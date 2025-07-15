@@ -12,8 +12,8 @@ import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
 import 'package:taqy/features/all/auth/presentation/cubit/user_cubit/user_cubit.dart';
 import 'package:taqy/features/all/auth/presentation/languages_cubit/languages_cubit.dart';
 
-class MustIvest extends StatelessWidget {
-  MustIvest({super.key});
+class TaQy extends StatelessWidget {
+  TaQy({super.key});
   final AppRouter appRouter = AppRouter(); // Create an instance of AppRouter
 
   @override

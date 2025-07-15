@@ -67,8 +67,8 @@ Future<void> main() async {
     ),
   );
 
-  // Get the language code from MustIvestPreferences
-  // final codeLang = sl<MustIvestPreferences>().getLang();
+  // Get the language code from TaQyPreferences
+  // final codeLang = sl<TaQyPreferences>().getLang();
   runApp(
     EasyLocalization(
       path: 'assets/translations',
@@ -82,7 +82,7 @@ Future<void> main() async {
       fallbackLocale: Locales.arabic,
       useOnlyLangCode: true,
       assetLoader: const CodegenLoader(),
-      child: MustIvest(),
+      child: TaQy(),
     ),
   );
 }
