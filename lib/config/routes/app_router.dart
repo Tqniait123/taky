@@ -8,9 +8,6 @@ import 'package:taqy/core/extensions/widget_extensions.dart';
 import 'package:taqy/core/observers/router_observer.dart';
 import 'package:taqy/core/services/di.dart';
 import 'package:taqy/core/utils/widgets/buttons/custom_back_button.dart';
-import 'package:taqy/features/all/auth/presentation/cubit/cities_cubit/cities_cubit.dart';
-import 'package:taqy/features/all/auth/presentation/cubit/countires_cubit/countries_cubit.dart';
-import 'package:taqy/features/all/auth/presentation/cubit/governorates_cubit/governorates_cubit.dart';
 import 'package:taqy/features/all/auth/presentation/pages/check_your_email_screen.dart';
 import 'package:taqy/features/all/auth/presentation/pages/forget_password_screen.dart';
 import 'package:taqy/features/all/auth/presentation/pages/login_screen.dart';
@@ -79,14 +76,7 @@ class AppRouter {
         path: Routes.register,
         builder: (context, state) {
           // Return the RegisterScreen widget
-          return MultiBlocProvider(
-            providers: [
-              BlocProvider(create: (context) => CountriesCubit(sl())),
-              BlocProvider(create: (context) => GovernoratesCubit(sl())),
-              BlocProvider(create: (context) => CitiesCubit(sl())),
-            ],
-            child: const RegisterScreen(),
-          );
+          return const RegisterScreen();
         },
       ),
       GoRoute(

@@ -109,13 +109,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     return;
                   }
 
-                  context.read<AuthCubit>().resetPassword(
-                    ResetPasswordParams(
-                      password: passwordController.text,
-                      phone: widget.phone,
-                      confirmPassword: confirmPasswordController.text,
-                    ),
-                  );
+                  // context.read<AuthCubit>().resetPassword(
+                  //   ResetPasswordParams(
+                  //     password: passwordController.text,
+                  //     phone: widget.phone,
+                  //     confirmPassword: confirmPasswordController.text,
+                  //   ),
+                  // );
                 },
               ).paddingAll(32),
             ),

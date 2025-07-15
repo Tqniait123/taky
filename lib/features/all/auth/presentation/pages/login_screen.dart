@@ -16,9 +16,7 @@ import 'package:taqy/core/utils/widgets/adaptive_layout/custom_layout.dart';
 import 'package:taqy/core/utils/widgets/buttons/custom_elevated_button.dart';
 import 'package:taqy/core/utils/widgets/inputs/custom_form_field.dart';
 import 'package:taqy/core/utils/widgets/logo_widget.dart';
-import 'package:taqy/features/all/auth/data/models/login_params.dart';
 import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
-import 'package:taqy/features/all/auth/presentation/cubit/user_cubit/user_cubit.dart';
 import 'package:taqy/features/all/auth/presentation/widgets/sign_up_button.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -52,9 +50,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _performRegularLogin() {
     if (_formKey.currentState!.validate()) {
-      AuthCubit.get(context).login(
-        LoginParams(phone: _phoneController.text, password: _passwordController.text, isRemembered: isRemembered),
-      );
+      // AuthCubit.get(context).login(
+      //   LoginParams(phone: _phoneController.text, password: _passwordController.text, isRemembered: isRemembered),
+      // );
     }
   }
 
@@ -318,7 +316,7 @@ class _LoginScreenState extends State<LoginScreen> {
             listener: (context, state) async {
               if (state is AuthSuccess) {
                 // Handle post-login biometric setup
-                UserCubit.get(context).setCurrentUser(state.user);
+                // UserCubit.get(context).setCurrentUser(state.user);
                 context.go(Routes.homeUser);
               } else if (state is AuthError) {
                 showErrorToast(context, state.message);

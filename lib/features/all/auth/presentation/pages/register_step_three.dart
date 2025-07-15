@@ -165,7 +165,7 @@ class _RegisterStepThreeScreenState extends State<RegisterStepThreeScreen> {
                 child: BlocConsumer<AuthCubit, AuthState>(
                   listener: (BuildContext context, AuthState state) async {
                     if (state is AuthSuccess) {
-                      UserCubit.get(context).setCurrentUser(state.user);
+                      // UserCubit.get(context).setCurrentUser(state.user);
 
                       context.go(Routes.homeUser);
                     }

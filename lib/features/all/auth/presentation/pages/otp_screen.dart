@@ -12,9 +12,7 @@ import 'package:taqy/core/translations/locale_keys.g.dart';
 import 'package:taqy/core/utils/dialogs/error_toast.dart';
 import 'package:taqy/core/utils/widgets/buttons/custom_back_button.dart';
 import 'package:taqy/core/utils/widgets/buttons/custom_elevated_button.dart';
-import 'package:taqy/features/all/auth/data/models/verify_params.dart';
 import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
-import 'package:taqy/features/all/auth/presentation/cubit/user_cubit/user_cubit.dart';
 import 'package:taqy/features/all/auth/presentation/widgets/custom_pin_field.dart';
 import 'package:taqy/features/all/auth/presentation/widgets/resend_otp_widget.dart';
 
@@ -52,7 +50,7 @@ class _OtpScreenState extends State<OtpScreen> {
   }
 
   void _handleResendOtp() {
-    AuthCubit.get(context).resendOTP(widget.phone);
+    // AuthCubit.get(context).resendOTP(widget.phone);
   }
 
   void _handleNavigationAfterVerification() {
@@ -152,7 +150,7 @@ class _OtpScreenState extends State<OtpScreen> {
                 BlocConsumer<AuthCubit, AuthState>(
                   listener: (BuildContext context, AuthState state) async {
                     if (state is AuthSuccess) {
-                      UserCubit.get(context).setCurrentUser(state.user);
+                      // UserCubit.get(context).setCurrentUser(state.user);
                       _handleNavigationAfterVerification();
                     }
                     if (state is AuthError) {
@@ -166,25 +164,25 @@ class _OtpScreenState extends State<OtpScreen> {
                     loading: state is AuthLoading,
                     title: LocaleKeys.confirm.tr(),
                     onPressed: () {
-                      if (otp.length == pinLength) {
-                        switch (widget.flow) {
-                          case OtpFlow.passwordReset:
-                            AuthCubit.get(context).verifyPasswordReset(
-                              VerifyParams(phone: widget.phone, loginCode: otp, codeKey: 'reset_password_code'),
-                            );
-                          case OtpFlow.registration:
-                            AuthCubit.get(
-                              context,
-                            ).verifyRegistration(VerifyParams(phone: widget.phone, loginCode: otp));
-                          case OtpFlow.login:
-                          // AuthCubit.get(context).verifyLogin(
-                          //   VerifyParams(
-                          //     phone: widget.phone,
-                          //     loginCode: otp,
-                          //   ),
-                          // );
-                        }
-                      }
+                      // if (otp.length == pinLength) {
+                      //   switch (widget.flow) {
+                      //     case OtpFlow.passwordReset:
+                      //       AuthCubit.get(context).verifyPasswordReset(
+                      //         VerifyParams(phone: widget.phone, loginCode: otp, codeKey: 'reset_password_code'),
+                      //       );
+                      //     case OtpFlow.registration:
+                      //       AuthCubit.get(
+                      //         context,
+                      //       ).verifyRegistration(VerifyParams(phone: widget.phone, loginCode: otp));
+                      //     case OtpFlow.login:
+                      //     // AuthCubit.get(context).verifyLogin(
+                      //     //   VerifyParams(
+                      //     //     phone: widget.phone,
+                      //     //     loginCode: otp,
+                      //     //   ),
+                      //     // );
+                      //   }
+                      // }
                     },
                   ),
                 ),
