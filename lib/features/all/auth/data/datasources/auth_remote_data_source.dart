@@ -11,12 +11,12 @@ import 'package:taqy/features/all/auth/data/models/login_with_apple.dart';
 import 'package:taqy/features/all/auth/data/models/login_with_google_params.dart';
 import 'package:taqy/features/all/auth/data/models/register_params.dart';
 import 'package:taqy/features/all/auth/data/models/reset_password_params.dart';
-import 'package:taqy/features/all/auth/data/models/user.dart';
+import 'package:taqy/features/all/auth/data/models/user_model.dart';
 import 'package:taqy/features/all/auth/data/models/verify_params.dart';
 
 abstract class AuthRemoteDataSource {
   // Future<ApiResponse> login();
-  Future<ApiResponse<User>> autoLogin(String token);
+  Future<ApiResponse<UserModel>> autoLogin(String token);
   Future<ApiResponse<AuthModel>> login(LoginParams params);
   Future<ApiResponse<AuthModel>> loginWithGoogle(LoginWithGoogleParams loginWithGoogleParams);
   Future<ApiResponse<AuthModel>> loginWithApple(LoginWithAppleParams loginWithAppleParams);
@@ -48,12 +48,12 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   /// Returns:
   ///   A `Future` of type `ApiResponse<AppUser>` is being returned.
   @override
-  Future<ApiResponse<User>> autoLogin(String token) async {
-    return dioClient.request<User>(
+  Future<ApiResponse<UserModel>> autoLogin(String token) async {
+    return dioClient.request<UserModel>(
       method: RequestMethod.get,
       EndPoints.autoLogin,
       options: token.toAuthorizationOptions(),
-      fromJson: (json) => User.fromJson(json as Map<String, dynamic>),
+      fromJson: (json) => UserModel.fromJson(json as Map<String, dynamic>),
     );
   }
 

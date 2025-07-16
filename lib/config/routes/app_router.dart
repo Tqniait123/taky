@@ -18,11 +18,9 @@ import 'package:taqy/features/all/auth/presentation/pages/register_step_two.dart
 import 'package:taqy/features/all/auth/presentation/pages/reset_password.dart';
 import 'package:taqy/features/all/notifications/presentation/pages/notifications_screen.dart';
 import 'package:taqy/features/all/on_boarding/presentation/pages/on_boarding_screen.dart';
-import 'package:taqy/features/all/profile/presentation/cubit/cars_cubit.dart';
 import 'package:taqy/features/all/profile/presentation/cubit/profile_cubit.dart';
 import 'package:taqy/features/all/profile/presentation/pages/edit_profile_screen.dart';
 import 'package:taqy/features/all/profile/presentation/pages/faq_screen.dart';
-import 'package:taqy/features/all/profile/presentation/pages/my_cars_screen.dart';
 import 'package:taqy/features/all/profile/presentation/pages/profile_screen.dart';
 import 'package:taqy/features/all/splash/presentation/pages/splash.dart';
 
@@ -153,13 +151,13 @@ class AppRouter {
         },
       ),
 
-      GoRoute(
-        path: Routes.myCars,
-        builder: (context, state) {
-          // Return the MyCarsScreen widget
-          return BlocProvider(create: (BuildContext context) => CarCubit(sl()), child: MyCarsScreen());
-        },
-      ),
+      // GoRoute(
+      //   path: Routes.myCars,
+      //   builder: (context, state) {
+      //     // Return the MyCarsScreen widget
+      //     return BlocProvider(create: (BuildContext context) => CarCubit(sl()), child: MyCarsScreen());
+      //   },
+      // ),
       GoRoute(
         path: Routes.faq,
         builder: (context, state) {
