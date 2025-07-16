@@ -1,5 +1,11 @@
 // lib/features/auth/presentation/screens/account_type_selection_screen.dart
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:taqy/config/routes/routes.dart';
+import 'package:taqy/core/theme/colors.dart';
+import 'package:taqy/core/translations/locale_keys.g.dart';
+import 'package:taqy/features/all/auth/presentation/widgets/account_type_selector_widget.dart';
 
 class AccountTypeSelectionScreen extends StatefulWidget {
   const AccountTypeSelectionScreen({super.key});
@@ -16,7 +22,7 @@ class _AccountTypeSelectionScreenState extends State<AccountTypeSelectionScreen>
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
+    _animationController = AnimationController(duration: const Duration(milliseconds: 1200), vsync: this);
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -38,7 +44,7 @@ class _AccountTypeSelectionScreenState extends State<AccountTypeSelectionScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: AnimatedBuilder(
           animation: _animationController,
@@ -55,53 +61,67 @@ class _AccountTypeSelectionScreenState extends State<AccountTypeSelectionScreen>
                       const SizedBox(height: 40),
                       Container(
                         padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(color: Colors.blue.shade50, shape: BoxShape.circle),
-                        child: Icon(Icons.business_center_outlined, size: 48, color: Colors.blue.shade600),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [AppColors.primary.withOpacity(0.1), AppColors.secondary.withOpacity(0.1)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.business_center_outlined, size: 52, color: AppColors.primary),
                       ),
                       const SizedBox(height: 32),
+
+                      ShaderMask(
+                        shaderCallback: (bounds) => LinearGradient(
+                          colors: [AppColors.primary, AppColors.secondary],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ).createShader(bounds),
+                        child: Text(
+                          LocaleKeys.welcomeToTaQy.tr(),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
                       Text(
-                        'Welcome to TaQy',
+                        LocaleKeys.chooseAccountType.tr(),
                         style: Theme.of(
                           context,
-                        ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.grey[800]),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Choose your account type to get started',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
+                        ).textTheme.bodyLarge?.copyWith(color: AppColors.onSurfaceVariant, height: 1.5),
                         textAlign: TextAlign.center,
                       ),
 
-                      const SizedBox(height: 48),
+                      const SizedBox(height: 56),
 
                       // Account Type Cards
                       Expanded(
                         child: Column(
                           children: [
-                            _buildAccountTypeCard(
-                              context,
-                              title: 'Organization Admin',
-                              description: 'Create and manage your organization',
-                              icon: Icons.admin_panel_settings,
-                              color: Colors.purple,
+                            AccountTypeCard(
+                              title: LocaleKeys.organizationAdmin.tr(),
+                              description: LocaleKeys.organizationAdminDesc.tr(),
+                              icon: Icons.admin_panel_settings_outlined,
+                              color: AppColors.primary,
                               onTap: () => _navigateToRegister(context, 'admin'),
                             ),
-                            const SizedBox(height: 16),
-                            _buildAccountTypeCard(
-                              context,
-                              title: 'Employee',
-                              description: 'Submit requests and track orders',
-                              icon: Icons.person,
-                              color: Colors.blue,
+                            const SizedBox(height: 20),
+                            AccountTypeCard(
+                              title: LocaleKeys.employee.tr(),
+                              description: LocaleKeys.employeeDesc.tr(),
+                              icon: Icons.person_outline,
+                              color: AppColors.secondary,
                               onTap: () => _navigateToRegister(context, 'employee'),
                             ),
-                            const SizedBox(height: 16),
-                            _buildAccountTypeCard(
-                              context,
-                              title: 'Office Boy',
-                              description: 'Receive and fulfill requests',
-                              icon: Icons.delivery_dining,
-                              color: Colors.green,
+                            const SizedBox(height: 20),
+                            AccountTypeCard(
+                              title: LocaleKeys.officeBoy.tr(),
+                              description: LocaleKeys.officeBoyDesc.tr(),
+                              icon: Icons.delivery_dining_outlined,
+                              color: Colors.teal,
                               onTap: () => _navigateToRegister(context, 'office_boy'),
                             ),
                           ],
@@ -109,19 +129,52 @@ class _AccountTypeSelectionScreenState extends State<AccountTypeSelectionScreen>
                       ),
 
                       // Footer
-                      const SizedBox(height: 24),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text('Already have an account? ', style: TextStyle(color: Colors.grey[600])),
-                          GestureDetector(
-                            onTap: () => Navigator.pushNamed(context, '/login'),
-                            child: Text(
-                              'Sign In',
-                              style: TextStyle(color: Colors.blue.shade600, fontWeight: FontWeight.w600),
+                      const SizedBox(height: 32),
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              LocaleKeys.alreadyHaveAccount.tr(),
+                              style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 16),
+                            ),
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: () => Navigator.pushNamed(context, '/login'),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [AppColors.primary, AppColors.secondary],
+                                    begin: Alignment.centerLeft,
+                                    end: Alignment.centerRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  LocaleKeys.signIn.tr(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 24),
                     ],
@@ -135,54 +188,7 @@ class _AccountTypeSelectionScreenState extends State<AccountTypeSelectionScreen>
     );
   }
 
-  Widget _buildAccountTypeCard(
-    BuildContext context, {
-    required String title,
-    required String description,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 10, offset: const Offset(0, 4))],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(12)),
-              child: Icon(icon, color: color, size: 32),
-            ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, color: Colors.grey[800]),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(description, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600])),
-                ],
-              ),
-            ),
-            Icon(Icons.arrow_forward_ios, color: Colors.grey[400], size: 16),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _navigateToRegister(BuildContext context, String accountType) {
-    Navigator.pushNamed(context, '/register', arguments: accountType);
+    context.push(Routes.register, extra: accountType);
   }
 }

@@ -1,7 +1,13 @@
-
 // lib/features/auth/presentation/screens/register_screen.dart
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
+import 'package:taqy/config/routes/routes.dart';
+import 'package:taqy/core/theme/colors.dart';
+import 'package:taqy/core/translations/locale_keys.g.dart';
+
+import '../widgets/animated_button.dart';
+import '../widgets/auth_text_field.dart';
 
 class RegisterScreen extends StatefulWidget {
   final String accountType;
@@ -33,13 +39,11 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
+    _animationController = AnimationController(duration: const Duration(milliseconds: 1200), vsync: this);
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
@@ -64,7 +68,7 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: AnimatedBuilder(
           animation: _animationController,
@@ -85,19 +89,19 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
                           GestureDetector(
                             onTap: () => Navigator.pop(context),
                             child: Container(
-                              padding: const EdgeInsets.all(8),
+                              padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8),
+                                color: AppColors.surface,
+                                borderRadius: BorderRadius.circular(12),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.grey.shade200,
-                                    blurRadius: 4,
+                                    color: Colors.black.withOpacity(0.08),
+                                    blurRadius: 8,
                                     offset: const Offset(0, 2),
                                   ),
                                 ],
                               ),
-                              child: Icon(Icons.arrow_back_ios, color: Colors.grey[600]),
+                              child: Icon(Icons.arrow_back_ios, color: AppColors.onSurfaceVariant, size: 20),
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -105,18 +109,26 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  'Create Account',
-                                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.grey[800],
+                                ShaderMask(
+                                  shaderCallback: (bounds) => LinearGradient(
+                                    colors: [AppColors.primary, AppColors.secondary],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ).createShader(bounds),
+                                  child: Text(
+                                    LocaleKeys.createAccount.tr(),
+                                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
+                                const SizedBox(height: 4),
                                 Text(
                                   _getAccountTypeTitle(),
-                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Colors.grey[600],
-                                  ),
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.bodyMedium?.copyWith(color: AppColors.onSurfaceVariant),
                                 ),
                               ],
                             ),
@@ -126,208 +138,232 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
 
                       const SizedBox(height: 32),
 
-                      // Form
-                      Form(
-                        key: _formKey,
-                        child: Column(
-                          children: [
-                            // Name Field
-                            _buildInputField(
-                              controller: _nameController,
-                              label: 'Full Name',
-                              hint: 'Enter your full name',
-                              prefixIcon: Icons.person_outline,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter your name';
-                                }
-                                return null;
-                              },
-                            ),
-
-                            const SizedBox(height: 20),
-
-                            // Email Field
-                            _buildInputField(
-                              controller: _emailController,
-                              label: 'Email',
-                              hint: 'Enter your email',
-                              prefixIcon: Icons.email_outlined,
-                              keyboardType: TextInputType.emailAddress,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter your email';
-                                }
-                                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                                  return 'Please enter a valid email';
-                                }
-                                return null;
-                              },
-                            ),
-
-                            const SizedBox(height: 20),
-
-                            // Phone Field
-                            _buildInputField(
-                              controller: _phoneController,
-                              label: 'Phone Number',
-                              hint: 'Enter your phone number',
-                              prefixIcon: Icons.phone_outlined,
-                              keyboardType: TextInputType.phone,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter your phone number';
-                                }
-                                return null;
-                              },
-                            ),
-
-                            const SizedBox(height: 20),
-
-                            // Organization fields for Employee and Office Boy
-                            if (widget.accountType != 'admin') ...[
-                              _buildInputField(
-                                controller: _orgCodeController,
-                                label: 'Organization Code',
-                                hint: 'Enter organization code',
-                                prefixIcon: Icons.business_outlined,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter organization code';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              const SizedBox(height: 20),
-                            ],
-
-                            // Organization name for Admin
-                            if (widget.accountType == 'admin') ...[
-                              _buildInputField(
-                                controller: _orgNameController,
-                                label: 'Organization Name',
-                                hint: 'Enter your organization name',
-                                prefixIcon: Icons.business_outlined,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter organization name';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              const SizedBox(height: 20),
-                            ],
-
-                            // Password Field
-                            _buildInputField(
-                              controller: _passwordController,
-                              label: 'Password',
-                              hint: 'Create a password',
-                              prefixIcon: Icons.lock_outline,
-                              isPassword: true,
-                              isPasswordVisible: _isPasswordVisible,
-                              onTogglePassword: () {
-                                setState(() {
-                                  _isPasswordVisible = !_isPasswordVisible;
-                                });
-                              },
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter a password';
-                                }
-                                if (value.length < 6) {
-                                  return 'Password must be at least 6 characters';
-                                }
-                                return null;
-                              },
-                            ),
-
-                            const SizedBox(height: 20),
-
-                            // Confirm Password Field
-                            _buildInputField(
-                              controller: _confirmPasswordController,
-                              label: 'Confirm Password',
-                              hint: 'Confirm your password',
-                              prefixIcon: Icons.lock_outline,
-                              isPassword: true,
-                              isPasswordVisible: _isConfirmPasswordVisible,
-                              onTogglePassword: () {
-                                setState(() {
-                                  _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
-                                });
-                              },
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please confirm your password';
-                                }
-                                if (value != _passwordController.text) {
-                                  return 'Passwords do not match';
-                                }
-                                return null;
-                              },
-                            ),
-
-                            const SizedBox(height: 32),
-
-                            // Register Button
-                            SizedBox(
-                              width: double.infinity,
-                              height: 56,
-                              child: ElevatedButton(
-                                onPressed: _isLoading ? null : _handleRegister,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: _getAccountTypeColor(),
-                                  foregroundColor: Colors.white,
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                ),
-                                child: _isLoading
-                                    ? const SizedBox(
-                                        height: 20,
-                                        width: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                        ),
-                                      )
-                                    : Text(
-                                        'Create Account',
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                              ),
-                            ),
-
-                            const SizedBox(height: 24),
-
-                            // Sign In Link
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'Already have an account? ',
-                                  style: TextStyle(color: Colors.grey[600]),
-                                ),
-                                GestureDetector(
-                                  onTap: () => Navigator.pushNamed(context, '/login'),
-                                  child: Text(
-                                    'Sign In',
-                                    style: TextStyle(
-                                      color: _getAccountTypeColor(),
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                      // Form Card
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.08),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
                             ),
                           ],
                         ),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            children: [
+                              // Name Field
+                              AuthTextField(
+                                controller: _nameController,
+                                label: LocaleKeys.fullName.tr(),
+                                hint: LocaleKeys.enterFullName.tr(),
+                                prefixIcon: Icons.person_outline,
+                                focusColor: _getAccountTypeColor(),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return LocaleKeys.pleaseEnterName.tr();
+                                  }
+                                  return null;
+                                },
+                              ),
+
+                              const SizedBox(height: 24),
+
+                              // Email Field
+                              AuthTextField(
+                                controller: _emailController,
+                                label: LocaleKeys.email.tr(),
+                                hint: LocaleKeys.enterEmail.tr(),
+                                prefixIcon: Icons.email_outlined,
+                                keyboardType: TextInputType.emailAddress,
+                                focusColor: _getAccountTypeColor(),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return LocaleKeys.pleaseEnterEmail.tr();
+                                  }
+                                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                                    return LocaleKeys.pleaseEnterValidEmail.tr();
+                                  }
+                                  return null;
+                                },
+                              ),
+
+                              const SizedBox(height: 24),
+
+                              // Phone Field
+                              AuthTextField(
+                                controller: _phoneController,
+                                label: LocaleKeys.phoneNumber.tr(),
+                                hint: LocaleKeys.enterPhoneNumber.tr(),
+                                prefixIcon: Icons.phone_outlined,
+                                keyboardType: TextInputType.phone,
+                                focusColor: _getAccountTypeColor(),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return LocaleKeys.pleaseEnterPhoneNumber.tr();
+                                  }
+                                  return null;
+                                },
+                              ),
+
+                              const SizedBox(height: 24),
+
+                              // Organization fields for Employee and Office Boy
+                              if (widget.accountType != 'admin') ...[
+                                AuthTextField(
+                                  controller: _orgCodeController,
+                                  label: LocaleKeys.organizationCode.tr(),
+                                  hint: LocaleKeys.enterOrganizationCode.tr(),
+                                  prefixIcon: Icons.business_outlined,
+                                  focusColor: _getAccountTypeColor(),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return LocaleKeys.pleaseEnterOrganizationCode.tr();
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 24),
+                              ],
+
+                              // Organization name for Admin
+                              if (widget.accountType == 'admin') ...[
+                                AuthTextField(
+                                  controller: _orgNameController,
+                                  label: LocaleKeys.organizationName.tr(),
+                                  hint: LocaleKeys.enterOrganizationName.tr(),
+                                  prefixIcon: Icons.business_outlined,
+                                  focusColor: _getAccountTypeColor(),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return LocaleKeys.pleaseEnterOrganizationName.tr();
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 24),
+                              ],
+
+                              // Password Field
+                              AuthTextField(
+                                controller: _passwordController,
+                                label: LocaleKeys.password.tr(),
+                                hint: LocaleKeys.createPassword.tr(),
+                                prefixIcon: Icons.lock_outline,
+                                isPassword: true,
+                                isPasswordVisible: _isPasswordVisible,
+                                focusColor: _getAccountTypeColor(),
+                                onTogglePassword: () {
+                                  setState(() {
+                                    _isPasswordVisible = !_isPasswordVisible;
+                                  });
+                                },
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return LocaleKeys.pleaseEnterPassword.tr();
+                                  }
+                                  if (value.length < 6) {
+                                    return LocaleKeys.passwordMinLength.tr();
+                                  }
+                                  return null;
+                                },
+                              ),
+
+                              const SizedBox(height: 24),
+
+                              // Confirm Password Field
+                              AuthTextField(
+                                controller: _confirmPasswordController,
+                                label: LocaleKeys.confirmPassword.tr(),
+                                hint: LocaleKeys.confirmYourPassword.tr(),
+                                prefixIcon: Icons.lock_outline,
+                                isPassword: true,
+                                isPasswordVisible: _isConfirmPasswordVisible,
+                                focusColor: _getAccountTypeColor(),
+                                onTogglePassword: () {
+                                  setState(() {
+                                    _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                                  });
+                                },
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return LocaleKeys.pleaseConfirmPassword.tr();
+                                  }
+                                  if (value != _passwordController.text) {
+                                    return LocaleKeys.passwordsDoNotMatch.tr();
+                                  }
+                                  return null;
+                                },
+                              ),
+
+                              const SizedBox(height: 32),
+
+                              // Register Button
+                              AnimatedButton(
+                                text: LocaleKeys.createAccount.tr(),
+                                onPressed: _isLoading ? null : _handleRegister,
+                                isLoading: _isLoading,
+                                backgroundColor: _getAccountTypeColor(),
+                                width: double.infinity,
+                                height: 56,
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
+
+                      const SizedBox(height: 32),
+
+                      // Sign In Link
+                      Center(
+                        child: Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                LocaleKeys.alreadyHaveAccount.tr(),
+                                style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 16),
+                              ),
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: () => context.go(Routes.login),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: _getAccountTypeColor(),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    LocaleKeys.signIn.tr(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
                     ],
                   ),
                 ),
@@ -339,93 +375,29 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
     );
   }
 
-  Widget _buildInputField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData prefixIcon,
-    bool isPassword = false,
-    bool isPasswordVisible = false,
-    VoidCallback? onTogglePassword,
-    TextInputType keyboardType = TextInputType.text,
-    String? Function(String?)? validator,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: Colors.grey[800],
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          obscureText: isPassword && !isPasswordVisible,
-          keyboardType: keyboardType,
-          validator: validator,
-          decoration: InputDecoration(
-            hintText: hint,
-            prefixIcon: Icon(prefixIcon, color: Colors.grey[600]),
-            suffixIcon: isPassword
-                ? IconButton(
-                    icon: Icon(
-                      isPasswordVisible ? Icons.visibility_off : Icons.visibility,
-                      color: Colors.grey[600],
-                    ),
-                    onPressed: onTogglePassword,
-                  )
-                : null,
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: _getAccountTypeColor(), width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.red.shade400),
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          ),
-        ),
-      ],
-    );
-  }
-
   String _getAccountTypeTitle() {
     switch (widget.accountType) {
       case 'admin':
-        return 'Organization Administrator';
+        return LocaleKeys.organizationAdministrator.tr();
       case 'employee':
-        return 'Employee Account';
+        return LocaleKeys.employeeAccount.tr();
       case 'office_boy':
-        return 'Office Boy Account';
+        return LocaleKeys.officeBoyAccount.tr();
       default:
-        return 'Create Account';
+        return LocaleKeys.createAccount.tr();
     }
   }
 
   Color _getAccountTypeColor() {
     switch (widget.accountType) {
       case 'admin':
-        return Colors.purple.shade600;
+        return AppColors.primary;
       case 'employee':
-        return Colors.blue.shade600;
+        return AppColors.secondary;
       case 'office_boy':
-        return Colors.green.shade600;
+        return Colors.teal;
       default:
-        return Colors.blue.shade600;
+        return AppColors.primary;
     }
   }
 
@@ -441,27 +413,21 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
       if (mounted) {
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Account created successfully!'),
-            backgroundColor: Colors.green.shade600,
-          ),
+          SnackBar(content: Text(LocaleKeys.accountCreatedSuccessfully.tr()), backgroundColor: AppColors.success),
         );
 
         // Navigate to login or dashboard
         if (widget.accountType == 'admin') {
-          Navigator.pushReplacementNamed(context, '/dashboard');
+          context.go(Routes.login);
         } else {
-          Navigator.pushReplacementNamed(context, '/login');
+          context.go(Routes.login);
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Registration failed: ${e.toString()}'),
-            backgroundColor: Colors.red.shade600,
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(LocaleKeys.registrationFailed.tr()), backgroundColor: AppColors.error));
       }
     } finally {
       if (mounted) {
