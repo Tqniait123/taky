@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:taqy/config/routes/routes.dart';
 import 'package:taqy/core/static/app_assets.dart';
 import 'package:taqy/core/theme/colors.dart';
-import 'package:taqy/core/utils/dialogs/error_toast.dart';
 import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -164,11 +163,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
             context.go(Routes.homeUser);
           }
           if (state is AuthError) {
-            showErrorToast(context, state.message);
+            context.go(Routes.login);
           }
-          
-
-         },
+        },
         child: AnimatedBuilder(
           animation: Listenable.merge([
             _logoController,

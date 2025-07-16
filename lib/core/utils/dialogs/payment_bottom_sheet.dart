@@ -102,7 +102,7 @@ class _PaymentRequestBottomSheetState extends State<PaymentRequestBottomSheet> w
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  gradient: const LinearGradient(colors: [AppColors.primary, AppColors.darkBlue]),
+                                  gradient: const LinearGradient(colors: [AppColors.primary, AppColors.primaryDark]),
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
@@ -153,7 +153,7 @@ class _PaymentRequestBottomSheetState extends State<PaymentRequestBottomSheet> w
                                   padding: const EdgeInsets.all(24),
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
-                                      colors: [AppColors.primary, AppColors.darkBlue],
+                                      colors: [AppColors.primary, AppColors.primaryDark],
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                     ),

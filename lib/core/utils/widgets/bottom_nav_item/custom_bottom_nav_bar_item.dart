@@ -40,7 +40,7 @@ class CustomBottomNavigationBarItem extends StatelessWidget {
           SvgPicture.asset(
             isSelected ? iconFilledPath : iconPath,
             colorFilter: !isSelected
-                ? const ColorFilter.mode(AppColors.grey60, BlendMode.srcIn)
+                ? const ColorFilter.mode(AppColors.outline, BlendMode.srcIn)
                 : const ColorFilter.mode(AppColors.secondary, BlendMode.srcIn),
             height: 27.h,
           ),
@@ -50,7 +50,7 @@ class CustomBottomNavigationBarItem extends StatelessWidget {
             child: Text(
               title,
               style: AppStyles.medium12black.copyWith(
-                color: isSelected ? AppColors.secondary : AppColors.grey78,
+                color: isSelected ? AppColors.secondary : AppColors.outline,
                 fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
               ),
             ),

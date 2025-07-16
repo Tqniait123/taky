@@ -12,7 +12,6 @@ import 'package:taqy/core/utils/widgets/adaptive_layout/custom_layout.dart';
 import 'package:taqy/core/utils/widgets/buttons/custom_elevated_button.dart';
 import 'package:taqy/core/utils/widgets/logo_widget.dart';
 import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
-import 'package:taqy/features/all/auth/presentation/cubit/user_cubit/user_cubit.dart';
 import 'package:taqy/features/all/auth/presentation/widgets/id_upload_widget.dart'; // Import the custom widget
 import 'package:taqy/features/all/auth/presentation/widgets/sign_up_button.dart';
 
@@ -62,9 +61,11 @@ class _RegisterStepTwoScreenState extends State<RegisterStepTwoScreen> {
               27.gap,
               Text(
                 LocaleKeys.register.tr(),
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge!.copyWith(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.white),
+                style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.background,
+                ),
                 textAlign: TextAlign.center,
               ),
             ],

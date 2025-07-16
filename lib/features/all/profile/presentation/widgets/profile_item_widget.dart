@@ -16,7 +16,7 @@ class ProfileItemWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppColors.white,
+      color: AppColors.background,
       margin: const EdgeInsets.only(bottom: 38),
       child: Row(
         children: [

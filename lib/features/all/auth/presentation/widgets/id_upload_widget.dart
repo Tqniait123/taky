@@ -73,7 +73,7 @@ class _IdUploadWidgetState extends State<IdUploadWidget> {
         Text(
           widget.title,
           style: context.bodyMedium.s14.semiBold.copyWith(
-            color: AppColors.grey,
+            color: AppColors.outline,
             fontSize: 12.r,
             fontWeight: FontWeight.w400,
           ),

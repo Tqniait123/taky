@@ -27,7 +27,7 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -87,7 +87,7 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen> {
                                 children: [
                                   TextSpan(
                                     text: LocaleKeys.didnt_receive_the_email_check_.tr(),
-                                    style: context.bodyMedium.regular.s12.copyWith(color: AppColors.grey),
+                                    style: context.bodyMedium.regular.s12.copyWith(color: AppColors.outline),
                                   ),
                                   TextSpan(
                                     text: ' ',
@@ -95,7 +95,7 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen> {
                                   ),
                                   TextSpan(
                                     text: LocaleKeys.try_another_email_address.tr(),
-                                    style: context.bodyMedium.regular.s12.copyWith(color: AppColors.redED),
+                                    style: context.bodyMedium.regular.s12.copyWith(color: AppColors.error),
                                     recognizer: TapGestureRecognizer()
                                       ..onTap = () {
                                         context.pop();

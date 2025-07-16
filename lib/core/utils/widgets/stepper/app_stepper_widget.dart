@@ -19,7 +19,7 @@ class AppStepperWidget extends StatelessWidget {
       animationDuration: 700,
       addAutomaticKeepAlive: false,
       percent: percent,
-      backgroundColor: AppColors.greyED,
+      backgroundColor: AppColors.outline,
       progressColor: AppColors.secondary,
     );
   }

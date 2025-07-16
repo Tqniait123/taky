@@ -8,6 +8,7 @@ import 'package:taqy/core/extensions/widget_extensions.dart';
 import 'package:taqy/core/observers/router_observer.dart';
 import 'package:taqy/core/services/di.dart';
 import 'package:taqy/core/utils/widgets/buttons/custom_back_button.dart';
+import 'package:taqy/features/all/auth/presentation/pages/account_type_selection_screen.dart';
 import 'package:taqy/features/all/auth/presentation/pages/check_your_email_screen.dart';
 import 'package:taqy/features/all/auth/presentation/pages/forget_password_screen.dart';
 import 'package:taqy/features/all/auth/presentation/pages/login_screen.dart';
@@ -71,10 +72,17 @@ class AppRouter {
         },
       ),
       GoRoute(
+        path: Routes.accountTypeSelection,
+        builder: (context, state) {
+          // Return the AccountTypeSelectionsScreen widget
+          return const AccountTypeSelectionScreen();
+        },
+      ),
+      GoRoute(
         path: Routes.register,
         builder: (context, state) {
           // Return the RegisterScreen widget
-          return const RegisterScreen();
+          return RegisterScreen(accountType: state.extra as String);
         },
       ),
       GoRoute(

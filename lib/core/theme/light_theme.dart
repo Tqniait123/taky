@@ -13,19 +13,19 @@ ThemeData lightTheme(BuildContext context) {
     primaryColorDark: AppColors.primaryDark,
     //this may be changed in the future
     // useMaterial3: false,
-    scaffoldBackgroundColor: AppColors.whiteFD,
+    scaffoldBackgroundColor: AppColors.background,
     fontFamily: context.locale.languageCode == "en" ? Constants.fontFamilyEN : Constants.fontFamilyAR,
     colorScheme: const ColorScheme.light(primary: AppColors.primary),
 
-    dividerColor: AppColors.grey78,
-    dividerTheme: const DividerThemeData(color: AppColors.grey4A, thickness: 0.1),
+    dividerColor: AppColors.outline,
+    dividerTheme: const DividerThemeData(color: AppColors.outline, thickness: 0.1),
 
     //! AppBar Theme
     appBarTheme: const AppBarTheme(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.background,
       elevation: 0.0,
       centerTitle: true,
-      iconTheme: IconThemeData(color: AppColors.green1E),
+      iconTheme: IconThemeData(color: AppColors.success),
       systemOverlayStyle: SystemUiOverlayStyle(
         statusBarBrightness: Brightness.light,
         statusBarIconBrightness: Brightness.dark,
@@ -39,12 +39,12 @@ ThemeData lightTheme(BuildContext context) {
       showSelectedLabels: true,
       showUnselectedLabels: true,
       selectedIconTheme: IconThemeData(color: AppColors.primary),
-      unselectedIconTheme: IconThemeData(color: AppColors.greyC4),
+      unselectedIconTheme: IconThemeData(color: AppColors.outline),
       selectedLabelStyle: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w400),
-      unselectedLabelStyle: TextStyle(fontSize: 12, color: AppColors.grey78, fontWeight: FontWeight.w400),
+      unselectedLabelStyle: TextStyle(fontSize: 12, color: AppColors.outline, fontWeight: FontWeight.w400),
       type: BottomNavigationBarType.fixed,
       selectedItemColor: AppColors.primary,
-      unselectedItemColor: AppColors.grey81,
+      unselectedItemColor: AppColors.outline,
       enableFeedback: false,
       landscapeLayout: BottomNavigationBarLandscapeLayout.centered,
     ),
@@ -52,9 +52,9 @@ ThemeData lightTheme(BuildContext context) {
     //! Buttons Themes
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        textStyle: Theme.of(context).textTheme.displayMedium?.copyWith(color: AppColors.white, fontSize: 16),
+        textStyle: Theme.of(context).textTheme.displayMedium?.copyWith(color: AppColors.background, fontSize: 16),
         backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.white,
+        foregroundColor: AppColors.background,
         elevation: 0.0,
         alignment: Alignment.center,
         enableFeedback: false,
@@ -96,7 +96,7 @@ TextTheme textTheme() {
     //   fontSize: 35.sp,
     //   fontStyle: FontStyle.normal,
     //   fontWeight: FontWeight.w900,
-    //   color: AppColors.black,
+    //   color: AppColors.onSurface,
     // ),
     bodyLarge: TextStyle(
       fontSize: 16.sp,
@@ -108,13 +108,13 @@ TextTheme textTheme() {
       fontSize: 16.sp,
       fontStyle: FontStyle.normal,
       fontWeight: FontWeight.w600,
-      color: AppColors.black,
+      color: AppColors.onSurface,
     ),
     bodySmall: TextStyle(
       fontSize: 14.sp,
       fontStyle: FontStyle.normal,
       fontWeight: FontWeight.w400,
-      color: AppColors.black,
+      color: AppColors.onSurface,
     ),
     //! DISPLAY
     displayLarge: TextStyle(
@@ -133,7 +133,7 @@ TextTheme textTheme() {
       fontSize: 14.sp,
       fontStyle: FontStyle.normal,
       fontWeight: FontWeight.w400,
-      color: AppColors.black,
+      color: AppColors.onSurface,
     ),
     //! HEADLINE
     headlineLarge: TextStyle(
@@ -141,19 +141,19 @@ TextTheme textTheme() {
       // fontSize: 20.sp,
       fontStyle: FontStyle.normal,
       fontWeight: FontWeight.bold,
-      color: AppColors.black,
+      color: AppColors.onSurface,
     ),
     headlineMedium: TextStyle(
       fontSize: 16.sp,
       fontStyle: FontStyle.normal,
       fontWeight: FontWeight.w600,
-      color: AppColors.black,
+      color: AppColors.onSurface,
     ),
     headlineSmall: TextStyle(
       fontSize: 14.sp,
       fontStyle: FontStyle.normal,
       fontWeight: FontWeight.w400,
-      color: AppColors.black,
+      color: AppColors.onSurface,
     ),
     //! LABEL
     labelLarge: TextStyle(
@@ -191,7 +191,7 @@ TextTheme textTheme() {
       fontSize: 14.sp,
       fontStyle: FontStyle.normal,
       fontWeight: FontWeight.w400,
-      color: AppColors.grey4A,
+      color: AppColors.outline,
     ),
   );
 }

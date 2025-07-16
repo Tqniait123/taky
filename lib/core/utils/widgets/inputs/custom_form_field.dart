@@ -123,14 +123,14 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
             widget.title!,
             style: Theme.of(
               context,
-            ).textTheme.labelMedium?.copyWith(color: AppColors.grey, fontSize: 12.r, fontWeight: FontWeight.w400),
+            ).textTheme.labelMedium?.copyWith(color: AppColors.outline, fontSize: 12.r, fontWeight: FontWeight.w400),
           ),
           8.ph,
         ],
         Container(
           margin: EdgeInsets.symmetric(horizontal: widget.margin),
           decoration: BoxDecoration(
-            // color: AppColors.white,
+            // color: AppColors.background,
             borderRadius: BorderRadius.all(Radius.circular(widget.radius)),
             // boxShadow:
             //     widget.shadow ??
@@ -173,14 +173,14 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
               enabledBorder: OutlineInputBorder(
                 borderSide: BorderSide(
                   width: 1,
-                  color: (widget.isBordered ?? true) ? AppColors.borderColor : Colors.transparent,
+                  color: (widget.isBordered ?? true) ? AppColors.primary : Colors.transparent,
                 ),
                 borderRadius: BorderRadius.all(Radius.circular(widget.radius)),
               ),
               filled: true,
               fillColor:
                   widget.backgroundColor ??
-                  (widget.disabled ? const Color(0xff000000).withOpacity(0.2) : AppColors.white),
+                  (widget.disabled ? const Color(0xff000000).withOpacity(0.2) : AppColors.background),
               border: OutlineInputBorder(
                 borderSide: BorderSide(
                   width: 0.5,
@@ -230,7 +230,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                   : widget.suffixIC != null
                   ? Padding(padding: const EdgeInsets.all(5), child: widget.suffixIC?.flippedForLocale(context))
                   : null,
-              // suffixIconColor: AppColors.greyAB,
+              // suffixIconColor: AppColors.outlineAB,
             ),
             // Call either debounced or instant onChanged based on the waitTyping flag
             onChanged: widget.waitTyping ? (value) => _onChangedDebounced(value) : (value) => _onChangedInstant(value),

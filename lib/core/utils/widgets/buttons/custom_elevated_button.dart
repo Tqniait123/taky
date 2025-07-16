@@ -45,8 +45,8 @@ class CustomElevatedButton extends StatefulWidget {
     this.height = 60,
     this.padding = 24,
     this.icon,
-    this.iconColor = AppColors.white,
-    this.textColor = AppColors.white,
+    this.iconColor = AppColors.background,
+    this.textColor = AppColors.background,
     this.backgroundColor = AppColors.primary,
     this.loading = false,
     this.reverse = false,
@@ -127,14 +127,17 @@ class _CustomElevatedButtonState extends State<CustomElevatedButton> with Single
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     border: widget.isBordered
-                        ? Border.all(color: widget.isDisabled ? AppColors.disableColor : AppColors.greyED, width: 1.0)
+                        ? Border.all(
+                            color: widget.isDisabled ? AppColors.outline : AppColors.primary,
+                            width: 1.0,
+                          )
                         : null,
 
                     borderRadius: widget.borderRadius ?? BorderRadius.circular(15),
 
                     color: widget.isDisabled
-                        ? AppColors.disableColor
-                        : (widget.isFilled ? (widget.backgroundColor ?? AppColors.primary) : AppColors.whiteEA),
+                        ? AppColors.outline
+                        : (widget.isFilled ? (widget.backgroundColor ?? AppColors.primary) : AppColors.background),
                     boxShadow: widget.withShadow
                         ? [BoxShadow(color: Colors.black.withOpacity(0.1), offset: const Offset(0, 4), blurRadius: 8)]
                         : [],
@@ -173,7 +176,9 @@ class _CustomElevatedButtonState extends State<CustomElevatedButton> with Single
                                 child: AutoSizeText(
                                   widget.title.tr(),
                                   style: context.theme.textTheme.bodyLarge!.copyWith(
-                                    color: widget.textColor ?? (widget.isFilled ? AppColors.white : Color(0xff2D2D2D)),
+                                    color:
+                                        widget.textColor ??
+                                        (widget.isFilled ? AppColors.background : Color(0xff2D2D2D)),
                                     fontWeight: FontWeight.bold,
                                   ),
                                   maxLines: 1,

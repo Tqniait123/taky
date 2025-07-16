@@ -36,7 +36,7 @@
 //               // constraints:
 //               //     BoxConstraints(minHeight: MediaQuery.sizeOf(context).height * 0.60),
 //               decoration: const BoxDecoration(
-//                 color: AppColors.white,
+//                 color: AppColors.background,
 //                 borderRadius: BorderRadius.only(
 //                   topLeft: Radius.circular(40),
 //                   topRight: Radius.circular(40),

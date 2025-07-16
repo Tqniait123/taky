@@ -36,7 +36,7 @@ class ProfileScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 CustomBackButton(),
-                Text(LocaleKeys.profile.tr(), style: context.titleLarge.copyWith(color: AppColors.white)),
+                Text(LocaleKeys.profile.tr(), style: context.titleLarge.copyWith(color: AppColors.background)),
                 NotificationsButton(color: Color(0xffEAEAF3), iconColor: AppColors.primary),
               ],
             ),
@@ -56,7 +56,7 @@ class ProfileScreen extends StatelessWidget {
                             Text(
                               LocaleKeys.welcome.tr(),
                               style: context.bodyMedium.copyWith(
-                                color: AppColors.white,
+                                color: AppColors.background,
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -65,7 +65,7 @@ class ProfileScreen extends StatelessWidget {
                             Text(
                               context.user.name,
                               style: context.titleLarge.copyWith(
-                                color: AppColors.white,
+                                color: AppColors.background,
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
                               ),

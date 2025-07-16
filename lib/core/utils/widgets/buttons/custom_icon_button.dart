@@ -76,7 +76,9 @@ class _CustomIconButtonState extends State<CustomIconButton> {
               color: widget.color,
               borderRadius: BorderRadius.circular(widget.radius),
               boxShadow: widget.boxShadow != null ? [widget.boxShadow!] : null,
-              border: widget.isBordered ? Border.all(color: widget.borderColor ?? AppColors.greyED, width: 2.0) : null,
+              border: widget.isBordered
+                  ? Border.all(color: widget.borderColor ?? AppColors.outline, width: 2.0)
+                  : null,
             ),
             child: Center(
               child: SvgPicture.asset(

@@ -30,7 +30,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
           clipBehavior: Clip.none,
@@ -49,7 +49,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
               Text(LocaleKeys.reset_password.tr(), style: context.bodyMedium.copyWith(color: AppColors.primary)),
               Text(
                 LocaleKeys.password_reset_instructions.tr(),
-                style: context.bodyMedium.regular.s14.copyWith(color: AppColors.grey60),
+                style: context.bodyMedium.regular.s14.copyWith(color: AppColors.outline),
               ),
               48.gap,
               Form(

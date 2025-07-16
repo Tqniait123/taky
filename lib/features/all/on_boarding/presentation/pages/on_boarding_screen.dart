@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:taqy/config/routes/routes.dart';
 import 'package:taqy/core/extensions/num_extension.dart';
 import 'package:taqy/core/extensions/txt_theme.dart';
@@ -12,7 +13,6 @@ import 'package:taqy/core/theme/colors.dart';
 import 'package:taqy/core/translations/locale_keys.g.dart';
 import 'package:taqy/core/utils/widgets/buttons/custom_elevated_button.dart';
 import 'package:taqy/features/all/on_boarding/presentation/widgets/custom_page_view.dart';
-import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 class OnBoardingScreen extends StatefulWidget {
   const OnBoardingScreen({super.key});
@@ -25,11 +25,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
   final PageController _pageController = PageController();
   final TaQyPreferences preferences = sl<TaQyPreferences>();
   int _currentPage = 0;
-  List<String> images = [
-    AppIcons.onBoarding1,
-    AppIcons.onBoarding2,
-    AppIcons.onBoarding3,
-  ];
+  List<String> images = [AppIcons.onBoarding1, AppIcons.onBoarding2, AppIcons.onBoarding3];
 
   @override
   void initState() {
@@ -68,9 +64,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
                       },
                       child: Text(
                         LocaleKeys.skip.tr(),
-                        style: context.textTheme.bodyMedium!.copyWith(
-                          color: AppColors.primary.withValues(alpha: 0.5),
-                        ),
+                        style: context.textTheme.bodyMedium!.copyWith(color: AppColors.primary.withValues(alpha: 0.5)),
                       ),
                     ),
                   ),
@@ -81,17 +75,10 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
                   height: MediaQuery.of(context).size.height * 0.35,
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 600),
-                    transitionBuilder: (
-                      Widget child,
-                      Animation<double> animation,
-                    ) {
+                    transitionBuilder: (Widget child, Animation<double> animation) {
                       return FadeTransition(opacity: animation, child: child);
                     },
-                    child: SvgPicture.asset(
-                      key: ValueKey(_currentPage),
-                      fit: BoxFit.fitWidth,
-                      images[_currentPage],
-                    ),
+                    child: SvgPicture.asset(key: ValueKey(_currentPage), fit: BoxFit.fitWidth, images[_currentPage]),
                   ),
                 ),
 
@@ -100,10 +87,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
                 // Page content
                 SizedBox(
                   height: MediaQuery.of(context).size.height * 0.2,
-                  child: CustomPageView(
-                    currentPage: _currentPage,
-                    pageController: _pageController,
-                  ),
+                  child: CustomPageView(currentPage: _currentPage, pageController: _pageController),
                 ),
 
                 // Indicators
@@ -112,7 +96,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
                   count: 3,
                   effect: const ExpandingDotsEffect(
                     activeDotColor: AppColors.primary,
-                    dotColor: AppColors.greyED,
+                    dotColor: AppColors.outline,
                     dotHeight: 10,
                     dotWidth: 10,
                   ),
@@ -139,10 +123,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
                         //     : LocaleKeys.next.tr(),
                         onPressed: () {
                           if (_currentPage < 2) {
-                            _pageController.nextPage(
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeIn,
-                            );
+                            _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeIn);
                           } else {
                             preferences.setOnBoardingCompleted();
                             context.pushReplacement(Routes.login);

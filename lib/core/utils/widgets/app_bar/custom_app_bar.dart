@@ -24,7 +24,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       elevation: elevation,
       // actions: actions,
-      title: Text(title, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.blue20)),
+      title: Text(title, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.primary)),
       centerTitle: true,
       leading: !hideDrawer
           ? IconButton(

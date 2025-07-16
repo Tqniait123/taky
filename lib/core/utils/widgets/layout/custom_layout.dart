@@ -76,7 +76,7 @@
 //                                         .copyWith(
 //                                             fontSize: 20,
 //                                             fontWeight: FontWeight.bold,
-//                                             color: AppColors.white),
+//                                             color: AppColors.background),
 //                                   ),
 //                                 ),
 //                             const SizedBox(
@@ -96,7 +96,7 @@
 //                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
 //                             children: [
 //                               CustomIconButton(
-//                                 color: AppColors.white,
+//                                 color: AppColors.background,
 //                                 iconAsset: AppIcons.drawerIc,
 //                                 onPressed: () {
 //                                   // Open the drawer when the button is pressed
@@ -123,7 +123,7 @@
 //                   child: AnimatedContainer(
 //                     width: double.infinity,
 //                     decoration: BoxDecoration(
-//                       color: AppColors.white,
+//                       color: AppColors.background,
 //                       borderRadius:
 //                           const BorderRadius.vertical(top: Radius.circular(16)),
 //                       boxShadow: [

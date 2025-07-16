@@ -178,9 +178,11 @@ class CustomLayout extends StatelessWidget {
                 tag: 'title',
                 child: Text(
                   title!,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge!.copyWith(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.white),
+                  style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.background,
+                  ),
                 ),
               ),
             ),
@@ -202,7 +204,7 @@ class CustomLayout extends StatelessWidget {
       child: AnimatedContainer(
         width: double.infinity,
         decoration: BoxDecoration(
-          color: containerColor ?? AppColors.white,
+          color: containerColor ?? AppColors.background,
           borderRadius:
               containerBorderRadius ??
               const BorderRadius.only(topLeft: Radius.circular(40), topRight: Radius.circular(40)),

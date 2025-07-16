@@ -16,7 +16,7 @@
 //       clipBehavior: Clip.antiAlias,
 //       decoration: customBorderShadowDecoration(
 //         shadowColor: Colors.transparent,
-//         borderColor: AppColors.greyEB,
+//         borderColor: AppColors.outlineEB,
 //         borderWidth: 1.0,
 //       ),
 //       child: Row(

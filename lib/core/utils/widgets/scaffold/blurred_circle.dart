@@ -5,7 +5,7 @@ import 'package:taqy/core/extensions/context_extensions.dart';
 import 'package:taqy/core/theme/colors.dart';
 
 class BlurredBackgroundCircle extends StatelessWidget {
-  const BlurredBackgroundCircle({super.key, this.top = -90, this.start = -140, this.color = AppColors.gradient});
+  const BlurredBackgroundCircle({super.key, this.top = -90, this.start = -140, this.color = AppColors.secondary});
 
   final double top;
   final double start;

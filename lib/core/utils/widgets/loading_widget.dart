@@ -12,7 +12,7 @@ class CustomLoadingWidget extends StatelessWidget {
       height: 20,
       child: CircularProgressIndicator(
         strokeWidth: 2,
-        valueColor: AlwaysStoppedAnimation<Color>(color ?? AppColors.white),
+        valueColor: AlwaysStoppedAnimation<Color>(color ?? AppColors.background),
       ),
     );
   }

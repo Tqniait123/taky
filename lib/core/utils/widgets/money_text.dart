@@ -25,7 +25,7 @@ class MoneyText extends StatelessWidget {
             style: context.bodyMedium.bold.s12.copyWith(fontSize: amountTextSize, color: fontColor),
           ),
           4.gap,
-          Text(LocaleKeys.EGP.tr(), style: context.bodyMedium.bold.s12.copyWith(color: fontColor ?? AppColors.grey60)),
+          Text(LocaleKeys.EGP.tr(), style: context.bodyMedium.bold.s12.copyWith(color: fontColor ?? AppColors.outline)),
         ],
       ),
     );

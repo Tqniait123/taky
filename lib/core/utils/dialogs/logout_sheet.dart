@@ -47,8 +47,8 @@ void showLogoutBottomSheet(BuildContext context) {
                   child: CustomElevatedButton(
                     title: LocaleKeys.logout.tr(),
                     isFilled: true,
-                    textColor: AppColors.white,
-                    backgroundColor: AppColors.redD7,
+                    textColor: AppColors.background,
+                    backgroundColor: AppColors.error,
                     withShadow: false,
                     isBordered: true,
                     onPressed: () {
@@ -61,7 +61,7 @@ void showLogoutBottomSheet(BuildContext context) {
                   child: CustomElevatedButton(
                     title: LocaleKeys.back.tr(),
                     isFilled: false,
-                    textColor: AppColors.black,
+                    textColor: AppColors.onSurface,
                     withShadow: false,
                     isBordered: true,
                     onPressed: () {

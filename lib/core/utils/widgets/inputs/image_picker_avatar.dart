@@ -27,7 +27,7 @@ class ImagePickerAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    bool isLight = context.theme.scaffoldBackgroundColor == AppColors.whiteFD;
+    bool isLight = context.theme.scaffoldBackgroundColor == AppColors.background;
 
     return SizedBox(
       height: height ?? (isLarge! ? 300 : 100),
@@ -39,7 +39,7 @@ class ImagePickerAvatar extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(50),
-                color: pickedImage == null ? (isLight ? AppColors.whiteF3 : AppColors.blueE2) : null,
+                color: pickedImage == null ? (isLight ? AppColors.background : AppColors.secondary) : null,
                 image: (initialImage != null && initialImage!.isNotEmpty && pickedImage == null)
                     ? DecorationImage(fit: BoxFit.cover, image: NetworkImage(initialImage!))
                     : pickedImage != null && pickedImage!.path != null
@@ -112,7 +112,7 @@ class ImagePickerAvatar extends StatelessWidget {
                           },
                           iconSize: 35,
                           splashRadius: 35,
-                          color: isLight ? AppColors.white : AppColors.black,
+                          color: isLight ? AppColors.background : AppColors.onSurface,
                           icon: AppIcons.editIc.icon(),
                         ),
                       ),

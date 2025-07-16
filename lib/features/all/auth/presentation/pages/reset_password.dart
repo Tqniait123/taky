@@ -14,7 +14,6 @@ import 'package:taqy/core/utils/dialogs/error_toast.dart';
 import 'package:taqy/core/utils/widgets/buttons/custom_back_button.dart';
 import 'package:taqy/core/utils/widgets/buttons/custom_elevated_button.dart';
 import 'package:taqy/core/utils/widgets/inputs/custom_form_field.dart';
-import 'package:taqy/features/all/auth/data/models/reset_password_params.dart';
 import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
@@ -31,7 +30,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
           clipBehavior: Clip.none,
@@ -50,7 +49,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               Text(LocaleKeys.new_password.tr(), style: context.bodyMedium.copyWith(color: AppColors.primary)),
               Text(
                 LocaleKeys.enter_the_new_password.tr(),
-                style: context.bodyMedium.regular.s14.copyWith(color: AppColors.grey60),
+                style: context.bodyMedium.regular.s14.copyWith(color: AppColors.outline),
               ),
               // 48.gap,
               48.gap,

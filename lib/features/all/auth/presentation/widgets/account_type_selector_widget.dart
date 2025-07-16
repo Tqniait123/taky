@@ -1,108 +1,98 @@
-import 'package:easy_localization/easy_localization.dart';
+// lib/features/auth/presentation/widgets/account_type_card.dart
 import 'package:flutter/material.dart';
-import 'package:taqy/core/extensions/num_extension.dart';
-import 'package:taqy/core/theme/colors.dart';
-import 'package:taqy/core/translations/locale_keys.g.dart';
-import 'package:taqy/core/utils/widgets/long_press_effect.dart';
 
-enum AccountType { user, securityMan }
+class AccountTypeCard extends StatefulWidget {
+  final String title;
+  final String description;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
 
-class AccountTypeSelectorWidget extends StatefulWidget {
-  final void Function(AccountType type)? onSelectType;
-  const AccountTypeSelectorWidget({super.key, this.onSelectType});
-
-  @override
-  State<AccountTypeSelectorWidget> createState() => _AccountTypeSelectorWidgetState();
-}
-
-class _AccountTypeSelectorWidgetState extends State<AccountTypeSelectorWidget> {
-  AccountType? selectedOption;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        OptionWidget(
-          option: LocaleKeys.user.tr(),
-          isSelected: selectedOption == AccountType.user,
-
-          selectedOption: AccountType.user,
-          onTap: (option) {
-            setState(() {
-              selectedOption = option;
-              widget.onSelectType?.call(option);
-            });
-          },
-        ),
-        16.gap,
-        OptionWidget(
-          option: LocaleKeys.security_man.tr(),
-          isSelected: selectedOption == AccountType.securityMan,
-
-          selectedOption: AccountType.securityMan,
-          onTap: (option) {
-            setState(() {
-              selectedOption = option;
-              widget.onSelectType?.call(option);
-            });
-          },
-        ),
-      ],
-    );
-  }
-}
-
-class OptionWidget extends StatelessWidget {
-  final String option;
-  final bool isSelected;
-
-  final AccountType selectedOption;
-  final void Function(AccountType option)? onTap;
-  const OptionWidget({
+  const AccountTypeCard({
     super.key,
-    required this.option,
-    required this.isSelected,
-
-    required this.selectedOption,
-    this.onTap,
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.color,
+    required this.onTap,
   });
+
+  @override
+  State<AccountTypeCard> createState() => _AccountTypeCardState();
+}
+
+class _AccountTypeCardState extends State<AccountTypeCard> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(duration: const Duration(milliseconds: 150), vsync: this);
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.98,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        if (onTap != null) {
-          onTap!(selectedOption);
-        }
-      },
-      child: Column(
-        children: [
-          AnimatedContainer(
-            width: double.infinity,
-            margin: const EdgeInsets.only(right: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
-            decoration: BoxDecoration(
-              color: isSelected ? AppColors.primary : AppColors.primary.withAlpha(50),
-              border: Border.all(color: isSelected ? AppColors.secondary : Colors.transparent, width: 2),
-              borderRadius: BorderRadius.circular(16),
+      onTapDown: (_) => _controller.forward(),
+      onTapUp: (_) => _controller.reverse(),
+      onTapCancel: () => _controller.reverse(),
+      onTap: widget.onTap,
+      child: AnimatedBuilder(
+        animation: _scaleAnimation,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _scaleAnimation.value,
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 10, offset: const Offset(0, 4))],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(color: widget.color, borderRadius: BorderRadius.circular(12)),
+                    child: Icon(widget.icon, color: widget.color, size: 32),
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.title,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, color: Colors.grey[800]),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          widget.description,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.arrow_forward_ios, color: Colors.grey[400], size: 16),
+                ],
+              ),
             ),
-            duration: const Duration(milliseconds: 200),
-            child: Text(
-              option,
-              textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium!.copyWith(color: isSelected ? AppColors.white : AppColors.primary),
-            ),
-          ),
-        ],
+          );
+        },
       ),
-    ).withPressEffect(
-      onTap: () {
-        if (onTap != null) {
-          onTap!(selectedOption);
-        }
-      },
     );
   }
 }

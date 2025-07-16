@@ -13,7 +13,6 @@ import 'package:taqy/core/utils/widgets/buttons/custom_elevated_button.dart';
 import 'package:taqy/core/utils/widgets/inputs/custom_form_field.dart';
 import 'package:taqy/core/utils/widgets/logo_widget.dart';
 import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
-import 'package:taqy/features/all/auth/presentation/cubit/user_cubit/user_cubit.dart';
 import 'package:taqy/features/all/auth/presentation/widgets/id_upload_widget.dart';
 import 'package:taqy/features/all/auth/presentation/widgets/sign_up_button.dart';
 
@@ -70,9 +69,11 @@ class _RegisterStepThreeScreenState extends State<RegisterStepThreeScreen> {
               27.gap,
               Text(
                 LocaleKeys.register.tr(),
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge!.copyWith(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.white),
+                style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.background,
+                ),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -205,7 +206,7 @@ class _RegisterStepThreeScreenState extends State<RegisterStepThreeScreen> {
           //   children: [
           //     Expanded(
           //       child: Divider(
-          //         color: AppColors.grey60.withOpacity(0.3),
+          //         color: AppColors.outline.withOpacity(0.3),
           //         thickness: 1,
           //       ),
           //     ),
@@ -217,7 +218,7 @@ class _RegisterStepThreeScreenState extends State<RegisterStepThreeScreen> {
           //     16.gap,
           //     Expanded(
           //       child: Divider(
-          //         color: AppColors.grey60.withOpacity(0.3),
+          //         color: AppColors.outline.withOpacity(0.3),
           //         thickness: 1,
           //       ),
           //     ),

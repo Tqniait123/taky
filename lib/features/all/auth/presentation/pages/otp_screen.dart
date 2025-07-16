@@ -74,7 +74,7 @@ class _OtpScreenState extends State<OtpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -96,7 +96,7 @@ class _OtpScreenState extends State<OtpScreen> {
                     Text(LocaleKeys.otp_code.tr()),
                     Text(
                       LocaleKeys.activation_code_sent.tr(namedArgs: {"phone_number": widget.phone}),
-                      style: context.bodyMedium.regular.s16.copyWith(color: AppColors.grey60),
+                      style: context.bodyMedium.regular.s16.copyWith(color: AppColors.outline),
                     ),
                     16.gap,
                     Material(
@@ -209,7 +209,7 @@ class NumericKeyboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppColors.white,
+      color: AppColors.background,
       child: Column(
         children: [
           buildRow(['1', '2', '3']),

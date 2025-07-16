@@ -156,7 +156,7 @@ class _CustomDropdownFieldState<T> extends State<CustomDropdownField<T>> with Si
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.borderColor),
+                border: Border.all(color: AppColors.primary),
                 boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))],
               ),
               elevation: 4,
@@ -170,12 +170,12 @@ class _CustomDropdownFieldState<T> extends State<CustomDropdownField<T>> with Si
 
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(widget.radius),
-                borderSide: BorderSide(color: AppColors.borderColor.withOpacity(0.5)),
+                borderSide: BorderSide(color: AppColors.primary.withOpacity(0.5)),
               ),
               enabledBorder: OutlineInputBorder(
                 borderSide: BorderSide(
                   width: 1,
-                  color: (widget.isBordered ?? true) ? AppColors.borderColor : Colors.transparent,
+                  color: (widget.isBordered ?? true) ? AppColors.primary : Colors.transparent,
                 ),
                 borderRadius: BorderRadius.all(Radius.circular(widget.radius)),
               ),

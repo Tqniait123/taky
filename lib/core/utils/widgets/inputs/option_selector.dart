@@ -33,7 +33,7 @@ class OptionSelector<T> extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (title != null) ...[
-          Text(title ?? '', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: AppColors.grey4A)),
+          Text(title ?? '', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: AppColors.outline)),
           8.ph,
         ],
         Column(
@@ -71,13 +71,13 @@ class OptionSelector<T> extends StatelessWidget {
   }
 
   Widget _buildOption(BuildContext context, int index) {
-    bool isLight = context.theme.scaffoldBackgroundColor == AppColors.whiteFD;
+    bool isLight = context.theme.scaffoldBackgroundColor == AppColors.background;
 
     final T option = options[index];
     final isSelected = option == value;
     final selectedColor = isLight
-        ? (isSelected ? Theme.of(context).colorScheme.primary : AppColors.white)
-        : (isSelected ? Theme.of(context).colorScheme.primary : AppColors.black);
+        ? (isSelected ? Theme.of(context).colorScheme.primary : AppColors.background)
+        : (isSelected ? Theme.of(context).colorScheme.primary : AppColors.onSurface);
 
     return Expanded(
       child: Padding(
@@ -107,8 +107,8 @@ class OptionSelector<T> extends StatelessWidget {
               formatOption?.call(option).tr() ?? "$option".tr(),
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
                 color: isLight
-                    ? (isSelected ? Colors.white : AppColors.black)
-                    : (isSelected ? AppColors.black : AppColors.white),
+                    ? (isSelected ? Colors.white : AppColors.onSurface)
+                    : (isSelected ? AppColors.onSurface : AppColors.background),
                 fontSize: 18.sp,
                 fontWeight: FontWeight.w400,
               ),

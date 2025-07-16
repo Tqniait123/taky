@@ -31,7 +31,7 @@ class _MultiChoiceWidgetState<T> extends State<MultiChoiceWidget<T>> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (widget.title != null) ...[
-          Text(widget.title!, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: AppColors.grey4A)),
+          Text(widget.title!, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: AppColors.primary)),
         ],
         Column(
           children: widget.choices.map((choice) {
@@ -40,7 +40,7 @@ class _MultiChoiceWidgetState<T> extends State<MultiChoiceWidget<T>> {
 
             return Theme(
               data: ThemeData(
-                unselectedWidgetColor: AppColors.grey78,
+                unselectedWidgetColor: AppColors.outline,
                 splashColor: Colors.transparent,
                 hoverColor: Colors.transparent,
                 textTheme: context.textTheme,
@@ -54,23 +54,23 @@ class _MultiChoiceWidgetState<T> extends State<MultiChoiceWidget<T>> {
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
                 value: isSelected, // Fixed this line to use isSelected
-                checkColor: AppColors.white,
+                checkColor: AppColors.background,
 
                 fillColor: WidgetStateColor.resolveWith((Set<WidgetState> states) {
                   if (states.contains(WidgetState.disabled)) {
                     // Color when the checkbox is disabled
-                    return AppColors.greyC4;
+                    return AppColors.outline;
                   }
                   // Color when the checkbox is enabled
                   return states.contains(WidgetState.selected)
                       ? Theme.of(context).colorScheme.primary
-                      : AppColors.white;
+                      : AppColors.background;
                 }),
 
                 splashRadius: 0,
                 checkboxShape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(4.0),
-                  side: const BorderSide(color: AppColors.grey78),
+                  side: const BorderSide(color: AppColors.outline),
                 ),
 
                 activeColor: Theme.of(context).colorScheme.primary,

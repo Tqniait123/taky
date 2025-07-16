@@ -57,7 +57,7 @@
 //               Expanded(
 //                 child: CustomElevatedButton(
 //                   isFilled: false,
-//                   textColor: AppColors.black,
+//                   textColor: AppColors.onSurface,
 //                   onPressed: () => Navigator.pop(context),
 //                   title: LocaleKeys.cancel.tr(),
 //                 ),
