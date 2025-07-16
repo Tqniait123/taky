@@ -1,8 +1,11 @@
 // lib/features/shared/presentation/screens/splash_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:taqy/config/routes/routes.dart';
 import 'package:taqy/core/static/app_assets.dart';
 import 'package:taqy/core/theme/colors.dart';
+import 'package:taqy/core/utils/dialogs/error_toast.dart';
 import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -155,58 +158,70 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: AnimatedBuilder(
-        animation: Listenable.merge([
-          _logoController,
-          _textController,
-          _shimmerController,
-          _backgroundController,
-          _pulseController,
-        ]),
-        builder: (context, child) {
-          return Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [AppColors.primary, AppColors.primary.withOpacity(0.8), AppColors.primary.withOpacity(0.9)],
-                stops: [0.0, _backgroundGradient.value * 0.6, 1.0],
-              ),
-            ),
-            child: Stack(
-              children: [
-                // Background particles/dots animation
-                _buildBackgroundParticles(),
+      body: BlocListener<AuthCubit, AuthState>(
+        listener: (BuildContext context, AuthState state) {
+          if (state is AuthSuccess) {
+            context.go(Routes.homeUser);
+          }
+          if (state is AuthError) {
+            showErrorToast(context, state.message);
+          }
+          
 
-                // Main content
-                Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Logo with multiple animations
-                      _buildAnimatedLogo(),
-
-                      const SizedBox(height: 30),
-
-                      // App name with shimmer effect
-                      _buildAnimatedTitle(),
-
-                      const SizedBox(height: 15),
-
-                      // Tagline with fade in
-                      _buildAnimatedTagline(),
-
-                      const SizedBox(height: 50),
-
-                      // Loading indicator
-                      _buildLoadingIndicator(),
-                    ],
-                  ),
+         },
+        child: AnimatedBuilder(
+          animation: Listenable.merge([
+            _logoController,
+            _textController,
+            _shimmerController,
+            _backgroundController,
+            _pulseController,
+          ]),
+          builder: (context, child) {
+            return Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [AppColors.primary, AppColors.primary.withOpacity(0.8), AppColors.primary.withOpacity(0.9)],
+                  stops: [0.0, _backgroundGradient.value * 0.6, 1.0],
                 ),
-              ],
-            ),
-          );
-        },
+              ),
+              child: Stack(
+                children: [
+                  // Background particles/dots animation
+                  _buildBackgroundParticles(),
+
+                  // Main content
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Logo with multiple animations
+                        _buildAnimatedLogo(),
+
+                        const SizedBox(height: 30),
+
+                        // App name with shimmer effect
+                        _buildAnimatedTitle(),
+
+                        const SizedBox(height: 15),
+
+                        // Tagline with fade in
+                        _buildAnimatedTagline(),
+
+                        const SizedBox(height: 50),
+
+                        // Loading indicator
+                        _buildLoadingIndicator(),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }
