@@ -12,6 +12,9 @@ import 'package:taqy/features/all/auth/presentation/pages/account_type_selection
 import 'package:taqy/features/all/auth/presentation/pages/check_your_email_screen.dart';
 import 'package:taqy/features/all/auth/presentation/pages/login_screen.dart';
 import 'package:taqy/features/all/auth/presentation/pages/register_screen.dart';
+import 'package:taqy/features/all/layout/presentation/pages/admin_layout.dart';
+import 'package:taqy/features/all/layout/presentation/pages/employee_layout.dart';
+import 'package:taqy/features/all/layout/presentation/pages/office_boy_layout.dart';
 import 'package:taqy/features/all/notifications/presentation/pages/notifications_screen.dart';
 import 'package:taqy/features/all/on_boarding/presentation/pages/on_boarding_screen.dart';
 import 'package:taqy/features/all/profile/presentation/cubit/profile_cubit.dart';
@@ -151,6 +154,27 @@ class AppRouter {
         builder: (context, state) {
           // Return the EditProfileScreen widget
           return EditProfileScreen();
+        },
+      ),
+      GoRoute(
+        path: Routes.layoutAdmin,
+        builder: (context, state) {
+          // Return the AdminLayout widget
+          return AdminLayout();
+        },
+      ),
+      GoRoute(
+        path: Routes.layoutEmployee,
+        builder: (context, state) {
+          // Return the EmployeeLayout widget
+          return EmployeeLayout();
+        },
+      ),
+      GoRoute(
+        path: Routes.layoutOfficeBoy,
+        builder: (context, state) {
+          // Return the OfficeBoyLayout widget
+          return OfficeBoyLayout();
         },
       ),
 

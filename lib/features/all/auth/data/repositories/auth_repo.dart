@@ -270,12 +270,7 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       SupabaseLogger.logRequest('SELECT', 'organizations', {'code': code});
 
-      final response = await _client
-          .from('organizations')
-          .select()
-          .eq('code', code)
-          .eq('is_active', true)
-          .maybeSingle();
+      final response = await _client.from('organizations').select().eq('code', code).maybeSingle();
 
       SupabaseLogger.logResponse('SELECT', 'organizations', response);
 
@@ -299,12 +294,7 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       SupabaseLogger.logRequest('SELECT', 'organizations', {'code': code});
 
-      final response = await _client
-          .from('organizations')
-          .select('id')
-          .eq('code', code)
-          .eq('is_active', true)
-          .maybeSingle();
+      final response = await _client.from('organizations').select('id').eq('code', code).maybeSingle();
 
       SupabaseLogger.logResponse('SELECT', 'organizations', response);
 
