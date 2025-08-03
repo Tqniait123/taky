@@ -1,33 +1,96 @@
-// lib/features/shared/domain/entities/organization.dart
-
-
 // lib/features/shared/data/models/user_model.dart
 import 'package:json_annotation/json_annotation.dart';
+
 import '../../domain/entities/user.dart';
 
 part 'user_model.g.dart';
 
 @JsonSerializable()
 class UserModel extends User {
-  const UserModel({
-    required super.id,
-    required super.email,
-    @JsonKey(name: 'password_hash') super.passwordHash,
-    required super.name,
-    super.phone,
-    required super.role,
-    @JsonKey(name: 'organization_id') required super.organizationId,
-    super.locale,
-    @JsonKey(name: 'profile_image_url') super.profileImageUrl,
-    @JsonKey(name: 'is_active') required super.isActive,
-    @JsonKey(name: 'is_verified') required super.isVerified,
-    @JsonKey(name: 'fcm_token') super.fcmToken,
-    @JsonKey(name: 'created_at') required super.createdAt,
-    @JsonKey(name: 'updated_at') required super.updatedAt,
-  });
+  // Define fields with JsonKey annotations
+  @override
+  final String id;
 
-  factory UserModel.fromJson(Map<String, dynamic> json) =>
-      _$UserModelFromJson(json);
+  @override
+  final String email;
+
+  @override
+  @JsonKey(name: 'password_hash')
+  final String? passwordHash;
+
+  @override
+  final String name;
+
+  @override
+  final String? phone;
+
+  @override
+  final UserRole role;
+
+  @override
+  @JsonKey(name: 'organization_id')
+  final String organizationId;
+
+  @override
+  final String? locale;
+
+  @override
+  @JsonKey(name: 'profile_image_url')
+  final String? profileImageUrl;
+
+  @override
+  @JsonKey(name: 'is_active')
+  final bool isActive;
+
+  @override
+  @JsonKey(name: 'is_verified')
+  final bool isVerified;
+
+  @override
+  @JsonKey(name: 'fcm_token')
+  final String? fcmToken;
+
+  @override
+  @JsonKey(name: 'created_at')
+  final DateTime createdAt;
+
+  @override
+  @JsonKey(name: 'updated_at')
+  final DateTime updatedAt;
+
+  const UserModel({
+    required this.id,
+    required this.email,
+    this.passwordHash,
+    required this.name,
+    this.phone,
+    required this.role,
+    required this.organizationId,
+    this.locale,
+    this.profileImageUrl,
+    required this.isActive,
+    required this.isVerified,
+    this.fcmToken,
+    required this.createdAt,
+    required this.updatedAt,
+  }) : super(
+         id: id,
+         email: email,
+         passwordHash: passwordHash,
+         name: name,
+         phone: phone,
+         role: role,
+         organizationId: organizationId,
+         locale: locale,
+         profileImageUrl: profileImageUrl,
+         isActive: isActive,
+         isVerified: isVerified,
+         fcmToken: fcmToken,
+         createdAt: createdAt,
+         updatedAt: updatedAt,
+       );
+
+  factory UserModel.fromJson(Map<String, dynamic> json) => _$UserModelFromJson(json);
 
   Map<String, dynamic> toJson() => _$UserModelToJson(this);
 

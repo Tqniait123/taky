@@ -402,7 +402,14 @@ class CodegenLoader extends AssetLoader{
   "pleaseConfirmPassword": "Please confirm your password",
   "passwordsDoNotMatch": "Passwords do not match",
   "accountCreatedSuccessfully": "Account created successfully!",
-  "registrationFailed": "Registration failed. Please try again."
+  "registrationFailed": "Registration failed. Please try again.",
+  "primary_color": "Primary Color",
+  "secondary_color": "Secondary Color",
+  "choose_your_organizations_main": "Choose your organizations main brand color",
+  "choose_your_organization_secon": "Choose your organization secondary brand color",
+  "organizationCodeNotFound": "Organization code not found",
+  "profileImage": "Profile Image",
+  "organizationLogo": "Organization Logo"
 };
 static const Map<String,dynamic> _ar = {
   "field_is_required": {
@@ -792,7 +799,14 @@ static const Map<String,dynamic> _ar = {
   "pleaseConfirmPassword": "يرجى تأكيد كلمة المرور",
   "passwordsDoNotMatch": "كلمات المرور غير متطابقة",
   "accountCreatedSuccessfully": "تم إنشاء الحساب بنجاح!",
-  "registrationFailed": "فشل التسجيل. يرجى المحاولة مرة أخرى."
+  "registrationFailed": "فشل التسجيل. يرجى المحاولة مرة أخرى.",
+  "primary_color": "اللون الأساسي",
+  "secondary_color": "لون ثانوي",
+  "choose_your_organizations_main": "اختر لون العلامة التجارية الرئيسية للمؤسسات",
+  "choose_your_organization_secon": "اختر لون العلامة التجارية الثانوية مؤسستك",
+  "organizationCodeNotFound": "رمز المؤسسة غير موجود",
+  "profileImage": "صورة الملف الشخصي",
+  "organizationLogo": "شعار المؤسسة"
 };
 static const Map<String, Map<String,dynamic>> mapLocales = {"en": _en, "ar": _ar};
 }

@@ -268,14 +268,14 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       switch (role) {
         case UserRole.admin:
           // context.go(Routes.adminDashboard);
-          context.go(Routes.login); // Fallback until admin route is ready
+          context.go(Routes.layoutAdmin); // Fallback until admin route is ready
           break;
         case UserRole.employee:
-          context.go(Routes.homeUser);
+          context.go(Routes.layoutEmployee);
           break;
         case UserRole.officeBoy:
           // context.go(Routes.officeBoyDashboard);
-          context.go(Routes.login); // Fallback until office boy route is ready
+          context.go(Routes.layoutOfficeBoy); // Fallback until office boy route is ready
           break;
       }
     } catch (e) {

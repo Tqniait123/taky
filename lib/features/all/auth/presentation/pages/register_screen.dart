@@ -1,13 +1,136 @@
 // lib/features/auth/presentation/screens/register_screen.dart
+import 'dart:io';
+
 import 'package:easy_localization/easy_localization.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:taqy/config/routes/routes.dart';
 import 'package:taqy/core/theme/colors.dart';
 import 'package:taqy/core/translations/locale_keys.g.dart';
+import 'package:taqy/features/all/auth/domain/entities/user.dart' as entities;
+import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
+import 'package:taqy/features/all/auth/presentation/widgets/color_picker_widget.dart';
 
 import '../widgets/animated_button.dart';
 import '../widgets/auth_text_field.dart';
+
+// Your ImagePickerAvatar widget
+class ImagePickerAvatar extends StatelessWidget {
+  final bool? isLarge;
+  final void Function(PlatformFile image) onPick;
+  final double? height;
+  final double? width;
+  final PlatformFile? pickedImage;
+  final String? initialImage;
+
+  const ImagePickerAvatar({
+    super.key,
+    this.pickedImage,
+    required this.onPick,
+    this.isLarge = false,
+    this.height,
+    this.width,
+    this.initialImage,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    bool isLight = Theme.of(context).scaffoldBackgroundColor == AppColors.background;
+
+    return SizedBox(
+      height: height ?? (isLarge! ? 300 : 100),
+      width: width ?? (isLarge! ? 300 : 100),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(50),
+                color: pickedImage == null ? (isLight ? AppColors.background : AppColors.secondary) : null,
+                image: (initialImage != null && initialImage!.isNotEmpty && pickedImage == null)
+                    ? DecorationImage(fit: BoxFit.cover, image: NetworkImage(initialImage!))
+                    : pickedImage != null && pickedImage!.path != null
+                    ? DecorationImage(fit: BoxFit.cover, image: FileImage(File(pickedImage!.path!)))
+                    : null,
+              ),
+            ),
+          ),
+          if (pickedImage == null && (initialImage == null || initialImage!.isEmpty))
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () async {
+                  final result = await FilePicker.platform.pickFiles(
+                    type: FileType.image,
+                    withData: true,
+                    compressionQuality: 0,
+                  );
+                  if (result != null) {
+                    onPick(result.files.first);
+                  }
+                },
+                child: Material(
+                  color: Colors.transparent,
+                  child: SizedBox.expand(
+                    child: IconButton(
+                      onPressed: () async {
+                        final result = await FilePicker.platform.pickFiles(
+                          type: FileType.image,
+                          withData: true,
+                          compressionQuality: 0,
+                        );
+                        if (result != null) {
+                          onPick(result.files.first);
+                        }
+                      },
+                      splashRadius: 50,
+                      color: Theme.of(context).colorScheme.primary,
+                      icon: Icon(Icons.add_photo_alternate_outlined, size: isLarge! ? 30 : 25.0),
+                    ),
+                  ),
+                ),
+              ),
+            )
+          else
+            PositionedDirectional(
+              bottom: -10,
+              start: -10,
+              height: 40,
+              width: 40,
+              child: Container(
+                height: 120,
+                width: 120,
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(60), color: Colors.white),
+                padding: const EdgeInsets.all(5),
+                child: Material(
+                  clipBehavior: Clip.hardEdge,
+                  color: Theme.of(context).colorScheme.primary,
+                  borderRadius: BorderRadius.circular(20),
+                  child: Center(
+                    child: IconButton(
+                      onPressed: () async {
+                        final result = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
+                        if (result != null) {
+                          onPick(result.files.first);
+                        }
+                      },
+                      iconSize: 35,
+                      splashRadius: 35,
+                      color: isLight ? AppColors.background : AppColors.onSurface,
+                      icon: const Icon(Icons.edit),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
 
 class RegisterScreen extends StatefulWidget {
   final String accountType;
@@ -34,7 +157,14 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
 
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
-  bool _isLoading = false;
+
+  // Color selection for admin
+  Color _selectedPrimaryColor = AppColors.primary;
+  Color _selectedSecondaryColor = AppColors.secondary;
+
+  // Image picker for profile and organization logo
+  PlatformFile? _profileImage;
+  PlatformFile? _organizationLogo;
 
   @override
   void initState() {
@@ -70,35 +200,70 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: AnimatedBuilder(
-          animation: _animationController,
-          builder: (context, child) {
-            return Opacity(
-              opacity: _fadeAnimation.value,
-              child: Transform.translate(
-                offset: Offset(0, _slideAnimation.value.dy * MediaQuery.of(context).size.height),
-                child: child,
-              ),
+        child: BlocListener<AuthCubit, AuthState>(
+          listener: (context, state) {
+            state.when(
+              initial: () {},
+              loading: () {},
+              authenticated: (user) {
+                // Show success message
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(LocaleKeys.accountCreatedSuccessfully.tr()),
+                    backgroundColor: AppColors.success,
+                  ),
+                );
+
+                // Navigate based on account type
+                context.go(Routes.login);
+              },
+              unauthenticated: () {},
+              error: (failure) {
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(failure.message), backgroundColor: AppColors.error));
+              },
+              passwordResetSent: () {},
+              checkingOrganizationCode: () {},
+              organizationCodeChecked: (exists) {
+                if (!exists) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(LocaleKeys.organizationCodeNotFound.tr()), backgroundColor: AppColors.error),
+                  );
+                }
+              },
             );
           },
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header
-                const SizedBox(height: 20),
-                _buildHeader(context),
-                const SizedBox(height: 32),
+          child: AnimatedBuilder(
+            animation: _animationController,
+            builder: (context, child) {
+              return Opacity(
+                opacity: _fadeAnimation.value,
+                child: Transform.translate(
+                  offset: Offset(0, _slideAnimation.value.dy * MediaQuery.of(context).size.height),
+                  child: child,
+                ),
+              );
+            },
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  const SizedBox(height: 20),
+                  _buildHeader(context),
+                  const SizedBox(height: 32),
 
-                // Form Card
-                _buildFormCard(context),
-                const SizedBox(height: 32),
+                  // Form Card
+                  _buildFormCard(context),
+                  const SizedBox(height: 32),
 
-                // Sign In Link
-                _buildSignInLink(context),
-                const SizedBox(height: 24),
-              ],
+                  // Sign In Link
+                  _buildSignInLink(context),
+                  const SizedBox(height: 24),
+                ],
+              ),
             ),
           ),
         ),
@@ -128,7 +293,7 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
             children: [
               ShaderMask(
                 shaderCallback: (bounds) => LinearGradient(
-                  colors: [AppColors.primary, AppColors.secondary],
+                  colors: [_selectedPrimaryColor, _selectedSecondaryColor],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ).createShader(bounds),
@@ -163,6 +328,18 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
         key: _formKey,
         child: Column(
           children: [
+            // Profile Image Picker
+            _buildImageSection(
+              label: LocaleKeys.profileImage.tr(),
+              image: _profileImage,
+              onPick: (image) {
+                setState(() {
+                  _profileImage = image;
+                });
+              },
+            ),
+            const SizedBox(height: 24),
+
             // Name Field
             AuthTextField(
               controller: _nameController,
@@ -216,7 +393,7 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
             ),
             const SizedBox(height: 24),
 
-            // Organization fields - Fixed conditional rendering
+            // Organization fields
             ..._buildOrganizationFields(),
 
             // Password Field
@@ -272,17 +449,49 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
             const SizedBox(height: 32),
 
             // Register Button
-            AnimatedButton(
-              text: LocaleKeys.createAccount.tr(),
-              onPressed: _isLoading ? null : _handleRegister,
-              isLoading: _isLoading,
-              backgroundColor: _getAccountTypeColor(),
-              width: double.infinity,
-              height: 56,
+            BlocBuilder<AuthCubit, AuthState>(
+              builder: (context, state) {
+                final isLoading = state is AuthLoading;
+                return AnimatedButton(
+                  text: LocaleKeys.createAccount.tr(),
+                  onPressed: isLoading ? null : _handleRegister,
+                  isLoading: isLoading,
+                  backgroundColor: _getAccountTypeColor(),
+                  width: double.infinity,
+                  height: 56,
+                );
+              },
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildImageSection({
+    required String label,
+    required PlatformFile? image,
+    required Function(PlatformFile) onPick,
+    bool isLarge = false,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          label,
+          style: Theme.of(
+            context,
+          ).textTheme.labelMedium?.copyWith(color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 12),
+        ImagePickerAvatar(
+          pickedImage: image,
+          onPick: onPick,
+          isLarge: isLarge,
+          height: isLarge ? 150 : 100,
+          width: isLarge ? 150 : 100,
+        ),
+      ],
     );
   }
 
@@ -308,8 +517,22 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
         const SizedBox(height: 24),
       ]);
     } else {
-      // Organization name for Admin
+      // Organization name and color selection for Admin
       fields.addAll([
+        AuthTextField(
+          controller: _orgCodeController,
+          label: LocaleKeys.organizationCode.tr(),
+          hint: LocaleKeys.enterOrganizationCode.tr(),
+          prefixIcon: Icons.business_outlined,
+          focusColor: _getAccountTypeColor(),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return LocaleKeys.pleaseEnterOrganizationCode.tr();
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 24),
         AuthTextField(
           controller: _orgNameController,
           label: LocaleKeys.organizationName.tr(),
@@ -321,6 +544,45 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
               return LocaleKeys.pleaseEnterOrganizationName.tr();
             }
             return null;
+          },
+        ),
+        const SizedBox(height: 24),
+
+        // Organization Logo Picker for Admin
+        _buildImageSection(
+          label: LocaleKeys.organizationLogo.tr(),
+          image: _organizationLogo,
+          onPick: (image) {
+            setState(() {
+              _organizationLogo = image;
+            });
+          },
+          isLarge: true,
+        ),
+        const SizedBox(height: 24),
+
+        // Primary Color Selection
+        ModernColorPicker(
+          label: LocaleKeys.primary_color.tr(),
+          selectedColor: _selectedPrimaryColor,
+          hint: LocaleKeys.choose_your_organizations_main.tr(),
+          onColorSelected: (color) {
+            setState(() {
+              _selectedPrimaryColor = color;
+            });
+          },
+        ),
+        const SizedBox(height: 24),
+
+        // Secondary Color Selection
+        ModernColorPicker(
+          label: LocaleKeys.secondary_color.tr(),
+          selectedColor: _selectedSecondaryColor,
+          hint: LocaleKeys.choose_your_organization_secon.tr(),
+          onColorSelected: (color) {
+            setState(() {
+              _selectedSecondaryColor = color;
+            });
           },
         ),
         const SizedBox(height: 24),
@@ -377,7 +639,7 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
   Color _getAccountTypeColor() {
     switch (widget.accountType) {
       case 'admin':
-        return AppColors.primary;
+        return _selectedPrimaryColor;
       case 'employee':
         return AppColors.secondary;
       case 'office_boy':
@@ -387,38 +649,58 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
     }
   }
 
+  entities.UserRole _getAccountTypeRole() {
+    switch (widget.accountType) {
+      case 'admin':
+        return entities.UserRole.admin;
+      case 'employee':
+        return entities.UserRole.employee;
+      case 'office_boy':
+        return entities.UserRole.officeBoy;
+      default:
+        return entities.UserRole.employee;
+    }
+  }
+
+  String _colorToHex(Color color) {
+    return '#${color.value.toRadixString(16).substring(2).toUpperCase()}';
+  }
+
+  // Helper method to convert PlatformFile to XFile for compatibility
+  XFile? _platformFileToXFile(PlatformFile? platformFile) {
+    if (platformFile?.path == null) return null;
+    return XFile(platformFile!.path!);
+  }
+
   void _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
+    // For non-admin users, check organization code first
+    if (widget.accountType != 'admin' && _orgCodeController.text.isNotEmpty) {
+      context.read<AuthCubit>().checkOrganizationCode(_orgCodeController.text);
 
-    try {
-      // TODO: Implement registration logic with Supabase
-      await Future.delayed(const Duration(seconds: 2)); // Simulate network call
+      // Wait for organization code check to complete
+      await Future.delayed(const Duration(milliseconds: 500));
 
-      if (mounted) {
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(LocaleKeys.accountCreatedSuccessfully.tr()), backgroundColor: AppColors.success),
-        );
-
-        // Navigate to login or dashboard
-        if (widget.accountType == 'admin') {
-          context.go(Routes.login);
-        } else {
-          context.go(Routes.login);
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(LocaleKeys.registrationFailed.tr()), backgroundColor: AppColors.error));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
+      final currentState = context.read<AuthCubit>().state;
+      if (currentState is AuthOrganizationCodeChecked && !currentState.exists) {
+        return; // Don't proceed if organization code doesn't exist
       }
     }
+
+    // Proceed with registration
+    context.read<AuthCubit>().signUp(
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+      name: _nameController.text.trim(),
+      role: _getAccountTypeRole(),
+      phone: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
+      profileImage: _platformFileToXFile(_profileImage),
+      organizationName: _orgNameController.text.trim().isNotEmpty ? _orgNameController.text.trim() : null,
+      organizationCode: _orgCodeController.text.trim().isNotEmpty ? _orgCodeController.text.trim() : null,
+      organizationLogo: _platformFileToXFile(_organizationLogo),
+      primaryColor: widget.accountType == 'admin' ? _colorToHex(_selectedPrimaryColor) : null,
+      secondaryColor: widget.accountType == 'admin' ? _colorToHex(_selectedSecondaryColor) : null,
+    );
   }
 }

@@ -34,26 +34,17 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this
-    );
+    _animationController = AnimationController(duration: const Duration(milliseconds: 1200), vsync: this);
 
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut
-    ));
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
 
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic
-    ));
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
 
     _animationController.forward();
   }
@@ -84,34 +75,28 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                   switch (user.role) {
                     case UserRole.admin:
                       // context.go(Routes.adminDashboard);
-                      context.go(Routes.homeUser); // Fallback
+                      context.go(Routes.layoutAdmin); // Fallback
                       break;
                     case UserRole.employee:
-                      context.go(Routes.homeUser);
+                      context.go(Routes.layoutEmployee);
                       break;
                     case UserRole.officeBoy:
-                      context.go(Routes.homeUser);
+                      context.go(Routes.layoutOfficeBoy);
                       break;
                   }
                 },
                 error: (failure) {
                   if (mounted && !_isDisposed) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(failure.message),
-                        backgroundColor: AppColors.error
-                      )
-                    );
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(failure.message), backgroundColor: AppColors.error));
                   }
                 },
                 orElse: () {},
               );
             },
             builder: (context, state) {
-              final isLoading = state.maybeWhen(
-                loading: () => true,
-                orElse: () => false
-              );
+              final isLoading = state.maybeWhen(loading: () => true, orElse: () => false);
 
               return AnimatedBuilder(
                 animation: _animationController,
@@ -132,20 +117,13 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                 padding: const EdgeInsets.all(24),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
-                                    colors: [
-                                      AppColors.primary.withOpacity(0.1),
-                                      AppColors.secondary.withOpacity(0.1)
-                                    ],
+                                    colors: [AppColors.primary.withOpacity(0.1), AppColors.secondary.withOpacity(0.1)],
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                   ),
                                   shape: BoxShape.circle,
                                 ),
-                                child: Icon(
-                                  Icons.business_center_outlined,
-                                  size: 52,
-                                  color: AppColors.primary
-                                ),
+                                child: Icon(Icons.business_center_outlined, size: 52, color: AppColors.primary),
                               ),
                             ),
                             const SizedBox(height: 32),
@@ -170,10 +148,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                             Center(
                               child: Text(
                                 LocaleKeys.signInToAccount.tr(),
-                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                  color: AppColors.onSurfaceVariant,
-                                  height: 1.5
-                                ),
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodyLarge?.copyWith(color: AppColors.onSurfaceVariant, height: 1.5),
                               ),
                             ),
 
@@ -286,28 +263,15 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                             // Divider
                             Row(
                               children: [
-                                Expanded(
-                                  child: Container(
-                                    height: 1,
-                                    color: AppColors.outline,
-                                  )
-                                ),
+                                Expanded(child: Container(height: 1, color: AppColors.outline)),
                                 Padding(
                                   padding: const EdgeInsets.symmetric(horizontal: 16),
                                   child: Text(
                                     LocaleKeys.or.tr(),
-                                    style: TextStyle(
-                                      color: AppColors.onSurfaceVariant,
-                                      fontWeight: FontWeight.w500
-                                    ),
+                                    style: TextStyle(color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w500),
                                   ),
                                 ),
-                                Expanded(
-                                  child: Container(
-                                    height: 1,
-                                    color: AppColors.outline,
-                                  )
-                                ),
+                                Expanded(child: Container(height: 1, color: AppColors.outline)),
                               ],
                             ),
 
@@ -333,10 +297,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                   children: [
                                     Text(
                                       LocaleKeys.dontHaveAccount.tr(),
-                                      style: TextStyle(
-                                        color: AppColors.onSurfaceVariant,
-                                        fontSize: 16
-                                      ),
+                                      style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 16),
                                     ),
                                     const SizedBox(height: 12),
                                     GestureDetector(
@@ -346,10 +307,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                         }
                                       },
                                       child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 24,
-                                          vertical: 12
-                                        ),
+                                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                                         decoration: BoxDecoration(
                                           gradient: LinearGradient(
                                             colors: [AppColors.primary, AppColors.secondary],
@@ -390,19 +348,13 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     if (!_formKey.currentState!.validate()) return;
 
     try {
-      context.read<AuthCubit>().signIn(
-        email: _emailController.text.trim(),
-        password: _passwordController.text
-      );
+      context.read<AuthCubit>().signIn(email: _emailController.text.trim(), password: _passwordController.text);
     } catch (e) {
       debugPrint('Login error: $e');
       if (mounted && !_isDisposed) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Login failed: $e'),
-            backgroundColor: AppColors.error
-          )
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Login failed: $e'), backgroundColor: AppColors.error));
       }
     }
   }

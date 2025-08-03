@@ -388,5 +388,12 @@ abstract class  LocaleKeys {
   static const passwordsDoNotMatch = 'passwordsDoNotMatch';
   static const accountCreatedSuccessfully = 'accountCreatedSuccessfully';
   static const registrationFailed = 'registrationFailed';
+  static const primary_color = 'primary_color';
+  static const secondary_color = 'secondary_color';
+  static const choose_your_organizations_main = 'choose_your_organizations_main';
+  static const choose_your_organization_secon = 'choose_your_organization_secon';
+  static const organizationCodeNotFound = 'organizationCodeNotFound';
+  static const profileImage = 'profileImage';
+  static const organizationLogo = 'organizationLogo';
 
 }
