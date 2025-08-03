@@ -1,3 +1,4 @@
+// lib/main.dart
 import 'package:easy_localization/easy_localization.dart';
 // import 'package:firebase_core/firebase_core.dart';
 // import 'package:firebase_messaging/firebase_messaging.dart';
@@ -47,14 +48,16 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
-  // Initialize SharedPreferences and other dependencies
+
+  // 1. Initialize Supabase FIRST
+  await SupabaseConfig.initialize();
+
+  // 2. Initialize SharedPreferences
   final sharedPreferences = await SharedPreferences.getInstance();
 
-  // Initialize the dependency injection container
+  // 3. Initialize the dependency injection container AFTER Supabase
   await initLocator(sharedPreferences);
 
-  // Initialize Supabase
-  await SupabaseConfig.initialize();
   // await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Initialize FCM
@@ -63,9 +66,10 @@ Future<void> main() async {
   // FirebaseMessaging.onBackgroundMessage(fcmBackgroundHandler);
 
   Bloc.observer = MyBlocObserver();
+
   // Set status bar color globally
   SystemChrome.setSystemUIOverlayStyle(
-    SystemUiOverlayStyle(
+    const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent, // Change to your primary color
       statusBarIconBrightness: Brightness.light, // Light icons for dark background
     ),

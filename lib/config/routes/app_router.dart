@@ -10,13 +10,8 @@ import 'package:taqy/core/services/di.dart';
 import 'package:taqy/core/utils/widgets/buttons/custom_back_button.dart';
 import 'package:taqy/features/all/auth/presentation/pages/account_type_selection_screen.dart';
 import 'package:taqy/features/all/auth/presentation/pages/check_your_email_screen.dart';
-import 'package:taqy/features/all/auth/presentation/pages/forget_password_screen.dart';
 import 'package:taqy/features/all/auth/presentation/pages/login_screen.dart';
-import 'package:taqy/features/all/auth/presentation/pages/otp_screen.dart';
 import 'package:taqy/features/all/auth/presentation/pages/register_screen.dart';
-import 'package:taqy/features/all/auth/presentation/pages/register_step_three.dart';
-import 'package:taqy/features/all/auth/presentation/pages/register_step_two.dart';
-import 'package:taqy/features/all/auth/presentation/pages/reset_password.dart';
 import 'package:taqy/features/all/notifications/presentation/pages/notifications_screen.dart';
 import 'package:taqy/features/all/on_boarding/presentation/pages/on_boarding_screen.dart';
 import 'package:taqy/features/all/profile/presentation/cubit/profile_cubit.dart';
@@ -85,27 +80,27 @@ class AppRouter {
           return RegisterScreen(accountType: state.extra as String);
         },
       ),
-      GoRoute(
-        path: Routes.forgetPassword,
-        builder: (context, state) {
-          // Return the ForgetPasswordScreen widget
-          return const ForgetPasswordScreen();
-        },
-      ),
-      GoRoute(
-        path: Routes.otpScreen,
-        builder: (context, state) {
-          final extras = state.extra as Map<String, dynamic>;
-          return OtpScreen(phone: extras['phone'] as String, flow: extras['flow'] as OtpFlow);
-        },
-      ),
-      GoRoute(
-        path: Routes.resetPassword,
-        builder: (context, state) {
-          // Return the OtpScreen widget
-          return ResetPasswordScreen(phone: state.extra as String);
-        },
-      ),
+      // GoRoute(
+      //   path: Routes.forgetPassword,
+      //   builder: (context, state) {
+      //     // Return the ForgetPasswordScreen widget
+      //     return const ForgetPasswordScreen();
+      //   },
+      // ),
+      // GoRoute(
+      //   path: Routes.otpScreen,
+      //   builder: (context, state) {
+      //     final extras = state.extra as Map<String, dynamic>;
+      //     return OtpScreen(phone: extras['phone'] as String, flow: extras['flow'] as OtpFlow);
+      //   },
+      // ),
+      // GoRoute(
+      //   path: Routes.resetPassword,
+      //   builder: (context, state) {
+      //     // Return the OtpScreen widget
+      //     return ResetPasswordScreen(phone: state.extra as String);
+      //   },
+      // ),
 
       // GoRoute(
       //   path: Routes.homeUser,
@@ -114,20 +109,20 @@ class AppRouter {
       //     return const HomeUser();
       //   },
       // ),
-      GoRoute(
-        path: Routes.registerStepTwo,
-        builder: (context, state) {
-          // Return the RegisterStepTwoScreen widget
-          return const RegisterStepTwoScreen();
-        },
-      ),
-      GoRoute(
-        path: Routes.registerStepThree,
-        builder: (context, state) {
-          // Return the RegisterStepThreeScreen widget
-          return const RegisterStepThreeScreen();
-        },
-      ),
+      // GoRoute(
+      //   path: Routes.registerStepTwo,
+      //   builder: (context, state) {
+      //     // Return the RegisterStepTwoScreen widget
+      //     return const RegisterStepTwoScreen();
+      //   },
+      // ),
+      // GoRoute(
+      //   path: Routes.registerStepThree,
+      //   builder: (context, state) {
+      //     // Return the RegisterStepThreeScreen widget
+      //     return const RegisterStepThreeScreen();
+      //   },
+      // ),
       GoRoute(
         path: Routes.checkYourEmail,
         builder: (context, state) {

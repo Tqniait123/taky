@@ -1,8 +1,22 @@
-
 // lib/features/shared/domain/entities/user.dart
 import 'package:equatable/equatable.dart';
 
-enum UserRole { admin, employee, officeBoy }
+enum UserRole {
+  admin,
+  employee,
+  officeBoy;
+
+  String toStr() {
+    return name;
+  }
+
+  static UserRole fromStr(String value) {
+    return UserRole.values.firstWhere(
+      (role) => role.name == value,
+      orElse: () => throw ArgumentError('Invalid UserRole value: $value'),
+    );
+  }
+}
 
 class User extends Equatable {
   final String id;
@@ -39,19 +53,19 @@ class User extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        email,
-        passwordHash,
-        name,
-        phone,
-        role,
-        organizationId,
-        locale,
-        profileImageUrl,
-        isActive,
-        isVerified,
-        fcmToken,
-        createdAt,
-        updatedAt,
-      ];
+    id,
+    email,
+    passwordHash,
+    name,
+    phone,
+    role,
+    organizationId,
+    locale,
+    profileImageUrl,
+    isActive,
+    isVerified,
+    fcmToken,
+    createdAt,
+    updatedAt,
+  ];
 }

@@ -152,7 +152,9 @@ class _AccountTypeSelectionScreenState extends State<AccountTypeSelectionScreen>
                             ),
                             const SizedBox(width: 8),
                             GestureDetector(
-                              onTap: () => Navigator.pushNamed(context, '/login'),
+                              onTap: () {
+                                context.pop();
+                              },
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                 decoration: BoxDecoration(

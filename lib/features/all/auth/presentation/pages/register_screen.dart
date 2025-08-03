@@ -73,303 +73,289 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
         child: AnimatedBuilder(
           animation: _animationController,
           builder: (context, child) {
-            return FadeTransition(
-              opacity: _fadeAnimation,
-              child: SlideTransition(
-                position: _slideAnimation,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header
-                      const SizedBox(height: 20),
-                      Row(
-                        children: [
-                          GestureDetector(
-                            onTap: () => Navigator.pop(context),
-                            child: Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: AppColors.surface,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.08),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Icon(Icons.arrow_back_ios, color: AppColors.onSurfaceVariant, size: 20),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                ShaderMask(
-                                  shaderCallback: (bounds) => LinearGradient(
-                                    colors: [AppColors.primary, AppColors.secondary],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ).createShader(bounds),
-                                  child: Text(
-                                    LocaleKeys.createAccount.tr(),
-                                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  _getAccountTypeTitle(),
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.bodyMedium?.copyWith(color: AppColors.onSurfaceVariant),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 32),
-
-                      // Form Card
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
-                              blurRadius: 20,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            children: [
-                              // Name Field
-                              AuthTextField(
-                                controller: _nameController,
-                                label: LocaleKeys.fullName.tr(),
-                                hint: LocaleKeys.enterFullName.tr(),
-                                prefixIcon: Icons.person_outline,
-                                focusColor: _getAccountTypeColor(),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return LocaleKeys.pleaseEnterName.tr();
-                                  }
-                                  return null;
-                                },
-                              ),
-
-                              const SizedBox(height: 24),
-
-                              // Email Field
-                              AuthTextField(
-                                controller: _emailController,
-                                label: LocaleKeys.email.tr(),
-                                hint: LocaleKeys.enterEmail.tr(),
-                                prefixIcon: Icons.email_outlined,
-                                keyboardType: TextInputType.emailAddress,
-                                focusColor: _getAccountTypeColor(),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return LocaleKeys.pleaseEnterEmail.tr();
-                                  }
-                                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                                    return LocaleKeys.pleaseEnterValidEmail.tr();
-                                  }
-                                  return null;
-                                },
-                              ),
-
-                              const SizedBox(height: 24),
-
-                              // Phone Field
-                              AuthTextField(
-                                controller: _phoneController,
-                                label: LocaleKeys.phoneNumber.tr(),
-                                hint: LocaleKeys.enterPhoneNumber.tr(),
-                                prefixIcon: Icons.phone_outlined,
-                                keyboardType: TextInputType.phone,
-                                focusColor: _getAccountTypeColor(),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return LocaleKeys.pleaseEnterPhoneNumber.tr();
-                                  }
-                                  return null;
-                                },
-                              ),
-
-                              const SizedBox(height: 24),
-
-                              // Organization fields for Employee and Office Boy
-                              if (widget.accountType != 'admin') ...[
-                                AuthTextField(
-                                  controller: _orgCodeController,
-                                  label: LocaleKeys.organizationCode.tr(),
-                                  hint: LocaleKeys.enterOrganizationCode.tr(),
-                                  prefixIcon: Icons.business_outlined,
-                                  focusColor: _getAccountTypeColor(),
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return LocaleKeys.pleaseEnterOrganizationCode.tr();
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: 24),
-                              ],
-
-                              // Organization name for Admin
-                              if (widget.accountType == 'admin') ...[
-                                AuthTextField(
-                                  controller: _orgNameController,
-                                  label: LocaleKeys.organizationName.tr(),
-                                  hint: LocaleKeys.enterOrganizationName.tr(),
-                                  prefixIcon: Icons.business_outlined,
-                                  focusColor: _getAccountTypeColor(),
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return LocaleKeys.pleaseEnterOrganizationName.tr();
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: 24),
-                              ],
-
-                              // Password Field
-                              AuthTextField(
-                                controller: _passwordController,
-                                label: LocaleKeys.password.tr(),
-                                hint: LocaleKeys.createPassword.tr(),
-                                prefixIcon: Icons.lock_outline,
-                                isPassword: true,
-                                isPasswordVisible: _isPasswordVisible,
-                                focusColor: _getAccountTypeColor(),
-                                onTogglePassword: () {
-                                  setState(() {
-                                    _isPasswordVisible = !_isPasswordVisible;
-                                  });
-                                },
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return LocaleKeys.pleaseEnterPassword.tr();
-                                  }
-                                  if (value.length < 6) {
-                                    return LocaleKeys.passwordMinLength.tr();
-                                  }
-                                  return null;
-                                },
-                              ),
-
-                              const SizedBox(height: 24),
-
-                              // Confirm Password Field
-                              AuthTextField(
-                                controller: _confirmPasswordController,
-                                label: LocaleKeys.confirmPassword.tr(),
-                                hint: LocaleKeys.confirmYourPassword.tr(),
-                                prefixIcon: Icons.lock_outline,
-                                isPassword: true,
-                                isPasswordVisible: _isConfirmPasswordVisible,
-                                focusColor: _getAccountTypeColor(),
-                                onTogglePassword: () {
-                                  setState(() {
-                                    _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
-                                  });
-                                },
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return LocaleKeys.pleaseConfirmPassword.tr();
-                                  }
-                                  if (value != _passwordController.text) {
-                                    return LocaleKeys.passwordsDoNotMatch.tr();
-                                  }
-                                  return null;
-                                },
-                              ),
-
-                              const SizedBox(height: 32),
-
-                              // Register Button
-                              AnimatedButton(
-                                text: LocaleKeys.createAccount.tr(),
-                                onPressed: _isLoading ? null : _handleRegister,
-                                isLoading: _isLoading,
-                                backgroundColor: _getAccountTypeColor(),
-                                width: double.infinity,
-                                height: 56,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 32),
-
-                      // Sign In Link
-                      Center(
-                        child: Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                LocaleKeys.alreadyHaveAccount.tr(),
-                                style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 16),
-                              ),
-                              const SizedBox(width: 8),
-                              GestureDetector(
-                                onTap: () => context.go(Routes.login),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: _getAccountTypeColor(),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Text(
-                                    LocaleKeys.signIn.tr(),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-                  ),
-                ),
+            return Opacity(
+              opacity: _fadeAnimation.value,
+              child: Transform.translate(
+                offset: Offset(0, _slideAnimation.value.dy * MediaQuery.of(context).size.height),
+                child: child,
               ),
             );
           },
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                const SizedBox(height: 20),
+                _buildHeader(context),
+                const SizedBox(height: 32),
+
+                // Form Card
+                _buildFormCard(context),
+                const SizedBox(height: 32),
+
+                // Sign In Link
+                _buildSignInLink(context),
+                const SizedBox(height: 24),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Row(
+      children: [
+        GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 2))],
+            ),
+            child: Icon(Icons.arrow_back_ios, color: AppColors.onSurfaceVariant, size: 20),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ShaderMask(
+                shaderCallback: (bounds) => LinearGradient(
+                  colors: [AppColors.primary, AppColors.secondary],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ).createShader(bounds),
+                child: Text(
+                  LocaleKeys.createAccount.tr(),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _getAccountTypeTitle(),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.onSurfaceVariant),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFormCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, 8))],
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            // Name Field
+            AuthTextField(
+              controller: _nameController,
+              label: LocaleKeys.fullName.tr(),
+              hint: LocaleKeys.enterFullName.tr(),
+              prefixIcon: Icons.person_outline,
+              focusColor: _getAccountTypeColor(),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return LocaleKeys.pleaseEnterName.tr();
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 24),
+
+            // Email Field
+            AuthTextField(
+              controller: _emailController,
+              label: LocaleKeys.email.tr(),
+              hint: LocaleKeys.enterEmail.tr(),
+              prefixIcon: Icons.email_outlined,
+              keyboardType: TextInputType.emailAddress,
+              focusColor: _getAccountTypeColor(),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return LocaleKeys.pleaseEnterEmail.tr();
+                }
+                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                  return LocaleKeys.pleaseEnterValidEmail.tr();
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 24),
+
+            // Phone Field
+            AuthTextField(
+              controller: _phoneController,
+              label: LocaleKeys.phoneNumber.tr(),
+              hint: LocaleKeys.enterPhoneNumber.tr(),
+              prefixIcon: Icons.phone_outlined,
+              keyboardType: TextInputType.phone,
+              focusColor: _getAccountTypeColor(),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return LocaleKeys.pleaseEnterPhoneNumber.tr();
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 24),
+
+            // Organization fields - Fixed conditional rendering
+            ..._buildOrganizationFields(),
+
+            // Password Field
+            AuthTextField(
+              controller: _passwordController,
+              label: LocaleKeys.password.tr(),
+              hint: LocaleKeys.createPassword.tr(),
+              prefixIcon: Icons.lock_outline,
+              isPassword: true,
+              isPasswordVisible: _isPasswordVisible,
+              focusColor: _getAccountTypeColor(),
+              onTogglePassword: () {
+                setState(() {
+                  _isPasswordVisible = !_isPasswordVisible;
+                });
+              },
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return LocaleKeys.pleaseEnterPassword.tr();
+                }
+                if (value.length < 6) {
+                  return LocaleKeys.passwordMinLength.tr();
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 24),
+
+            // Confirm Password Field
+            AuthTextField(
+              controller: _confirmPasswordController,
+              label: LocaleKeys.confirmPassword.tr(),
+              hint: LocaleKeys.confirmYourPassword.tr(),
+              prefixIcon: Icons.lock_outline,
+              isPassword: true,
+              isPasswordVisible: _isConfirmPasswordVisible,
+              focusColor: _getAccountTypeColor(),
+              onTogglePassword: () {
+                setState(() {
+                  _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                });
+              },
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return LocaleKeys.pleaseConfirmPassword.tr();
+                }
+                if (value != _passwordController.text) {
+                  return LocaleKeys.passwordsDoNotMatch.tr();
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 32),
+
+            // Register Button
+            AnimatedButton(
+              text: LocaleKeys.createAccount.tr(),
+              onPressed: _isLoading ? null : _handleRegister,
+              isLoading: _isLoading,
+              backgroundColor: _getAccountTypeColor(),
+              width: double.infinity,
+              height: 56,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildOrganizationFields() {
+    List<Widget> fields = [];
+
+    if (widget.accountType != 'admin') {
+      // Organization code for Employee and Office Boy
+      fields.addAll([
+        AuthTextField(
+          controller: _orgCodeController,
+          label: LocaleKeys.organizationCode.tr(),
+          hint: LocaleKeys.enterOrganizationCode.tr(),
+          prefixIcon: Icons.business_outlined,
+          focusColor: _getAccountTypeColor(),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return LocaleKeys.pleaseEnterOrganizationCode.tr();
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 24),
+      ]);
+    } else {
+      // Organization name for Admin
+      fields.addAll([
+        AuthTextField(
+          controller: _orgNameController,
+          label: LocaleKeys.organizationName.tr(),
+          hint: LocaleKeys.enterOrganizationName.tr(),
+          prefixIcon: Icons.business_outlined,
+          focusColor: _getAccountTypeColor(),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return LocaleKeys.pleaseEnterOrganizationName.tr();
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 24),
+      ]);
+    }
+
+    return fields;
+  }
+
+  Widget _buildSignInLink(BuildContext context) {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(LocaleKeys.alreadyHaveAccount.tr(), style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 16)),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () => context.go(Routes.login),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(color: _getAccountTypeColor(), borderRadius: BorderRadius.circular(20)),
+                child: Text(
+                  LocaleKeys.signIn.tr(),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

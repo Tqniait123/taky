@@ -1,119 +1,157 @@
-import 'package:equatable/equatable.dart';
+// lib/features/all/auth/presentation/cubit/auth_cubit.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
+import 'package:taqy/core/errors/failures.dart';
 import 'package:taqy/features/all/auth/data/repositories/auth_repo.dart';
+import 'package:taqy/features/all/auth/domain/entities/user.dart' as entities;
+import 'package:taqy/features/all/auth/domain/entities/user.dart';
+import 'package:taqy/features/all/auth/domain/usecases/auth_usecase.dart';
 
+part 'auth_cubit.freezed.dart';
 part 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
-  final AuthRepository _repo;
-  AuthCubit(this._repo) : super(AuthInitial());
+  final SignUpUseCase _signUpUseCase;
+  final SignInUseCase _signInUseCase;
+  final SignOutUseCase _signOutUseCase;
+  final ResetPasswordUseCase _resetPasswordUseCase;
+  final CheckOrganizationCodeUseCase _checkOrganizationCodeUseCase;
+  final GetCurrentUserUseCase _getCurrentUserUseCase;
+  final GetAuthStateChangesUseCase _getAuthStateChangesUseCase;
+  final AuthRepository _authRepository;
 
-  static AuthCubit get(context) => BlocProvider.of<AuthCubit>(context);
+  AuthCubit({
+    required SignUpUseCase signUpUseCase,
+    required SignInUseCase signInUseCase,
+    required SignOutUseCase signOutUseCase,
+    required ResetPasswordUseCase resetPasswordUseCase,
+    required CheckOrganizationCodeUseCase checkOrganizationCodeUseCase,
+    required GetCurrentUserUseCase getCurrentUserUseCase,
+    required GetAuthStateChangesUseCase getAuthStateChangesUseCase,
+    required AuthRepository authRepository,
+  }) : _signUpUseCase = signUpUseCase,
+       _signInUseCase = signInUseCase,
+       _signOutUseCase = signOutUseCase,
+       _resetPasswordUseCase = resetPasswordUseCase,
+       _checkOrganizationCodeUseCase = checkOrganizationCodeUseCase,
+       _getCurrentUserUseCase = getCurrentUserUseCase,
+       _getAuthStateChangesUseCase = getAuthStateChangesUseCase,
+       _authRepository = authRepository,
+       super(const AuthState.initial());
 
-  /// Get the current user if already authenticated
-  User? get currentUser => _repo.currentUser;
+  Future<void> signUp({
+    required String email,
+    required String password,
+    required String name,
+    required entities.UserRole role,
+    String? phone,
+    XFile? profileImage,
+    String? organizationName,
+    String? organizationCode,
+    XFile? organizationLogo,
+    String? primaryColor,
+    String? secondaryColor,
+  }) async {
+    emit(const AuthState.loading());
 
-  /// Stream of authentication state changes
-  Stream<AuthState> get authStateChanges => _repo.authStateChanges.map((authState) {
-    if (authState.event == AuthChangeEvent.signedIn) {
-      return AuthSuccess(authState.session!.user);
-    } else if (authState.event == AuthChangeEvent.signedOut) {
-      return AuthInitial();
-    }
-    return AuthInitial();
-  });
-
-  /// Auto login - checks if user is already authenticated
-  Future<void> autoLogin() async {
     try {
-      emit(AuthLoading());
-      final user = _repo.currentUser;
-      if (user != null) {
-        emit(AuthSuccess(user));
-      } else {
-        emit(AuthError('User not found'));
+      // Upload profile image if provided
+      String? profileImageUrl;
+      if (profileImage != null) {
+        final uploadResult = await _authRepository.uploadProfileImage(profileImage.path);
+        uploadResult.fold((failure) => emit(AuthState.error(failure)), (url) => profileImageUrl = url);
+        if (profileImageUrl == null) return;
       }
+
+      // Upload organization logo if admin and logo provided
+      String? orgLogoUrl;
+      if (role == entities.UserRole.admin && organizationLogo != null) {
+        final uploadResult = await _authRepository.uploadOrganizationLogo(organizationLogo.path);
+        uploadResult.fold((failure) => emit(AuthState.error(failure)), (url) => orgLogoUrl = url);
+        if (orgLogoUrl == null) return;
+      }
+
+      // For employee/office boy, check if organization exists
+      if (role != entities.UserRole.admin && organizationCode != null) {
+        final checkResult = await _checkOrganizationCodeUseCase(organizationCode);
+        checkResult.fold((failure) => emit(AuthState.error(failure)), (exists) {
+          if (!exists) {
+            emit(const AuthState.error(DatabaseFailure('Organization code not found')));
+            return;
+          }
+        });
+        if (state is AuthError) return;
+      }
+
+      // Register user
+      final result = await _signUpUseCase(
+        SignUpParams(
+          email: email,
+          password: password,
+          name: name,
+          role: role,
+          phone: phone,
+          profileImageUrl: profileImageUrl,
+          organizationName: organizationName,
+          organizationCode: organizationCode,
+          organizationLogo: orgLogoUrl,
+          primaryColor: primaryColor,
+          secondaryColor: secondaryColor,
+        ),
+      );
+
+      result.fold((failure) => emit(AuthState.error(failure)), (user) => emit(AuthState.authenticated(user)));
     } catch (e) {
-      emit(AuthError(e.toString()));
+      emit(AuthState.error(GeneralFailure(e.toString())));
     }
   }
 
-  /// Email and password login
-  Future<void> login({required String email, required String password}) async {
-    try {
-      emit(AuthLoading());
-      final response = await _repo.signIn(email: email, password: password);
-      emit(AuthSuccess(response.user ?? User(id: '', appMetadata: {}, userMetadata: {}, aud: '', createdAt: '')));
-    } on AuthException catch (e) {
-      emit(AuthError(e.message));
-    } catch (e) {
-      emit(AuthError(e.toString()));
-    }
+  Future<void> signIn({required String email, required String password}) async {
+    emit(const AuthState.loading());
+
+    final result = await _signInUseCase(SignInParams(email: email, password: password));
+
+    result.fold((failure) => emit(AuthState.error(failure)), (user) => emit(AuthState.authenticated(user)));
   }
 
-  /// Registration with email and password
-  Future<void> register({required String email, required String password, Map<String, dynamic>? userData}) async {
-    try {
-      emit(AuthLoading());
-      final response = await _repo.signUp(email: email, password: password, userData: userData);
-      emit(RegisterSuccess());
-    } on AuthException catch (e) {
-      emit(AuthError(e.message));
-    } catch (e) {
-      emit(AuthError(e.toString()));
-    }
+  Future<void> signOut() async {
+    emit(const AuthState.loading());
+
+    final result = await _signOutUseCase();
+
+    result.fold((failure) => emit(AuthState.error(failure)), (_) => emit(const AuthState.unauthenticated()));
   }
 
-  /// Sign out
-  Future<void> logout() async {
-    try {
-      emit(AuthLoading());
-      await _repo.signOut();
-      emit(AuthInitial());
-    } catch (e) {
-      emit(AuthError(e.toString()));
-    }
+  Future<void> resetPassword(String email) async {
+    emit(const AuthState.loading());
+
+    final result = await _resetPasswordUseCase(email);
+
+    result.fold((failure) => emit(AuthState.error(failure)), (_) => emit(const AuthState.passwordResetSent()));
   }
 
-  // Note: The following methods would need additional Supabase configuration
-  // They're included here for interface consistency but would need implementation
+  Future<void> checkOrganizationCode(String code) async {
+    emit(const AuthState.checkingOrganizationCode());
 
-  /// Google OAuth login
-  Future<void> loginWithGoogle() async {
-    try {
-      emit(AuthLoading());
-      // Implement Google OAuth with Supabase
-      // final response = await _repo.signInWithGoogle();
-      // emit(AuthSuccess(response.user));
-      emit(AuthError("Google login not implemented"));
-    } catch (e) {
-      emit(AuthError(e.toString()));
-    }
+    final result = await _checkOrganizationCodeUseCase(code);
+
+    result.fold(
+      (failure) => emit(AuthState.error(failure)),
+      (exists) => emit(AuthState.organizationCodeChecked(exists)),
+    );
   }
 
-  /// Apple OAuth login
-  Future<void> loginWithApple() async {
-    try {
-      emit(AuthLoading());
-      // Implement Apple OAuth with Supabase
-      // final response = await _repo.signInWithApple();
-      // emit(AuthSuccess(response.user));
-      emit(AuthError("Apple login not implemented"));
-    } catch (e) {
-      emit(AuthError(e.toString()));
-    }
+  void initializeAuthStream() {
+    _getAuthStateChangesUseCase().listen((user) {
+      if (user == null) {
+        emit(const AuthState.unauthenticated());
+      } else {
+        emit(AuthState.authenticated(user));
+      }
+    });
   }
 
-  /// Password reset request
-  Future<void> forgetPassword(String email) async {
-    try {
-      emit(ForgetPasswordLoading());
-      // Implement password reset with Supabase
-      // await _repo.resetPasswordForEmail(email);
-      emit(ForgetPasswordSentOTP());
-    } catch (e) {
-      emit(ForgetPasswordError(e.toString()));
-    }
-  }
+  entities.User? get currentUser => _getCurrentUserUseCase();
 }

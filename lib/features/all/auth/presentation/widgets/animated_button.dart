@@ -99,18 +99,16 @@ class _AnimatedButtonState extends State<AnimatedButton> with SingleTickerProvid
                           valueColor: AlwaysStoppedAnimation<Color>(widget.foregroundColor),
                         ),
                       )
-                    : Flexible(
-                        child: Text(
-                          widget.text,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: widget.foregroundColor,
-                            fontSize: 16,
-                          ),
-                          textAlign: TextAlign.center,
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
+                    : Text(
+                        widget.text,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: widget.foregroundColor,
+                          fontSize: 16,
                         ),
+                        textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
               ),
             ),

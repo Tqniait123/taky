@@ -1,68 +1,14 @@
+// lib/features/all/auth/presentation/cubit/auth_state.dart
 part of 'auth_cubit.dart';
 
-abstract class AuthState extends Equatable {
-  const AuthState();
-
-  @override
-  List<Object> get props => [];
-}
-
-class AuthInitial extends AuthState {}
-
-class AuthLoading extends AuthState {}
-
-class AuthSuccess extends AuthState {
-  final User user;
-  const AuthSuccess(this.user);
-
-  @override
-  List<Object> get props => [user];
-}
-
-class AuthError extends AuthState {
-  final String message;
-  const AuthError(this.message);
-
-  @override
-  List<Object> get props => [message];
-}
-
-class RegisterSuccess extends AuthState {}
-
-class ForgetPasswordLoading extends AuthState {}
-
-class ForgetPasswordSentOTP extends AuthState {}
-
-class ForgetPasswordError extends AuthState {
-  final String message;
-  const ForgetPasswordError(this.message);
-
-  @override
-  List<Object> get props => [message];
-}
-
-class ResetPasswordLoading extends AuthState {}
-
-class ResetPasswordSuccess extends AuthState {}
-
-class ResetPasswordError extends AuthState {
-  final String message;
-  const ResetPasswordError(this.message);
-
-  @override
-  List<Object> get props => [message];
-}
-
-class ResetPasswordSentOTP extends AuthState {}
-
-class ResendOTPLoading extends AuthState {}
-
-class ResendOTPSuccess extends AuthState {}
-
-class ResendOTPError extends AuthState {
-  final String message;
-  const ResendOTPError(this.message);
-
-  @override
-  List<Object> get props => [message];
+@freezed
+class AuthState with _$AuthState {
+  const factory AuthState.initial() = AuthInitial;
+  const factory AuthState.loading() = AuthLoading;
+  const factory AuthState.authenticated(User user) = AuthAuthenticated;
+  const factory AuthState.unauthenticated() = AuthUnauthenticated;
+  const factory AuthState.error(Failure failure) = AuthError;
+  const factory AuthState.checkingOrganizationCode() = AuthCheckingOrganizationCode;
+  const factory AuthState.organizationCodeChecked(bool exists) = AuthOrganizationCodeChecked;
+  const factory AuthState.passwordResetSent() = AuthPasswordResetSent;
 }

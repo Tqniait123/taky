@@ -1,10 +1,14 @@
 // lib/features/shared/presentation/screens/splash_screen.dart
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:taqy/config/routes/routes.dart';
+import 'package:taqy/core/services/di.dart';
 import 'package:taqy/core/static/app_assets.dart';
 import 'package:taqy/core/theme/colors.dart';
+import 'package:taqy/core/translations/locale_keys.g.dart';
+import 'package:taqy/features/all/auth/domain/entities/user.dart';
 import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -37,6 +41,15 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
   // Pulse animation for logo
   late Animation<double> _pulseAnimation;
+
+  bool _isDisposed = false;
+  bool _animationsComplete = false;
+  bool _hasNavigated = false;
+  AuthState? _pendingAuthState;
+
+  // Animation duration constants
+  static const Duration _totalAnimationDuration = Duration(milliseconds: 3000);
+  static const Duration _minimumSplashDuration = Duration(milliseconds: 2500);
 
   @override
   void initState() {
@@ -117,107 +130,262 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     ).animate(CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut));
   }
 
+  // Safe animation helper methods
+  void _safeRepeatAnimation(AnimationController controller, {bool reverse = false}) {
+    if (mounted && !_isDisposed && !controller.isAnimating) {
+      try {
+        controller.repeat(reverse: reverse);
+      } catch (e) {
+        debugPrint('Animation controller repeat error: $e');
+      }
+    }
+  }
+
+  void _safeForwardAnimation(AnimationController controller) {
+    if (mounted && !_isDisposed) {
+      try {
+        controller.forward();
+      } catch (e) {
+        debugPrint('Animation controller forward error: $e');
+      }
+    }
+  }
+
   void _startAnimationSequence() async {
-    // Start background animation immediately
-    _backgroundController.forward();
+    try {
+      // Start background animation immediately
+      _safeForwardAnimation(_backgroundController);
 
-    // Start logo animation after a short delay
-    await Future.delayed(const Duration(milliseconds: 300));
-    _logoController.forward();
+      // Start logo animation after a short delay
+      await Future.delayed(const Duration(milliseconds: 300));
+      if (!mounted || _isDisposed) return;
+      _safeForwardAnimation(_logoController);
 
-    // Start text animation after logo animation begins
-    await Future.delayed(const Duration(milliseconds: 600));
-    _textController.forward();
+      // Start text animation after logo animation begins
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (!mounted || _isDisposed) return;
+      _safeForwardAnimation(_textController);
 
-    // Start shimmer effect
-    await Future.delayed(const Duration(milliseconds: 400));
-    _shimmerController.repeat();
+      // Start shimmer effect
+      await Future.delayed(const Duration(milliseconds: 400));
+      if (!mounted || _isDisposed) return;
+      _safeRepeatAnimation(_shimmerController);
 
-    // Start pulse animation and repeat
-    await Future.delayed(const Duration(milliseconds: 800));
-    _pulseController.repeat(reverse: true);
+      // Start pulse animation and repeat
+      await Future.delayed(const Duration(milliseconds: 800));
+      if (!mounted || _isDisposed) return;
+      _safeRepeatAnimation(_pulseController, reverse: true);
 
-    // Auto login after all animations
-    await Future.delayed(const Duration(milliseconds: 1500));
-    if (mounted) {
-      context.read<AuthCubit>().autoLogin();
+      // Wait for minimum animation duration before allowing navigation
+      await Future.delayed(_minimumSplashDuration);
+      if (!mounted || _isDisposed) return;
+
+      _animationsComplete = true;
+
+      // If we have a pending auth state, handle it now
+      if (_pendingAuthState != null) {
+        _handleAuthState(_pendingAuthState!);
+      } else {
+        // Check auth status manually if no state received
+        _checkAuthStatus();
+      }
+    } catch (e) {
+      debugPrint('Animation sequence error: $e');
+      // Fallback to check auth status immediately
+      if (mounted && !_isDisposed) {
+        _animationsComplete = true;
+        _checkAuthStatus();
+      }
+    }
+  }
+
+  void _checkAuthStatus() {
+    try {
+      if (!mounted || _isDisposed || _hasNavigated) return;
+
+      // Check if user is already authenticated
+      final authCubit = context.read<AuthCubit>();
+      final currentUser = authCubit.currentUser;
+
+      if (currentUser != null) {
+        // User is logged in, navigate to appropriate dashboard
+        _navigateBasedOnRole(UserRole.fromStr(currentUser.role.toString()));
+      } else {
+        // User is not logged in, navigate to login
+        _navigateToLogin();
+      }
+    } catch (e) {
+      debugPrint('Error checking auth status: $e');
+      // Fallback to login page
+      _navigateToLogin();
+    }
+  }
+
+  void _handleAuthState(AuthState state) {
+    if (!mounted || _isDisposed || _hasNavigated) return;
+
+    // If animations aren't complete yet, store the state for later
+    if (!_animationsComplete) {
+      _pendingAuthState = state;
+      return;
+    }
+
+    state.maybeWhen(
+      authenticated: (user) {
+        // Initialize FCM for authenticated user
+        // FCMNotificationService().initialize();
+
+        // Navigate based on user role
+        _navigateBasedOnRole(user.role);
+      },
+      unauthenticated: () {
+        _navigateToLogin();
+      },
+      error: (failure) {
+        // Show error message and navigate to login
+        if (mounted && !_isDisposed) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(failure.message), backgroundColor: AppColors.error));
+        }
+        _navigateToLogin();
+      },
+      orElse: () {},
+    );
+  }
+
+  void _navigateToLogin() {
+    if (!mounted || _isDisposed || _hasNavigated) return;
+    _hasNavigated = true;
+    context.go(Routes.login);
+  }
+
+  void _navigateBasedOnRole(UserRole role) {
+    try {
+      if (!mounted || _isDisposed || _hasNavigated) return;
+      _hasNavigated = true;
+
+      switch (role) {
+        case UserRole.admin:
+          // context.go(Routes.adminDashboard);
+          context.go(Routes.login); // Fallback until admin route is ready
+          break;
+        case UserRole.employee:
+          context.go(Routes.homeUser);
+          break;
+        case UserRole.officeBoy:
+          // context.go(Routes.officeBoyDashboard);
+          context.go(Routes.login); // Fallback until office boy route is ready
+          break;
+      }
+    } catch (e) {
+      debugPrint('Navigation error: $e');
+      _navigateToLogin();
     }
   }
 
   @override
   void dispose() {
+    _isDisposed = true;
+
+    // Stop all animations before disposing to prevent errors
+    try {
+      _logoController.stop();
+      _textController.stop();
+      _shimmerController.stop();
+      _backgroundController.stop();
+      _pulseController.stop();
+    } catch (e) {
+      debugPrint('Error stopping animations: $e');
+    }
+
+    // Reset all animations to prevent any pending operations
+    try {
+      _logoController.reset();
+      _textController.reset();
+      _shimmerController.reset();
+      _backgroundController.reset();
+      _pulseController.reset();
+    } catch (e) {
+      debugPrint('Error resetting animations: $e');
+    }
+
+    // Now dispose of the controllers
     _logoController.dispose();
     _textController.dispose();
     _shimmerController.dispose();
     _backgroundController.dispose();
     _pulseController.dispose();
+
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: BlocListener<AuthCubit, AuthState>(
-        listener: (BuildContext context, AuthState state) {
-          if (state is AuthSuccess) {
-            context.go(Routes.homeUser);
-          }
-          if (state is AuthError) {
-            context.go(Routes.login);
-          }
-        },
-        child: AnimatedBuilder(
-          animation: Listenable.merge([
-            _logoController,
-            _textController,
-            _shimmerController,
-            _backgroundController,
-            _pulseController,
-          ]),
-          builder: (context, child) {
-            return Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [AppColors.primary, AppColors.primary.withOpacity(0.8), AppColors.primary.withOpacity(0.9)],
-                  stops: [0.0, _backgroundGradient.value * 0.6, 1.0],
-                ),
-              ),
-              child: Stack(
-                children: [
-                  // Background particles/dots animation
-                  _buildBackgroundParticles(),
-
-                  // Main content
-                  Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Logo with multiple animations
-                        _buildAnimatedLogo(),
-
-                        const SizedBox(height: 30),
-
-                        // App name with shimmer effect
-                        _buildAnimatedTitle(),
-
-                        const SizedBox(height: 15),
-
-                        // Tagline with fade in
-                        _buildAnimatedTagline(),
-
-                        const SizedBox(height: 50),
-
-                        // Loading indicator
-                        _buildLoadingIndicator(),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
+    return BlocProvider(
+      create: (context) => sl<AuthCubit>()..initializeAuthStream(),
+      child: Scaffold(
+        body: BlocListener<AuthCubit, AuthState>(
+          listener: (BuildContext context, AuthState state) {
+            if (_isDisposed || !mounted) return;
+            _handleAuthState(state);
           },
+          child: AnimatedBuilder(
+            animation: Listenable.merge([
+              _logoController,
+              _textController,
+              _shimmerController,
+              _backgroundController,
+              _pulseController,
+            ]),
+            builder: (context, child) {
+              return Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [AppColors.primary, AppColors.primary.withOpacity(0.8), AppColors.primary.withOpacity(0.9)],
+                    stops: [0.0, _backgroundGradient.value * 0.6, 1.0],
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    // Background particles/dots animation
+                    _buildBackgroundParticles(),
+
+                    // Main content
+                    Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Logo with multiple animations
+                          _buildAnimatedLogo(),
+
+                          const SizedBox(height: 30),
+
+                          // App name with shimmer effect
+                          _buildAnimatedTitle(),
+
+                          const SizedBox(height: 15),
+
+                          // Tagline with fade in
+                          _buildAnimatedTagline(),
+
+                          const SizedBox(height: 50),
+
+                          // Loading indicator
+                          _buildLoadingIndicator(),
+                        ],
+                      ),
+                    ),
+
+                    // App version at bottom
+                    _buildVersionInfo(),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -294,7 +462,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
             border: Border.all(color: Colors.white.withOpacity(0.3)),
           ),
           child: const Text(
-            'Office Requests Made Simple',
+            'test',
             style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.w300, letterSpacing: 0.5),
           ),
         ),
@@ -305,12 +473,45 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   Widget _buildLoadingIndicator() {
     return FadeTransition(
       opacity: _taglineOpacity,
-      child: SizedBox(
-        width: 30,
-        height: 30,
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.white.withOpacity(0.8)),
-          strokeWidth: 2,
+      child: Column(
+        children: [
+          SizedBox(
+            width: 30,
+            height: 30,
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white.withOpacity(0.8)),
+              strokeWidth: 2,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            LocaleKeys.loading.tr(),
+            style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14, fontWeight: FontWeight.w300),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVersionInfo() {
+    return Positioned(
+      bottom: 30,
+      left: 0,
+      right: 0,
+      child: FadeTransition(
+        opacity: _taglineOpacity,
+        child: Column(
+          children: [
+            Text(
+              'Powered By TaQy Team',
+              style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12, fontWeight: FontWeight.w300),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'TaQy v1.0.0',
+              style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14, fontWeight: FontWeight.w400),
+            ),
+          ],
         ),
       ),
     );
@@ -335,6 +536,16 @@ class ParticlesPainter extends CustomPainter {
       final double y = (size.height * 0.15 * i + animationValue * 100) % size.height;
       final double radius = (i % 3 + 1) * 2.0;
 
+      canvas.drawCircle(Offset(x, y), radius, paint);
+    }
+
+    // Draw some larger floating elements
+    for (int i = 0; i < 5; i++) {
+      final double x = (size.width * 0.3 * i + animationValue * 50) % size.width;
+      final double y = (size.height * 0.4 * i) % size.height;
+      final double radius = (i % 2 + 1) * 1.5;
+
+      paint.color = Colors.white.withOpacity(0.05);
       canvas.drawCircle(Offset(x, y), radius, paint);
     }
   }

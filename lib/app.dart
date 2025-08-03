@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:taqy/config/routes/app_router.dart';
+import 'package:taqy/core/services/di.dart' as di;
 import 'package:taqy/core/services/di.dart';
 import 'package:taqy/core/static/strings.dart';
 import 'package:taqy/core/theme/light_theme.dart';
@@ -25,7 +26,7 @@ class TaQy extends StatelessWidget {
       builder: (_, __) {
         return MultiBlocProvider(
           providers: [
-            BlocProvider(create: (BuildContext context) => AuthCubit(sl())),
+            BlocProvider<AuthCubit>(create: (context) => di.sl<AuthCubit>()..initializeAuthStream()),
             BlocProvider(create: (BuildContext context) => UserCubit()),
             BlocProvider(create: (context) => LanguagesCubit(sl())),
           ],
