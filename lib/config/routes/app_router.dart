@@ -10,6 +10,7 @@ import 'package:taqy/core/services/di.dart';
 import 'package:taqy/core/utils/widgets/buttons/custom_back_button.dart';
 import 'package:taqy/features/all/auth/presentation/pages/account_type_selection_screen.dart';
 import 'package:taqy/features/all/auth/presentation/pages/check_your_email_screen.dart';
+import 'package:taqy/features/all/auth/presentation/pages/forget_password_screen.dart';
 import 'package:taqy/features/all/auth/presentation/pages/login_screen.dart';
 import 'package:taqy/features/all/auth/presentation/pages/register_screen.dart';
 import 'package:taqy/features/all/layout/presentation/pages/admin_layout.dart';
@@ -83,6 +84,7 @@ class AppRouter {
           return RegisterScreen(accountType: state.extra as String);
         },
       ),
+
       // GoRoute(
       //   path: Routes.forgetPassword,
       //   builder: (context, state) {
@@ -126,14 +128,13 @@ class AppRouter {
       //     return const RegisterStepThreeScreen();
       //   },
       // ),
-      GoRoute(
-        path: Routes.checkYourEmail,
-        builder: (context, state) {
-          // Return the CheckYourEmailScreen widget
-          return CheckYourEmailScreen(email: state.extra as String);
-        },
-      ),
-
+      // GoRoute(
+      //   path: Routes.checkYourEmail,
+      //   builder: (context, state) {
+      //     // Return the CheckYourEmailScreen widget
+      //     return CheckYourEmailScreen(email: state.extra as String);
+      //   },
+      // ),
       GoRoute(
         path: Routes.notifications,
         builder: (context, state) {
@@ -175,6 +176,23 @@ class AppRouter {
         builder: (context, state) {
           // Return the OfficeBoyLayout widget
           return OfficeBoyLayout();
+        },
+      ),
+      GoRoute(
+        path: Routes.forgetPassword,
+        builder: (context, state) {
+          // Return the OfficeBoyLayout widget
+          return ForgetPasswordScreen();
+        },
+      ),
+      GoRoute(
+        path: Routes.checkYourEmail,
+        builder: (context, state) {
+          final Map<String, dynamic> extras = state.extra as Map<String, dynamic>;
+          return CheckYourEmailScreen(
+            email: extras['email'] as String,
+            isPasswordReset: extras['isPasswordReset'] as bool,
+          );
         },
       ),
 

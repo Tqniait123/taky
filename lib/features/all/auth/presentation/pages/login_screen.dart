@@ -7,6 +7,7 @@ import 'package:taqy/config/routes/routes.dart';
 import 'package:taqy/core/services/di.dart';
 import 'package:taqy/core/theme/colors.dart';
 import 'package:taqy/core/translations/locale_keys.g.dart';
+import 'package:taqy/core/utils/dialogs/error_toast.dart';
 import 'package:taqy/features/all/auth/domain/entities/user.dart';
 import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
 import 'package:taqy/features/all/auth/presentation/widgets/animated_button.dart';
@@ -87,9 +88,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                 },
                 error: (failure) {
                   if (mounted && !_isDisposed) {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text(failure), backgroundColor: AppColors.error));
+                    showErrorToast(context, failure);
                   }
                 },
                 orElse: () {},
@@ -352,15 +351,12 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     } catch (e) {
       debugPrint('Login error: $e');
       if (mounted && !_isDisposed) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Login failed: $e'), backgroundColor: AppColors.error));
+        showErrorToast(context, e.toString());
       }
     }
   }
 
   void _handleForgotPassword(BuildContext context) {
-    // context.push(Routes.forgotPassword);
-    debugPrint('Forgot password tapped');
+    context.push(Routes.forgetPassword);
   }
 }

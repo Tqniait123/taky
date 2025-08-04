@@ -568,5 +568,25 @@ abstract class  LocaleKeys {
   static const dashboard_recentActivity = 'dashboard.recentActivity';
   static const dashboard_quickActions = 'dashboard.quickActions';
   static const dashboard = 'dashboard';
+  static const resetPassword = 'resetPassword';
+  static const passwordResetInstructions = 'passwordResetInstructions';
+  static const sendResetEmail = 'sendResetEmail';
+  static const passwordResetEmailSent = 'passwordResetEmailSent';
+  static const passwordResetEmailFailed = 'passwordResetEmailFailed';
+  static const passwordResetEmailSentDescription = 'passwordResetEmailSentDescription';
+  static const verificationEmailSentDescription = 'verificationEmailSentDescription';
+  static const checkYourEmail = 'checkYourEmail';
+  static const openEmailApp = 'openEmailApp';
+  static const backToLogin = 'backToLogin';
+  static const skipIllConfirmLater = 'skipIllConfirmLater';
+  static const didntReceiveEmail = 'didntReceiveEmail';
+  static const resendEmail = 'resendEmail';
+  static const didntReceiveEmailCheck = 'didntReceiveEmailCheck';
+  static const tryAnotherEmailAddress = 'tryAnotherEmailAddress';
+  static const rememberPassword = 'rememberPassword';
+  static const noEmailAppFound = 'noEmailAppFound';
+  static const errorOpeningEmailApp = 'errorOpeningEmailApp';
+  static const verificationEmailResent = 'verificationEmailResent';
+  static const errorResendingEmail = 'errorResendingEmail';
 
 }

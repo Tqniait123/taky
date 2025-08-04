@@ -588,5 +588,27 @@
     "pendingRequests": "Pending",
     "recentActivity": "Recent Activity",
     "quickActions": "Quick Actions"
-  }
+  },
+  "resetPassword": "Reset Password",
+  "passwordResetInstructions": "Enter your email address and we'll send you a link to reset your password",
+  "sendResetEmail": "Send Reset Email",
+  "passwordResetEmailSent": "Password reset email sent successfully",
+  "passwordResetEmailFailed": "Failed to send password reset email",
+  "passwordResetEmailSentDescription": "We've sent a password reset link to your email address. Please check your inbox and follow the instructions to reset your password.",
+  "verificationEmailSentDescription": "We've sent a verification link to your email address. Please check your inbox to verify your account.",
+  "checkYourEmail": "Check Your Email",
+  "openEmailApp": "Open Email App",
+  "backToLogin": "Back to Login",
+  "skipIllConfirmLater": "Skip, I'll confirm later",
+  "didntReceiveEmail": "Didn't receive the email?",
+  "resendEmail": "Resend Email",
+  "didntReceiveEmailCheck": "Didn't receive the email? Check your spam folder or",
+  "tryAnotherEmailAddress": "try another email address",
+  "rememberPassword": "Remember your password?",
+  "noEmailAppFound": "No email app found on your device",
+  "errorOpeningEmailApp": "Error opening email app",
+  "verificationEmailResent": "Verification email sent successfully",
+  "errorResendingEmail": "Error resending email"
+
+
 }

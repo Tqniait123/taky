@@ -158,6 +158,26 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  Future<void> forgotPassword(String email) async {
+    if (isClosed) return;
+    emit(const AuthState.loading());
+
+    try {
+      final result = await _authRepository.resetPassword(email);
+
+      if (!isClosed) {
+        result.fold(
+          (failure) => emit(AuthState.error(failure.message)),
+          (_) => emit(const AuthState.passwordResetSent()),
+        );
+      }
+    } catch (e) {
+      if (!isClosed) {
+        emit(AuthState.error(LocaleKeys.passwordResetEmailFailed.tr()));
+      }
+    }
+  }
+
   Future<void> resetPassword(String email) async {
     if (isClosed) return;
     emit(const AuthState.loading());
@@ -173,7 +193,7 @@ class AuthCubit extends Cubit<AuthState> {
       }
     } catch (e) {
       if (!isClosed) {
-        emit(AuthState.error(LocaleKeys.errors_passwordResetFailed.tr()));
+        emit(AuthState.error(LocaleKeys.passwordResetEmailFailed.tr()));
       }
     }
   }

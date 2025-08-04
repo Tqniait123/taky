@@ -588,5 +588,25 @@
     "pendingRequests": "معلقة",
     "recentActivity": "النشاط الأخير",
     "quickActions": "إجراءات سريعة"
-  }
+  },
+  "resetPassword": "إعادة تعيين كلمة المرور",
+  "passwordResetInstructions": "أدخل عنوان بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور",
+  "sendResetEmail": "إرسال بريد إعادة التعيين",
+  "passwordResetEmailSent": "تم إرسال بريد إعادة تعيين كلمة المرور بنجاح",
+  "passwordResetEmailFailed": "فشل في إرسال بريد إعادة تعيين كلمة المرور",
+  "passwordResetEmailSentDescription": "لقد أرسلنا رابط إعادة تعيين كلمة المرور إلى عنوان بريدك الإلكتروني. يرجى التحقق من صندوق الوارد واتباع التعليمات لإعادة تعيين كلمة المرور.",
+  "verificationEmailSentDescription": "لقد أرسلنا رابط التحقق إلى عنوان بريدك الإلكتروني. يرجى التحقق من صندوق الوارد للتحقق من حسابك.",
+  "checkYourEmail": "تحقق من بريدك الإلكتروني",
+  "openEmailApp": "فتح تطبيق البريد الإلكتروني",
+  "backToLogin": "العودة لتسجيل الدخول",
+  "skipIllConfirmLater": "تخطي، سأؤكد لاحقاً",
+  "didntReceiveEmail": "لم تستلم البريد الإلكتروني؟",
+  "resendEmail": "إعادة إرسال البريد الإلكتروني",
+  "didntReceiveEmailCheck": "لم تستلم البريد الإلكتروني؟ تحقق من مجلد الرسائل غير المرغوب فيها أو",
+  "tryAnotherEmailAddress": "جرب عنوان بريد إلكتروني آخر",
+  "rememberPassword": "تذكرت كلمة المرور؟",
+  "noEmailAppFound": "لم يتم العثور على تطبيق بريد إلكتروني على جهازك",
+  "errorOpeningEmailApp": "خطأ في فتح تطبيق البريد الإلكتروني",
+  "verificationEmailResent": "تم إرسال بريد التحقق بنجاح",
+  "errorResendingEmail": "خطأ في إعادة إرسال البريد الإلكتروني"
 }

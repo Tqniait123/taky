@@ -601,7 +601,27 @@ class CodegenLoader extends AssetLoader{
     "pendingRequests": "Pending",
     "recentActivity": "Recent Activity",
     "quickActions": "Quick Actions"
-  }
+  },
+  "resetPassword": "Reset Password",
+  "passwordResetInstructions": "Enter your email address and we'll send you a link to reset your password",
+  "sendResetEmail": "Send Reset Email",
+  "passwordResetEmailSent": "Password reset email sent successfully",
+  "passwordResetEmailFailed": "Failed to send password reset email",
+  "passwordResetEmailSentDescription": "We've sent a password reset link to your email address. Please check your inbox and follow the instructions to reset your password.",
+  "verificationEmailSentDescription": "We've sent a verification link to your email address. Please check your inbox to verify your account.",
+  "checkYourEmail": "Check Your Email",
+  "openEmailApp": "Open Email App",
+  "backToLogin": "Back to Login",
+  "skipIllConfirmLater": "Skip, I'll confirm later",
+  "didntReceiveEmail": "Didn't receive the email?",
+  "resendEmail": "Resend Email",
+  "didntReceiveEmailCheck": "Didn't receive the email? Check your spam folder or",
+  "tryAnotherEmailAddress": "try another email address",
+  "rememberPassword": "Remember your password?",
+  "noEmailAppFound": "No email app found on your device",
+  "errorOpeningEmailApp": "Error opening email app",
+  "verificationEmailResent": "Verification email sent successfully",
+  "errorResendingEmail": "Error resending email"
 };
 static const Map<String,dynamic> _ar = {
   "field_is_required": {
@@ -1190,7 +1210,27 @@ static const Map<String,dynamic> _ar = {
     "pendingRequests": "معلقة",
     "recentActivity": "النشاط الأخير",
     "quickActions": "إجراءات سريعة"
-  }
+  },
+  "resetPassword": "إعادة تعيين كلمة المرور",
+  "passwordResetInstructions": "أدخل عنوان بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور",
+  "sendResetEmail": "إرسال بريد إعادة التعيين",
+  "passwordResetEmailSent": "تم إرسال بريد إعادة تعيين كلمة المرور بنجاح",
+  "passwordResetEmailFailed": "فشل في إرسال بريد إعادة تعيين كلمة المرور",
+  "passwordResetEmailSentDescription": "لقد أرسلنا رابط إعادة تعيين كلمة المرور إلى عنوان بريدك الإلكتروني. يرجى التحقق من صندوق الوارد واتباع التعليمات لإعادة تعيين كلمة المرور.",
+  "verificationEmailSentDescription": "لقد أرسلنا رابط التحقق إلى عنوان بريدك الإلكتروني. يرجى التحقق من صندوق الوارد للتحقق من حسابك.",
+  "checkYourEmail": "تحقق من بريدك الإلكتروني",
+  "openEmailApp": "فتح تطبيق البريد الإلكتروني",
+  "backToLogin": "العودة لتسجيل الدخول",
+  "skipIllConfirmLater": "تخطي، سأؤكد لاحقاً",
+  "didntReceiveEmail": "لم تستلم البريد الإلكتروني؟",
+  "resendEmail": "إعادة إرسال البريد الإلكتروني",
+  "didntReceiveEmailCheck": "لم تستلم البريد الإلكتروني؟ تحقق من مجلد الرسائل غير المرغوب فيها أو",
+  "tryAnotherEmailAddress": "جرب عنوان بريد إلكتروني آخر",
+  "rememberPassword": "تذكرت كلمة المرور؟",
+  "noEmailAppFound": "لم يتم العثور على تطبيق بريد إلكتروني على جهازك",
+  "errorOpeningEmailApp": "خطأ في فتح تطبيق البريد الإلكتروني",
+  "verificationEmailResent": "تم إرسال بريد التحقق بنجاح",
+  "errorResendingEmail": "خطأ في إعادة إرسال البريد الإلكتروني"
 };
 static const Map<String, Map<String,dynamic>> mapLocales = {"en": _en, "ar": _ar};
 }

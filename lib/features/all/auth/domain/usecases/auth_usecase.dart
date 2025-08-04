@@ -86,6 +86,17 @@ class SignOutUseCase {
   }
 }
 
+// lib/features/all/auth/domain/usecases/forgot_password_usecase.dart
+class ForgotPasswordUseCase {
+  final AuthRepository _repository;
+
+  ForgotPasswordUseCase(this._repository);
+
+  Future<Either<Failure, void>> call(String email) async {
+    return await _repository.resetPassword(email);
+  }
+}
+
 // lib/features/all/auth/domain/usecases/reset_password_usecase.dart
 class ResetPasswordUseCase {
   final AuthRepository _repository;
