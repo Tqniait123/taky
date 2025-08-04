@@ -33,18 +33,18 @@ class Organization extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        code,
-        name,
-        description,
-        address,
-        phone,
-        email,
-        logo,
-        primaryColor,
-        secondaryColor,
-        isActive,
-        createdAt,
-        updatedAt,
-      ];
+    id,
+    code,
+    name,
+    description,
+    address,
+    phone,
+    email,
+    logo,
+    primaryColor,
+    secondaryColor,
+    isActive,
+    createdAt,
+    updatedAt,
+  ];
 }

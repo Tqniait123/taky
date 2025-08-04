@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:dartz/dartz.dart';
@@ -80,7 +82,6 @@ class AuthRepositoryImpl implements AuthRepository {
   final Map<String, bool> _bucketExists = {};
 
   AuthRepositoryImpl(this._client);
-
   @override
   Future<Either<Failure, User>> signUp({
     required String email,
@@ -149,7 +150,7 @@ class AuthRepositoryImpl implements AuthRepository {
         return Left(DatabaseFailure('Organization ID is missing or invalid'));
       }
 
-      // 5. Register user in auth
+      // 5. Register user in auth (trigger will create user record automatically)
       SupabaseLogger.logRequest('signUp', 'auth', {'email': email, 'password': password});
 
       final authResponse = await _client.auth.signUp(
@@ -158,7 +159,7 @@ class AuthRepositoryImpl implements AuthRepository {
         data: {
           'name': name,
           'phone': phone,
-          'role': role.value, // Use role.value instead of role.name for consistency
+          'role': role.value,
           'organization_id': orgId,
           'profile_image_url': profileImageUrl,
         },
@@ -170,26 +171,62 @@ class AuthRepositoryImpl implements AuthRepository {
         return Left(AuthFailure('User creation failed'));
       }
 
-      // 6. Create user in users table
-      final userModel = UserModel(
-        id: authResponse.user!.id,
-        email: email,
-        name: name,
-        phone: phone,
-        role: role,
-        organizationId: orgId ?? '', // Removed fallback to empty string
-        profileImageUrl: profileImageUrl,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        isActive: true,
-        isVerified: true,
-      );
+      // 6. Fetch the user data created by the trigger
+      // Add a small delay to ensure trigger has completed
+      await Future.delayed(const Duration(milliseconds: 1000));
 
-      SupabaseLogger.logRequest('INSERT', 'users', userModel.toJson());
+      // 6. Wait longer and check auth state before querying
+      if (authResponse.user == null) {
+        return Left(AuthFailure('User creation failed'));
+      }
 
-      await _client.from('users').insert(userModel.toJson());
+      // Log current auth state
+      SupabaseLogger.logRequest('AUTH CHECK', 'current_user', _client.auth.currentUser?.id ?? 'null');
 
-      return Right(userModel);
+      // Wait longer for session to be fully established
+      await Future.delayed(const Duration(seconds: 5));
+
+      try {
+        // Check auth state again
+        final currentUser = _client.auth.currentUser;
+        SupabaseLogger.logRequest('AUTH RECHECK', 'current_user', currentUser?.id ?? 'null');
+
+        if (currentUser == null) {
+          return Left(AuthFailure('User session not established'));
+        }
+
+        SupabaseLogger.logRequest('SELECT', 'users', {'id': authResponse.user!.id});
+
+        final userData = await _client.from('users').select().eq('id', authResponse.user!.id).maybeSingle();
+
+        SupabaseLogger.logResponse('SELECT', 'users', userData);
+
+        if (userData == null) {
+          return Left(DatabaseFailure('User record not found in database'));
+        }
+
+        final user = UserModel.fromJson(userData);
+        return Right(user);
+      } catch (e) {
+        SupabaseLogger.logError('SELECT', 'users', e);
+
+        // Fallback: create user object from auth metadata
+        final user = UserModel(
+          id: authResponse.user!.id,
+          email: email,
+          name: name,
+          phone: phone,
+          role: role,
+          organizationId: orgId!,
+          profileImageUrl: profileImageUrl,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          isActive: true,
+          isVerified: authResponse.user!.emailConfirmedAt != null,
+        );
+
+        return Right(user);
+      }
     } on AuthException catch (e) {
       SupabaseLogger.logError('signUp', 'auth', e);
       return Left(AuthFailure(e.message));
@@ -278,7 +315,7 @@ class AuthRepositoryImpl implements AuthRepository {
         return const Right(null);
       }
 
-      final organization = OrganizationModel.fromJson(response);
+      final organization = OrganizationModel.fromJson(response).toEntity();
       return Right(organization);
     } on PostgrestException catch (e) {
       SupabaseLogger.logError('getOrganizationByCode', 'database', e);
@@ -294,16 +331,36 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       SupabaseLogger.logRequest('SELECT', 'organizations', {'code': code});
 
-      final response = await _client.from('organizations').select('id').eq('code', code).maybeSingle();
+      // Add a timeout to handle connection issues
+      final response = await _client
+          .from('organizations')
+          .select('id, code') // Select code as well for debugging
+          .eq('code', code)
+          .maybeSingle()
+          .timeout(const Duration(seconds: 10)); // Add timeout
 
       SupabaseLogger.logResponse('SELECT', 'organizations', response);
 
+      // Log the exact response for debugging
+      log('DEBUG: Organization query response: $response');
+      log('DEBUG: Response type: ${response.runtimeType}');
+      log('DEBUG: Searching for code: "$code"');
+
       return Right(response != null);
+    } on TimeoutException catch (e) {
+      SupabaseLogger.logError('checkOrganizationCodeExists', 'timeout', e);
+      return Left(NetworkFailure('Connection timeout: ${e.toString()}'));
     } on PostgrestException catch (e) {
       SupabaseLogger.logError('checkOrganizationCodeExists', 'database', e);
+      log('DEBUG: PostgrestException details: ${e.details}');
       return Left(DatabaseFailure(e.message));
+    } on SocketException catch (e) {
+      SupabaseLogger.logError('checkOrganizationCodeExists', 'network', e);
+      return Left(NetworkFailure('Network error: ${e.toString()}'));
     } catch (e) {
       SupabaseLogger.logError('checkOrganizationCodeExists', 'general', e);
+      log('DEBUG: Unexpected error type: ${e.runtimeType}');
+      log('DEBUG: Error details: $e');
       return Left(GeneralFailure(e.toString()));
     }
   }
