@@ -246,7 +246,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
         if (mounted && !_isDisposed) {
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text(failure.message), backgroundColor: AppColors.error));
+          ).showSnackBar(SnackBar(content: Text(failure), backgroundColor: AppColors.error));
         }
         _navigateToLogin();
       },

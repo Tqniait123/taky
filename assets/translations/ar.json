@@ -393,5 +393,200 @@
   "choose_your_organization_secon": "اختر لون العلامة التجارية الثانوية مؤسستك",
   "organizationCodeNotFound": "رمز المؤسسة غير موجود",
   "profileImage": "صورة الملف الشخصي",
-  "organizationLogo": "شعار المؤسسة"
+  "organizationLogo": "شعار المؤسسة",
+  "auth": {
+    "signIn": "تسجيل الدخول",
+    "signUp": "إنشاء حساب",
+    "signOut": "تسجيل الخروج",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "confirmPassword": "تأكيد كلمة المرور",
+    "name": "الاسم",
+    "phone": "رقم الهاتف",
+    "forgotPassword": "نسيت كلمة المرور؟",
+    "resetPassword": "إعادة تعيين كلمة المرور",
+    "createAccount": "إنشاء حساب",
+    "alreadyHaveAccount": "لديك حساب بالفعل؟",
+    "dontHaveAccount": "ليس لديك حساب؟"
+  },
+  "roles": {
+    "selectAccountType": "اختر نوع الحساب",
+    "organizationAdmin": "مدير المؤسسة",
+    "employee": "موظف",
+    "officeBoy": "مساعد مكتبي",
+    "adminDescription": "إنشاء وإدارة مؤسستك",
+    "employeeDescription": "تقديم طلبات للخدمات المكتبية",
+    "officeBoyDescription": "استقبال وتنفيذ طلبات الخدمة"
+  },
+  "organization": {
+    "organizationName": "اسم المؤسسة",
+    "organizationCode": "رمز المؤسسة",
+    "organizationLogo": "شعار المؤسسة",
+    "primaryColor": "اللون الأساسي",
+    "secondaryColor": "اللون الثانوي",
+    "createOrganization": "إنشاء مؤسسة",
+    "joinOrganization": "الانضمام للمؤسسة",
+    "organizationCodeNotFound": "رمز المؤسسة غير موجود",
+    "organizationRequired": "معلومات المؤسسة مطلوبة"
+  },
+  "requests": {
+    "newRequest": "طلب جديد",
+    "myRequests": "طلباتي",
+    "pendingRequests": "الطلبات المعلقة",
+    "completedRequests": "الطلبات المكتملة",
+    "requestTitle": "عنوان الطلب",
+    "requestDescription": "وصف الطلب",
+    "requestType": "نوع الطلب",
+    "requestStatus": "حالة الطلب",
+    "submitRequest": "تقديم الطلب",
+    "acceptRequest": "قبول الطلب",
+    "completeRequest": "إنهاء الطلب",
+    "cancelRequest": "إلغاء الطلب",
+    "requestDetails": "تفاصيل الطلب"
+  },
+  "requestTypes": {
+    "coffee": "قهوة",
+    "tea": "شاي",
+    "food": "طعام",
+    "documents": "مستندات",
+    "office_supplies": "لوازم مكتبية",
+    "other": "أخرى"
+  },
+  "requestStatus": {
+    "pending": "معلق",
+    "accepted": "مقبول",
+    "inProgress": "قيد التنفيذ",
+    "completed": "مكتمل",
+    "cancelled": "ملغي"
+  },
+  "navigation": {
+    "home": "الرئيسية",
+    "requests": "الطلبات",
+    "notifications": "الإشعارات",
+    "profile": "الملف الشخصي",
+    "settings": "الإعدادات"
+  },
+  "common": {
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "confirm": "تأكيد",
+    "yes": "نعم",
+    "no": "لا",
+    "ok": "موافق",
+    "retry": "إعادة المحاولة",
+    "loading": "جاري التحميل...",
+    "error": "خطأ",
+    "success": "نجح",
+    "warning": "تحذير",
+    "info": "معلومات",
+    "next": "التالي",
+    "previous": "السابق",
+    "finish": "إنهاء",
+    "skip": "تخطي",
+    "search": "بحث",
+    "filter": "تصفية",
+    "sort": "ترتيب",
+    "refresh": "تحديث",
+    "noData": "لا توجد بيانات",
+    "noResults": "لا توجد نتائج",
+    "tryAgain": "حاول مرة أخرى"
+  },
+  "validation": {
+    "fieldRequired": "هذا الحقل مطلوب",
+    "invalidEmail": "يرجى إدخال بريد إلكتروني صحيح",
+    "passwordTooShort": "كلمة المرور يجب أن تكون 6 أحرف على الأقل",
+    "passwordsDoNotMatch": "كلمات المرور غير متطابقة",
+    "invalidPhone": "يرجى إدخال رقم هاتف صحيح",
+    "invalidCode": "يرجى إدخال رمز صحيح"
+  },
+  "errors": {
+    "registrationFailed": "فشل في التسجيل. يرجى المحاولة مرة أخرى.",
+    "signInFailed": "فشل في تسجيل الدخول. يرجى التحقق من بياناتك.",
+    "signOutFailed": "فشل في تسجيل الخروج. يرجى المحاولة مرة أخرى.",
+    "passwordResetFailed": "فشل في إعادة تعيين كلمة المرور. يرجى المحاولة مرة أخرى.",
+    "organizationCheckFailed": "فشل في التحقق من المؤسسة. يرجى المحاولة مرة أخرى.",
+    "authStreamError": "حدث خطأ في المصادقة.",
+    "networkError": "خطأ في الشبكة. يرجى التحقق من الاتصال.",
+    "serverError": "خطأ في الخادم. يرجى المحاولة لاحقاً.",
+    "unknownError": "حدث خطأ غير معروف.",
+    "uploadFailed": "فشل في تحميل الملف. يرجى المحاولة مرة أخرى.",
+    "permissionDenied": "تم رفض الإذن."
+  },
+  "success": {
+    "registrationSuccess": "تم التسجيل بنجاح!",
+    "signInSuccess": "مرحباً بعودتك!",
+    "passwordResetSent": "تم إرسال رابط إعادة تعيين كلمة المرور بنجاح",
+    "profileUpdated": "تم تحديث الملف الشخصي بنجاح",
+    "requestSubmitted": "تم تقديم الطلب بنجاح",
+    "requestAccepted": "تم قبول الطلب بنجاح",
+    "requestCompleted": "تم إنهاء الطلب بنجاح",
+    "requestCancelled": "تم إلغاء الطلب بنجاح"
+  },
+  "profile": {
+    "profile": "الملف الشخصي",
+    "editProfile": "تعديل الملف الشخصي",
+    "profileImage": "صورة الملف الشخصي",
+    "changePassword": "تغيير كلمة المرور",
+    "currentPassword": "كلمة المرور الحالية",
+    "newPassword": "كلمة المرور الجديدة",
+    "language": "اللغة",
+    "theme": "المظهر",
+    "aboutApp": "حول التطبيق",
+    "version": "الإصدار",
+    "logout": "تسجيل الخروج",
+    "logoutConfirmation": "هل أنت متأكد من تسجيل الخروج؟"
+  },
+  "notifications": {
+    "newRequestNotification": "تم استلام طلب جديد",
+    "requestAcceptedNotification": "تم قبول طلبك",
+    "requestCompletedNotification": "تم إنهاء طلبك",
+    "requestCancelledNotification": "تم إلغاء طلبك",
+    "markAsRead": "تحديد كمقروء",
+    "markAllAsRead": "تحديد الكل كمقروء",
+    "noNotifications": "لا توجد إشعارات"
+  },
+  "time": {
+    "now": "الآن",
+    "minutesAgo": "منذ {} دقيقة",
+    "hoursAgo": "منذ {} ساعة",
+    "daysAgo": "منذ {} يوم",
+    "weeksAgo": "منذ {} أسبوع",
+    "monthsAgo": "منذ {} شهر",
+    "yearsAgo": "منذ {} سنة"
+  },
+  "fileUpload": {
+    "selectImage": "اختر صورة",
+    "camera": "الكاميرا",
+    "gallery": "المعرض",
+    "uploadImage": "تحميل صورة",
+    "imageSelected": "تم اختيار الصورة بنجاح",
+    "imageUploadFailed": "فشل في تحميل الصورة"
+  },
+  "colors": {
+    "selectColor": "اختر لون",
+    "customColor": "لون مخصص",
+    "resetColor": "إعادة تعيين اللون"
+  },
+  "welcome": {
+    "welcome": "مرحباً بك في تقي",
+    "welcomeMessage": "رفيقك في الخدمات المكتبية",
+    "getStarted": "ابدأ الآن",
+    "onboardingTitle1": "قدم الطلبات",
+    "onboardingMessage1": "قدم طلبات بسهولة للقهوة والمستندات وخدمات المكتب الأخرى",
+    "onboardingTitle2": "تتبع التقدم",
+    "onboardingMessage2": "راقب طلباتك في الوقت الفعلي واحصل على إشعارات عند اكتمالها",
+    "onboardingTitle3": "ابق متصلاً",
+    "onboardingMessage3": "تواصل مع فريقك ومساعدي المكتب بسلاسة"
+  },
+  "dashboard": {
+    "dashboard": "لوحة القيادة",
+    "todayRequests": "طلبات اليوم",
+    "totalRequests": "إجمالي الطلبات",
+    "completedToday": "مكتملة اليوم",
+    "pendingRequests": "معلقة",
+    "recentActivity": "النشاط الأخير",
+    "quickActions": "إجراءات سريعة"
+  }
 }

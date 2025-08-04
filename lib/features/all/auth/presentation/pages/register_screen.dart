@@ -10,6 +10,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:taqy/config/routes/routes.dart';
 import 'package:taqy/core/theme/colors.dart';
 import 'package:taqy/core/translations/locale_keys.g.dart';
+import 'package:taqy/core/utils/dialogs/error_toast.dart';
 import 'package:taqy/features/all/auth/domain/entities/user.dart' as entities;
 import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
 import 'package:taqy/features/all/auth/presentation/widgets/color_picker_widget.dart';
@@ -207,29 +208,20 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
               loading: () {},
               authenticated: (user) {
                 // Show success message
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(LocaleKeys.accountCreatedSuccessfully.tr()),
-                    backgroundColor: AppColors.success,
-                  ),
-                );
+                showSuccessToast(context, LocaleKeys.accountCreatedSuccessfully.tr());
 
                 // Navigate based on account type
                 context.go(Routes.login);
               },
               unauthenticated: () {},
               error: (failure) {
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text(failure.message), backgroundColor: AppColors.error));
+                showErrorToast(context, failure);
               },
               passwordResetSent: () {},
               checkingOrganizationCode: () {},
               organizationCodeChecked: (exists) {
                 if (!exists) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(LocaleKeys.organizationCodeNotFound.tr()), backgroundColor: AppColors.error),
-                  );
+                  showErrorToast(context, LocaleKeys.organizationCodeNotFound.tr());
                 }
               },
             );

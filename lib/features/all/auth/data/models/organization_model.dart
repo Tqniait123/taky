@@ -15,20 +15,10 @@ class OrganizationModel {
   final String? phone;
   final String? email;
   final String? logo;
-
-  @JsonKey(name: 'primary_color')
   final String? primaryColor;
-
-  @JsonKey(name: 'secondary_color')
   final String? secondaryColor;
-
-  @JsonKey(name: 'is_active')
   final bool isActive;
-
-  @JsonKey(name: 'created_at')
   final DateTime createdAt;
-
-  @JsonKey(name: 'updated_at')
   final DateTime updatedAt;
 
   const OrganizationModel({

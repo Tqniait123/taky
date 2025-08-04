@@ -31,7 +31,7 @@ class AdminLayout extends StatelessWidget {
                 state.maybeWhen(
                   unauthenticated: () => context.go(Routes.login),
                   error: (failure) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(failure.message)));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(failure)));
                   },
                   orElse: () {},
                 );

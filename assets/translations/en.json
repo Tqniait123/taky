@@ -393,5 +393,200 @@
   "choose_your_organization_secon": "Choose your organization secondary brand color",
   "organizationCodeNotFound": "Organization code not found",
   "profileImage": "Profile Image",
-  "organizationLogo": "Organization Logo"
+  "organizationLogo": "Organization Logo",
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "signOut": "Sign Out",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "name": "Name",
+    "phone": "Phone",
+    "forgotPassword": "Forgot Password?",
+    "resetPassword": "Reset Password",
+    "createAccount": "Create Account",
+    "alreadyHaveAccount": "Already have an account?",
+    "dontHaveAccount": "Don't have an account?"
+  },
+  "roles": {
+    "selectAccountType": "Select Account Type",
+    "organizationAdmin": "Organization Admin",
+    "employee": "Employee",
+    "officeBoy": "Office Boy",
+    "adminDescription": "Create and manage your organization",
+    "employeeDescription": "Submit requests for office services",
+    "officeBoyDescription": "Receive and fulfill service requests"
+  },
+  "organization": {
+    "organizationName": "Organization Name",
+    "organizationCode": "Organization Code",
+    "organizationLogo": "Organization Logo",
+    "primaryColor": "Primary Color",
+    "secondaryColor": "Secondary Color",
+    "createOrganization": "Create Organization",
+    "joinOrganization": "Join Organization",
+    "organizationCodeNotFound": "Organization code not found",
+    "organizationRequired": "Organization information is required"
+  },
+  "requests": {
+    "newRequest": "New Request",
+    "myRequests": "My Requests",
+    "pendingRequests": "Pending Requests",
+    "completedRequests": "Completed Requests",
+    "requestTitle": "Request Title",
+    "requestDescription": "Request Description",
+    "requestType": "Request Type",
+    "requestStatus": "Request Status",
+    "submitRequest": "Submit Request",
+    "acceptRequest": "Accept Request",
+    "completeRequest": "Complete Request",
+    "cancelRequest": "Cancel Request",
+    "requestDetails": "Request Details"
+  },
+  "requestTypes": {
+    "coffee": "Coffee",
+    "tea": "Tea",
+    "food": "Food",
+    "documents": "Documents",
+    "office_supplies": "Office Supplies",
+    "other": "Other"
+  },
+  "requestStatus": {
+    "pending": "Pending",
+    "accepted": "Accepted",
+    "inProgress": "In Progress",
+    "completed": "Completed",
+    "cancelled": "Cancelled"
+  },
+  "navigation": {
+    "home": "Home",
+    "requests": "Requests",
+    "notifications": "Notifications",
+    "profile": "Profile",
+    "settings": "Settings"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "retry": "Retry",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "warning": "Warning",
+    "info": "Info",
+    "next": "Next",
+    "previous": "Previous",
+    "finish": "Finish",
+    "skip": "Skip",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "refresh": "Refresh",
+    "noData": "No data available",
+    "noResults": "No results found",
+    "tryAgain": "Try again"
+  },
+  "validation": {
+    "fieldRequired": "This field is required",
+    "invalidEmail": "Please enter a valid email",
+    "passwordTooShort": "Password must be at least 6 characters",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "invalidPhone": "Please enter a valid phone number",
+    "invalidCode": "Please enter a valid code"
+  },
+  "errors": {
+    "registrationFailed": "Registration failed. Please try again.",
+    "signInFailed": "Sign in failed. Please check your credentials.",
+    "signOutFailed": "Sign out failed. Please try again.",
+    "passwordResetFailed": "Password reset failed. Please try again.",
+    "organizationCheckFailed": "Organization check failed. Please try again.",
+    "authStreamError": "Authentication error occurred.",
+    "networkError": "Network error. Please check your connection.",
+    "serverError": "Server error. Please try again later.",
+    "unknownError": "An unknown error occurred.",
+    "uploadFailed": "File upload failed. Please try again.",
+    "permissionDenied": "Permission denied."
+  },
+  "success": {
+    "registrationSuccess": "Registration successful!",
+    "signInSuccess": "Welcome back!",
+    "passwordResetSent": "Password reset email sent successfully",
+    "profileUpdated": "Profile updated successfully",
+    "requestSubmitted": "Request submitted successfully",
+    "requestAccepted": "Request accepted successfully",
+    "requestCompleted": "Request completed successfully",
+    "requestCancelled": "Request cancelled successfully"
+  },
+  "profile": {
+    "profile": "Profile",
+    "editProfile": "Edit Profile",
+    "profileImage": "Profile Image",
+    "changePassword": "Change Password",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "language": "Language",
+    "theme": "Theme",
+    "aboutApp": "About App",
+    "version": "Version",
+    "logout": "Logout",
+    "logoutConfirmation": "Are you sure you want to logout?"
+  },
+  "notifications": {
+    "newRequestNotification": "New request received",
+    "requestAcceptedNotification": "Your request has been accepted",
+    "requestCompletedNotification": "Your request has been completed",
+    "requestCancelledNotification": "Your request has been cancelled",
+    "markAsRead": "Mark as read",
+    "markAllAsRead": "Mark all as read",
+    "noNotifications": "No notifications available"
+  },
+  "time": {
+    "now": "Now",
+    "minutesAgo": "{} minutes ago",
+    "hoursAgo": "{} hours ago",
+    "daysAgo": "{} days ago",
+    "weeksAgo": "{} weeks ago",
+    "monthsAgo": "{} months ago",
+    "yearsAgo": "{} years ago"
+  },
+  "fileUpload": {
+    "selectImage": "Select Image",
+    "camera": "Camera",
+    "gallery": "Gallery",
+    "uploadImage": "Upload Image",
+    "imageSelected": "Image selected successfully",
+    "imageUploadFailed": "Image upload failed"
+  },
+  "colors": {
+    "selectColor": "Select Color",
+    "customColor": "Custom Color",
+    "resetColor": "Reset Color"
+  },
+  "welcome": {
+    "welcome": "Welcome to TaQy",
+    "welcomeMessage": "Your office service companion",
+    "getStarted": "Get Started",
+    "onboardingTitle1": "Submit Requests",
+    "onboardingMessage1": "Easily submit requests for coffee, documents, and other office services",
+    "onboardingTitle2": "Track Progress",
+    "onboardingMessage2": "Monitor your requests in real-time and get notified when they're completed",
+    "onboardingTitle3": "Stay Connected",
+    "onboardingMessage3": "Connect with your team and office assistants seamlessly"
+  },
+  "dashboard": {
+    "dashboard": "Dashboard",
+    "todayRequests": "Today's Requests",
+    "totalRequests": "Total Requests",
+    "completedToday": "Completed Today",
+    "pendingRequests": "Pending",
+    "recentActivity": "Recent Activity",
+    "quickActions": "Quick Actions"
+  }
 }

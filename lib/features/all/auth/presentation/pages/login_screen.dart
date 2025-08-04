@@ -89,7 +89,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                   if (mounted && !_isDisposed) {
                     ScaffoldMessenger.of(
                       context,
-                    ).showSnackBar(SnackBar(content: Text(failure.message), backgroundColor: AppColors.error));
+                    ).showSnackBar(SnackBar(content: Text(failure), backgroundColor: AppColors.error));
                   }
                 },
                 orElse: () {},

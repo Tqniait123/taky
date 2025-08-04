@@ -55,7 +55,7 @@ extension AuthStatePatterns on AuthState {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( AuthInitial value)?  initial,TResult Function( AuthLoading value)?  loading,TResult Function( AuthAuthenticated value)?  authenticated,TResult Function( AuthUnauthenticated value)?  unauthenticated,TResult Function( AuthError value)?  error,TResult Function( AuthCheckingOrganizationCode value)?  checkingOrganizationCode,TResult Function( AuthOrganizationCodeChecked value)?  organizationCodeChecked,TResult Function( AuthPasswordResetSent value)?  passwordResetSent,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( AuthInitial value)?  initial,TResult Function( AuthLoading value)?  loading,TResult Function( AuthAuthenticated value)?  authenticated,TResult Function( AuthUnauthenticated value)?  unauthenticated,TResult Function( AuthError value)?  error,TResult Function( AuthPasswordResetSent value)?  passwordResetSent,TResult Function( AuthCheckingOrganizationCode value)?  checkingOrganizationCode,TResult Function( AuthOrganizationCodeChecked value)?  organizationCodeChecked,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case AuthInitial() when initial != null:
@@ -63,10 +63,10 @@ return initial(_that);case AuthLoading() when loading != null:
 return loading(_that);case AuthAuthenticated() when authenticated != null:
 return authenticated(_that);case AuthUnauthenticated() when unauthenticated != null:
 return unauthenticated(_that);case AuthError() when error != null:
-return error(_that);case AuthCheckingOrganizationCode() when checkingOrganizationCode != null:
+return error(_that);case AuthPasswordResetSent() when passwordResetSent != null:
+return passwordResetSent(_that);case AuthCheckingOrganizationCode() when checkingOrganizationCode != null:
 return checkingOrganizationCode(_that);case AuthOrganizationCodeChecked() when organizationCodeChecked != null:
-return organizationCodeChecked(_that);case AuthPasswordResetSent() when passwordResetSent != null:
-return passwordResetSent(_that);case _:
+return organizationCodeChecked(_that);case _:
   return orElse();
 
 }
@@ -84,7 +84,7 @@ return passwordResetSent(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( AuthInitial value)  initial,required TResult Function( AuthLoading value)  loading,required TResult Function( AuthAuthenticated value)  authenticated,required TResult Function( AuthUnauthenticated value)  unauthenticated,required TResult Function( AuthError value)  error,required TResult Function( AuthCheckingOrganizationCode value)  checkingOrganizationCode,required TResult Function( AuthOrganizationCodeChecked value)  organizationCodeChecked,required TResult Function( AuthPasswordResetSent value)  passwordResetSent,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( AuthInitial value)  initial,required TResult Function( AuthLoading value)  loading,required TResult Function( AuthAuthenticated value)  authenticated,required TResult Function( AuthUnauthenticated value)  unauthenticated,required TResult Function( AuthError value)  error,required TResult Function( AuthPasswordResetSent value)  passwordResetSent,required TResult Function( AuthCheckingOrganizationCode value)  checkingOrganizationCode,required TResult Function( AuthOrganizationCodeChecked value)  organizationCodeChecked,}){
 final _that = this;
 switch (_that) {
 case AuthInitial():
@@ -92,10 +92,10 @@ return initial(_that);case AuthLoading():
 return loading(_that);case AuthAuthenticated():
 return authenticated(_that);case AuthUnauthenticated():
 return unauthenticated(_that);case AuthError():
-return error(_that);case AuthCheckingOrganizationCode():
+return error(_that);case AuthPasswordResetSent():
+return passwordResetSent(_that);case AuthCheckingOrganizationCode():
 return checkingOrganizationCode(_that);case AuthOrganizationCodeChecked():
-return organizationCodeChecked(_that);case AuthPasswordResetSent():
-return passwordResetSent(_that);case _:
+return organizationCodeChecked(_that);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -112,7 +112,7 @@ return passwordResetSent(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( AuthInitial value)?  initial,TResult? Function( AuthLoading value)?  loading,TResult? Function( AuthAuthenticated value)?  authenticated,TResult? Function( AuthUnauthenticated value)?  unauthenticated,TResult? Function( AuthError value)?  error,TResult? Function( AuthCheckingOrganizationCode value)?  checkingOrganizationCode,TResult? Function( AuthOrganizationCodeChecked value)?  organizationCodeChecked,TResult? Function( AuthPasswordResetSent value)?  passwordResetSent,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( AuthInitial value)?  initial,TResult? Function( AuthLoading value)?  loading,TResult? Function( AuthAuthenticated value)?  authenticated,TResult? Function( AuthUnauthenticated value)?  unauthenticated,TResult? Function( AuthError value)?  error,TResult? Function( AuthPasswordResetSent value)?  passwordResetSent,TResult? Function( AuthCheckingOrganizationCode value)?  checkingOrganizationCode,TResult? Function( AuthOrganizationCodeChecked value)?  organizationCodeChecked,}){
 final _that = this;
 switch (_that) {
 case AuthInitial() when initial != null:
@@ -120,10 +120,10 @@ return initial(_that);case AuthLoading() when loading != null:
 return loading(_that);case AuthAuthenticated() when authenticated != null:
 return authenticated(_that);case AuthUnauthenticated() when unauthenticated != null:
 return unauthenticated(_that);case AuthError() when error != null:
-return error(_that);case AuthCheckingOrganizationCode() when checkingOrganizationCode != null:
+return error(_that);case AuthPasswordResetSent() when passwordResetSent != null:
+return passwordResetSent(_that);case AuthCheckingOrganizationCode() when checkingOrganizationCode != null:
 return checkingOrganizationCode(_that);case AuthOrganizationCodeChecked() when organizationCodeChecked != null:
-return organizationCodeChecked(_that);case AuthPasswordResetSent() when passwordResetSent != null:
-return passwordResetSent(_that);case _:
+return organizationCodeChecked(_that);case _:
   return null;
 
 }
@@ -140,17 +140,17 @@ return passwordResetSent(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( User user)?  authenticated,TResult Function()?  unauthenticated,TResult Function( Failure failure)?  error,TResult Function()?  checkingOrganizationCode,TResult Function( bool exists)?  organizationCodeChecked,TResult Function()?  passwordResetSent,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( User user)?  authenticated,TResult Function()?  unauthenticated,TResult Function( String message)?  error,TResult Function()?  passwordResetSent,TResult Function()?  checkingOrganizationCode,TResult Function( bool exists)?  organizationCodeChecked,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case AuthInitial() when initial != null:
 return initial();case AuthLoading() when loading != null:
 return loading();case AuthAuthenticated() when authenticated != null:
 return authenticated(_that.user);case AuthUnauthenticated() when unauthenticated != null:
 return unauthenticated();case AuthError() when error != null:
-return error(_that.failure);case AuthCheckingOrganizationCode() when checkingOrganizationCode != null:
+return error(_that.message);case AuthPasswordResetSent() when passwordResetSent != null:
+return passwordResetSent();case AuthCheckingOrganizationCode() when checkingOrganizationCode != null:
 return checkingOrganizationCode();case AuthOrganizationCodeChecked() when organizationCodeChecked != null:
-return organizationCodeChecked(_that.exists);case AuthPasswordResetSent() when passwordResetSent != null:
-return passwordResetSent();case _:
+return organizationCodeChecked(_that.exists);case _:
   return orElse();
 
 }
@@ -168,17 +168,17 @@ return passwordResetSent();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( User user)  authenticated,required TResult Function()  unauthenticated,required TResult Function( Failure failure)  error,required TResult Function()  checkingOrganizationCode,required TResult Function( bool exists)  organizationCodeChecked,required TResult Function()  passwordResetSent,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( User user)  authenticated,required TResult Function()  unauthenticated,required TResult Function( String message)  error,required TResult Function()  passwordResetSent,required TResult Function()  checkingOrganizationCode,required TResult Function( bool exists)  organizationCodeChecked,}) {final _that = this;
 switch (_that) {
 case AuthInitial():
 return initial();case AuthLoading():
 return loading();case AuthAuthenticated():
 return authenticated(_that.user);case AuthUnauthenticated():
 return unauthenticated();case AuthError():
-return error(_that.failure);case AuthCheckingOrganizationCode():
+return error(_that.message);case AuthPasswordResetSent():
+return passwordResetSent();case AuthCheckingOrganizationCode():
 return checkingOrganizationCode();case AuthOrganizationCodeChecked():
-return organizationCodeChecked(_that.exists);case AuthPasswordResetSent():
-return passwordResetSent();case _:
+return organizationCodeChecked(_that.exists);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -195,17 +195,17 @@ return passwordResetSent();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( User user)?  authenticated,TResult? Function()?  unauthenticated,TResult? Function( Failure failure)?  error,TResult? Function()?  checkingOrganizationCode,TResult? Function( bool exists)?  organizationCodeChecked,TResult? Function()?  passwordResetSent,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( User user)?  authenticated,TResult? Function()?  unauthenticated,TResult? Function( String message)?  error,TResult? Function()?  passwordResetSent,TResult? Function()?  checkingOrganizationCode,TResult? Function( bool exists)?  organizationCodeChecked,}) {final _that = this;
 switch (_that) {
 case AuthInitial() when initial != null:
 return initial();case AuthLoading() when loading != null:
 return loading();case AuthAuthenticated() when authenticated != null:
 return authenticated(_that.user);case AuthUnauthenticated() when unauthenticated != null:
 return unauthenticated();case AuthError() when error != null:
-return error(_that.failure);case AuthCheckingOrganizationCode() when checkingOrganizationCode != null:
+return error(_that.message);case AuthPasswordResetSent() when passwordResetSent != null:
+return passwordResetSent();case AuthCheckingOrganizationCode() when checkingOrganizationCode != null:
 return checkingOrganizationCode();case AuthOrganizationCodeChecked() when organizationCodeChecked != null:
-return organizationCodeChecked(_that.exists);case AuthPasswordResetSent() when passwordResetSent != null:
-return passwordResetSent();case _:
+return organizationCodeChecked(_that.exists);case _:
   return null;
 
 }
@@ -379,10 +379,10 @@ String toString() {
 
 
 class AuthError implements AuthState {
-  const AuthError(this.failure);
+  const AuthError(this.message);
   
 
- final  Failure failure;
+ final  String message;
 
 /// Create a copy of AuthState
 /// with the given fields replaced by the non-null parameter values.
@@ -394,16 +394,16 @@ $AuthErrorCopyWith<AuthError> get copyWith => _$AuthErrorCopyWithImpl<AuthError>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AuthError&&(identical(other.failure, failure) || other.failure == failure));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AuthError&&(identical(other.message, message) || other.message == message));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,failure);
+int get hashCode => Object.hash(runtimeType,message);
 
 @override
 String toString() {
-  return 'AuthState.error(failure: $failure)';
+  return 'AuthState.error(message: $message)';
 }
 
 
@@ -414,7 +414,7 @@ abstract mixin class $AuthErrorCopyWith<$Res> implements $AuthStateCopyWith<$Res
   factory $AuthErrorCopyWith(AuthError value, $Res Function(AuthError) _then) = _$AuthErrorCopyWithImpl;
 @useResult
 $Res call({
- Failure failure
+ String message
 });
 
 
@@ -431,15 +431,47 @@ class _$AuthErrorCopyWithImpl<$Res>
 
 /// Create a copy of AuthState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? failure = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? message = null,}) {
   return _then(AuthError(
-null == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
-as Failure,
+null == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
+as String,
   ));
 }
 
 
 }
+
+/// @nodoc
+
+
+class AuthPasswordResetSent implements AuthState {
+  const AuthPasswordResetSent();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AuthPasswordResetSent);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'AuthState.passwordResetSent()';
+}
+
+
+}
+
+
+
 
 /// @nodoc
 
@@ -538,37 +570,5 @@ as bool,
 
 
 }
-
-/// @nodoc
-
-
-class AuthPasswordResetSent implements AuthState {
-  const AuthPasswordResetSent();
-  
-
-
-
-
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AuthPasswordResetSent);
-}
-
-
-@override
-int get hashCode => runtimeType.hashCode;
-
-@override
-String toString() {
-  return 'AuthState.passwordResetSent()';
-}
-
-
-}
-
-
-
 
 // dart format on

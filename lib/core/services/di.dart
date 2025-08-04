@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:taqy/config/supabase_config.dart';
 import 'package:taqy/core/api/dio_client.dart';
 import 'package:taqy/core/preferences/shared_pref.dart';
+import 'package:taqy/core/services/firebase_service.dart';
 import 'package:taqy/features/all/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:taqy/features/all/auth/data/repositories/auth_repo.dart';
 import 'package:taqy/features/all/auth/domain/usecases/auth_usecase.dart';
@@ -27,6 +28,8 @@ Future<void> initLocator(SharedPreferences sharedPreferences) async {
     // Register SupabaseClient (Supabase should already be initialized at this point)
     // Use the SupabaseConfig.client getter for consistency
     sl.registerLazySingleton<SupabaseClient>(() => SupabaseConfig.client);
+    // Register Firebase Service
+    sl.registerLazySingleton<FirebaseService>(() => FirebaseService());
 
     // Data Sources
     sl.registerLazySingleton<AuthRemoteDataSource>(() => AuthRemoteDataSourceImpl(sl()));
@@ -38,7 +41,7 @@ Future<void> initLocator(SharedPreferences sharedPreferences) async {
     // );
 
     // Repositories
-    sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(sl<SupabaseClient>()));
+    sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(sl<FirebaseService>()));
     // sl.registerLazySingleton<NotificationsRepository>(
     //   () => NotificationsRepoImpl(sl<NotificationsRemoteDataSource>(), sl<TaQyPreferences>()),
     // );
@@ -56,18 +59,7 @@ Future<void> initLocator(SharedPreferences sharedPreferences) async {
     sl.registerLazySingleton<GetAuthStateChangesUseCase>(() => GetAuthStateChangesUseCase(sl<AuthRepository>()));
 
     // Cubits
-    sl.registerFactory<AuthCubit>(
-      () => AuthCubit(
-        signUpUseCase: sl<SignUpUseCase>(),
-        signInUseCase: sl<SignInUseCase>(),
-        signOutUseCase: sl<SignOutUseCase>(),
-        resetPasswordUseCase: sl<ResetPasswordUseCase>(),
-        checkOrganizationCodeUseCase: sl<CheckOrganizationCodeUseCase>(),
-        getCurrentUserUseCase: sl<GetCurrentUserUseCase>(),
-        getAuthStateChangesUseCase: sl<GetAuthStateChangesUseCase>(),
-        authRepository: sl<AuthRepository>(),
-      ),
-    );
+    sl.registerFactory<AuthCubit>(() => AuthCubit(sl<AuthRepository>()));
 
     sl.registerFactory<UserCubit>(() => UserCubit());
 

@@ -16,11 +16,11 @@ OrganizationModel _$OrganizationModelFromJson(Map<String, dynamic> json) =>
       phone: json['phone'] as String?,
       email: json['email'] as String?,
       logo: json['logo'] as String?,
-      primaryColor: json['primary_color'] as String?,
-      secondaryColor: json['secondary_color'] as String?,
-      isActive: json['is_active'] as bool,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      primaryColor: json['primaryColor'] as String?,
+      secondaryColor: json['secondaryColor'] as String?,
+      isActive: json['isActive'] as bool,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
 
 Map<String, dynamic> _$OrganizationModelToJson(OrganizationModel instance) =>
@@ -33,9 +33,9 @@ Map<String, dynamic> _$OrganizationModelToJson(OrganizationModel instance) =>
       'phone': instance.phone,
       'email': instance.email,
       'logo': instance.logo,
-      'primary_color': instance.primaryColor,
-      'secondary_color': instance.secondaryColor,
-      'is_active': instance.isActive,
-      'created_at': instance.createdAt.toIso8601String(),
-      'updated_at': instance.updatedAt.toIso8601String(),
+      'primaryColor': instance.primaryColor,
+      'secondaryColor': instance.secondaryColor,
+      'isActive': instance.isActive,
+      'createdAt': instance.createdAt.toIso8601String(),
+      'updatedAt': instance.updatedAt.toIso8601String(),
     };

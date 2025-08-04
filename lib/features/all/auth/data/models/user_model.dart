@@ -10,52 +10,31 @@ class UserModel extends User {
   // Define fields with JsonKey annotations
   @override
   final String id;
-
   @override
   final String email;
-
   @override
-  @JsonKey(name: 'password_hash')
   final String? passwordHash;
-
   @override
   final String name;
-
   @override
   final String? phone;
-
   @override
   final UserRole role;
-
   @override
-  @JsonKey(name: 'organization_id')
   final String organizationId;
-
   @override
   final String? locale;
-
   @override
-  @JsonKey(name: 'profile_image_url')
   final String? profileImageUrl;
-
   @override
-  @JsonKey(name: 'is_active')
   final bool isActive;
-
   @override
-  @JsonKey(name: 'is_verified')
   final bool isVerified;
-
   @override
-  @JsonKey(name: 'fcm_token')
   final String? fcmToken;
-
   @override
-  @JsonKey(name: 'created_at')
   final DateTime createdAt;
-
   @override
-  @JsonKey(name: 'updated_at')
   final DateTime updatedAt;
 
   const UserModel({

@@ -1,11 +1,12 @@
+// lib/features/all/auth/data/repositories/firebase_auth_repo.dart
 import 'dart:async';
 import 'dart:developer';
-import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' hide User;
-import 'package:taqy/config/supabase_logger.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:taqy/core/errors/failures.dart';
+import 'package:taqy/core/services/firebase_service.dart';
 import 'package:taqy/features/all/auth/data/models/organization_model.dart';
 import 'package:taqy/features/all/auth/data/models/user_model.dart';
 import 'package:taqy/features/all/auth/domain/entities/organization.dart';
@@ -48,40 +49,15 @@ abstract class AuthRepository {
   Stream<User?> getAuthStateChanges();
 }
 
-// // Extension for UserRole enum
-// extension UserRoleExtension on UserRole {
-//   String get value {
-//     switch (this) {
-//       case UserRole.admin:
-//         return 'admin';
-//       case UserRole.employee:
-//         return 'employee';
-//       case UserRole.officeBoy:
-//         return 'office_boy';
-//     }
-//   }
-
-//   static UserRole fromString(String value) {
-//     switch (value.toLowerCase()) {
-//       case 'admin':
-//         return UserRole.admin;
-//       case 'employee':
-//         return UserRole.employee;
-//       case 'office_boy':
-//         return UserRole.officeBoy;
-//       default:
-//         return UserRole.employee;
-//     }
-//   }
-// }
-
 class AuthRepositoryImpl implements AuthRepository {
-  final SupabaseClient _client;
+  final FirebaseService _firebaseService;
 
-  // Cache for bucket existence to avoid repeated checks
-  final Map<String, bool> _bucketExists = {};
+  // Firestore collections
+  static const String usersCollection = 'users';
+  static const String organizationsCollection = 'organizations';
 
-  AuthRepositoryImpl(this._client);
+  AuthRepositoryImpl(this._firebaseService);
+
   @override
   Future<Either<Failure, User>> signUp({
     required String email,
@@ -106,32 +82,24 @@ class AuthRepositoryImpl implements AuthRepository {
       // 2. Create organization if admin
       String? orgId = organizationId;
       if (role == UserRole.admin) {
-        SupabaseLogger.logRequest('INSERT', 'organizations', {
-          'code': organizationCode,
-          'name': organizationName,
+        orgId = _firebaseService.generateId();
+
+        final orgData = {
+          'id': orgId,
+          'code': organizationCode!,
+          'name': organizationName!,
+          'description': null,
+          'address': null,
+          'phone': null,
+          'email': null,
           'logo': organizationLogo,
-          'primary_color': primaryColor,
-          'secondary_color': secondaryColor,
-        });
+          'primaryColor': primaryColor,
+          'secondaryColor': secondaryColor,
+          'isActive': true,
+        };
 
-        final orgResponse = await _client
-            .from('organizations')
-            .insert({
-              'code': organizationCode!,
-              'name': organizationName!,
-              'logo': organizationLogo,
-              'primary_color': primaryColor,
-              'secondary_color': secondaryColor,
-            })
-            .select()
-            .single();
-
-        SupabaseLogger.logResponse('INSERT', 'organizations', orgResponse);
-        orgId = orgResponse['id'] as String?;
-
-        if (orgId == null || orgId.isEmpty) {
-          return Left(DatabaseFailure('Failed to retrieve organization ID after creation'));
-        }
+        await _firebaseService.setDocument(organizationsCollection, orgId, orgData);
+        log('Organization created with ID: $orgId');
       }
 
       // 3. For employee/office boy, get organization by code
@@ -150,91 +118,60 @@ class AuthRepositoryImpl implements AuthRepository {
         return Left(DatabaseFailure('Organization ID is missing or invalid'));
       }
 
-      // 5. Register user in auth (trigger will create user record automatically)
-      SupabaseLogger.logRequest('signUp', 'auth', {'email': email, 'password': password});
+      // 5. Create user in Firebase Auth
+      final authResult = await _firebaseService.signUpWithEmailPassword(email, password);
 
-      final authResponse = await _client.auth.signUp(
+      if (authResult.user == null) {
+        return Left(AuthFailure('User creation failed'));
+      }
+
+      final userId = authResult.user!.uid;
+
+      // 6. Create user document in Firestore
+      final userData = {
+        'id': userId,
+        'email': email,
+        'passwordHash': null, // Don't store password hash in Firestore
+        'name': name,
+        'phone': phone,
+        'role': role.name,
+        'organizationId': orgId,
+        'locale': null,
+        'profileImageUrl': profileImageUrl,
+        'isActive': true,
+        'isVerified': authResult.user!.emailVerified,
+        'fcmToken': null,
+      };
+
+      await _firebaseService.setDocument(usersCollection, userId, userData);
+
+      // 7. Create and return User entity
+      final user = UserModel(
+        id: userId,
         email: email,
-        password: password,
-        data: {
-          'name': name,
-          'phone': phone,
-          'role': role.value,
-          'organization_id': orgId,
-          'profile_image_url': profileImageUrl,
-        },
+        passwordHash: null,
+        name: name,
+        phone: phone,
+        role: role,
+        organizationId: orgId!,
+        locale: null,
+        profileImageUrl: profileImageUrl,
+        isActive: true,
+        isVerified: authResult.user!.emailVerified,
+        fcmToken: null,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
       );
 
-      SupabaseLogger.logResponse('signUp', 'auth', authResponse);
-
-      if (authResponse.user == null) {
-        return Left(AuthFailure('User creation failed'));
-      }
-
-      // 6. Fetch the user data created by the trigger
-      // Add a small delay to ensure trigger has completed
-      await Future.delayed(const Duration(milliseconds: 1000));
-
-      // 6. Wait longer and check auth state before querying
-      if (authResponse.user == null) {
-        return Left(AuthFailure('User creation failed'));
-      }
-
-      // Log current auth state
-      SupabaseLogger.logRequest('AUTH CHECK', 'current_user', _client.auth.currentUser?.id ?? 'null');
-
-      // Wait longer for session to be fully established
-      await Future.delayed(const Duration(seconds: 5));
-
-      try {
-        // Check auth state again
-        final currentUser = _client.auth.currentUser;
-        SupabaseLogger.logRequest('AUTH RECHECK', 'current_user', currentUser?.id ?? 'null');
-
-        if (currentUser == null) {
-          return Left(AuthFailure('User session not established'));
-        }
-
-        SupabaseLogger.logRequest('SELECT', 'users', {'id': authResponse.user!.id});
-
-        final userData = await _client.from('users').select().eq('id', authResponse.user!.id).maybeSingle();
-
-        SupabaseLogger.logResponse('SELECT', 'users', userData);
-
-        if (userData == null) {
-          return Left(DatabaseFailure('User record not found in database'));
-        }
-
-        final user = UserModel.fromJson(userData);
-        return Right(user);
-      } catch (e) {
-        SupabaseLogger.logError('SELECT', 'users', e);
-
-        // Fallback: create user object from auth metadata
-        final user = UserModel(
-          id: authResponse.user!.id,
-          email: email,
-          name: name,
-          phone: phone,
-          role: role,
-          organizationId: orgId!,
-          profileImageUrl: profileImageUrl,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-          isActive: true,
-          isVerified: authResponse.user!.emailConfirmedAt != null,
-        );
-
-        return Right(user);
-      }
-    } on AuthException catch (e) {
-      SupabaseLogger.logError('signUp', 'auth', e);
-      return Left(AuthFailure(e.message));
-    } on PostgrestException catch (e) {
-      SupabaseLogger.logError('signUp', 'database', e);
-      return Left(DatabaseFailure(e.message));
+      return Right(user);
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      log('Firebase Auth Error: ${e.code} - ${e.message}');
+      return Left(AuthFailure(_handleAuthException(e)));
+    } on FirebaseException catch (e) {
+      log('Firestore Error: ${e.code} - ${e.message}');
+      return Left(DatabaseFailure(e.message ?? 'Database error occurred'));
     } catch (e) {
-      SupabaseLogger.logError('signUp', 'general', e);
+      log('General Error: $e');
       return Left(GeneralFailure(e.toString()));
     }
   }
@@ -242,37 +179,45 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, User>> signIn({required String email, required String password}) async {
     try {
-      SupabaseLogger.logRequest('signIn', 'auth', {'email': email});
+      // 1. Sign in with Firebase Auth
+      final authResult = await _firebaseService.signInWithEmailPassword(email, password);
 
-      final response = await _client.auth.signInWithPassword(email: email, password: password);
-
-      SupabaseLogger.logResponse('signIn', 'auth', response);
-
-      if (response.user == null) {
+      if (authResult.user == null) {
         return Left(AuthFailure('Authentication failed'));
       }
 
-      // Get additional user data from users table
-      final userData = await _client
-          .from('users')
-          .select('*, organizations(*)')
-          .eq('id', response.user!.id)
-          .maybeSingle();
+      final userId = authResult.user!.uid;
 
-      if (userData == null) {
+      // 2. Get user document from Firestore
+      final userDoc = await _firebaseService.getDocument(usersCollection, userId);
+
+      if (!userDoc.exists) {
         return Left(DatabaseFailure('User data not found'));
       }
 
-      final user = UserModel.fromJson(userData);
+      final userData = userDoc.data() as Map<String, dynamic>;
+
+      // 3. Convert Firestore data to UserModel
+      final user = UserModel.fromJson({
+        ...userData,
+        'createdAt':
+            _firebaseService.timestampToDateTime(userData['createdAt'])?.toIso8601String() ??
+            DateTime.now().toIso8601String(),
+        'updatedAt':
+            _firebaseService.timestampToDateTime(userData['updatedAt'])?.toIso8601String() ??
+            DateTime.now().toIso8601String(),
+        'role': userData['role'], // Keep as string for UserRoleExtension.fromString
+      });
+
       return Right(user);
-    } on AuthException catch (e) {
-      SupabaseLogger.logError('signIn', 'auth', e);
-      return Left(AuthFailure(e.message));
-    } on PostgrestException catch (e) {
-      SupabaseLogger.logError('signIn', 'database', e);
-      return Left(DatabaseFailure(e.message));
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      log('Firebase Auth Error: ${e.code} - ${e.message}');
+      return Left(AuthFailure(_handleAuthException(e)));
+    } on FirebaseException catch (e) {
+      log('Firestore Error: ${e.code} - ${e.message}');
+      return Left(DatabaseFailure(e.message ?? 'Database error occurred'));
     } catch (e) {
-      SupabaseLogger.logError('signIn', 'general', e);
+      log('General Error: $e');
       return Left(GeneralFailure(e.toString()));
     }
   }
@@ -280,10 +225,10 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, void>> signOut() async {
     try {
-      await _client.auth.signOut();
+      await _firebaseService.signOut();
       return const Right(null);
     } catch (e) {
-      SupabaseLogger.logError('signOut', 'auth', e);
+      log('Sign out error: $e');
       return Left(GeneralFailure(e.toString()));
     }
   }
@@ -291,13 +236,13 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, void>> resetPassword(String email) async {
     try {
-      await _client.auth.resetPasswordForEmail(email);
+      await _firebaseService.sendPasswordResetEmail(email);
       return const Right(null);
-    } on AuthException catch (e) {
-      SupabaseLogger.logError('resetPassword', 'auth', e);
-      return Left(AuthFailure(e.message));
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      log('Password reset error: ${e.code} - ${e.message}');
+      return Left(AuthFailure(_handleAuthException(e)));
     } catch (e) {
-      SupabaseLogger.logError('resetPassword', 'general', e);
+      log('General Error: $e');
       return Left(GeneralFailure(e.toString()));
     }
   }
@@ -305,23 +250,31 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, Organization?>> getOrganizationByCode(String code) async {
     try {
-      SupabaseLogger.logRequest('SELECT', 'organizations', {'code': code});
+      final querySnapshot = await _firebaseService.getCollectionWhere(organizationsCollection, 'code', code);
 
-      final response = await _client.from('organizations').select().eq('code', code).maybeSingle();
-
-      SupabaseLogger.logResponse('SELECT', 'organizations', response);
-
-      if (response == null) {
+      if (querySnapshot.docs.isEmpty) {
         return const Right(null);
       }
 
-      final organization = OrganizationModel.fromJson(response).toEntity();
+      final doc = querySnapshot.docs.first;
+      final data = doc.data() as Map<String, dynamic>? ?? {}; // Ensure non-null Map
+
+      final organization = OrganizationModel.fromJson({
+        ...data, // Now safe to spread since we ensured it's a non-null Map
+        'createdAt':
+            _firebaseService.timestampToDateTime(data['createdAt'])?.toIso8601String() ??
+            DateTime.now().toIso8601String(),
+        'updatedAt':
+            _firebaseService.timestampToDateTime(data['updatedAt'])?.toIso8601String() ??
+            DateTime.now().toIso8601String(),
+      }).toEntity();
+
       return Right(organization);
-    } on PostgrestException catch (e) {
-      SupabaseLogger.logError('getOrganizationByCode', 'database', e);
-      return Left(DatabaseFailure(e.message));
+    } on FirebaseException catch (e) {
+      log('Get organization error: ${e.code} - ${e.message}');
+      return Left(DatabaseFailure(e.message ?? 'Database error occurred'));
     } catch (e) {
-      SupabaseLogger.logError('getOrganizationByCode', 'general', e);
+      log('General Error: $e');
       return Left(GeneralFailure(e.toString()));
     }
   }
@@ -329,207 +282,81 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, bool>> checkOrganizationCodeExists(String code) async {
     try {
-      SupabaseLogger.logRequest('SELECT', 'organizations', {'code': code});
+      final querySnapshot = await _firebaseService.getCollectionWhere(organizationsCollection, 'code', code);
 
-      // Add a timeout to handle connection issues
-      final response = await _client
-          .from('organizations')
-          .select('id, code') // Select code as well for debugging
-          .eq('code', code)
-          .maybeSingle()
-          .timeout(const Duration(seconds: 10)); // Add timeout
-
-      SupabaseLogger.logResponse('SELECT', 'organizations', response);
-
-      // Log the exact response for debugging
-      log('DEBUG: Organization query response: $response');
-      log('DEBUG: Response type: ${response.runtimeType}');
+      log('DEBUG: Organization query response: ${querySnapshot.docs.length} documents found');
       log('DEBUG: Searching for code: "$code"');
 
-      return Right(response != null);
-    } on TimeoutException catch (e) {
-      SupabaseLogger.logError('checkOrganizationCodeExists', 'timeout', e);
-      return Left(NetworkFailure('Connection timeout: ${e.toString()}'));
-    } on PostgrestException catch (e) {
-      SupabaseLogger.logError('checkOrganizationCodeExists', 'database', e);
-      log('DEBUG: PostgrestException details: ${e.details}');
-      return Left(DatabaseFailure(e.message));
-    } on SocketException catch (e) {
-      SupabaseLogger.logError('checkOrganizationCodeExists', 'network', e);
-      return Left(NetworkFailure('Network error: ${e.toString()}'));
+      return Right(querySnapshot.docs.isNotEmpty);
+    } on FirebaseException catch (e) {
+      log('Check organization code error: ${e.code} - ${e.message}');
+      return Left(DatabaseFailure(e.message ?? 'Database error occurred'));
     } catch (e) {
-      SupabaseLogger.logError('checkOrganizationCodeExists', 'general', e);
-      log('DEBUG: Unexpected error type: ${e.runtimeType}');
-      log('DEBUG: Error details: $e');
+      log('General Error: $e');
       return Left(GeneralFailure(e.toString()));
     }
   }
 
   @override
   Future<Either<Failure, String>> uploadProfileImage(String filePath) async {
-    return _uploadFile(filePath, 'profile_images');
+    try {
+      final currentUser = _firebaseService.currentUser;
+      if (currentUser == null) {
+        return Left(AuthFailure('User not authenticated'));
+      }
+
+      final url = await _firebaseService.uploadProfileImage(currentUser.uid, filePath);
+      return Right(url);
+    } catch (e) {
+      log('Profile image upload error: $e');
+      return Left(StorageFailure(e.toString()));
+    }
   }
 
   @override
   Future<Either<Failure, String>> uploadOrganizationLogo(String filePath) async {
-    return _uploadFile(filePath, 'organization_logos');
-  }
-
-  // Enhanced file upload with bucket creation
-  Future<Either<Failure, String>> _uploadFile(String filePath, String bucketName) async {
     try {
-      // Check if bucket exists, create if not
-      await _ensureBucketExists(bucketName);
-
-      final fileName = '${DateTime.now().millisecondsSinceEpoch}_${filePath.split('/').last}';
-
-      SupabaseLogger.logRequest('UPLOAD', 'storage/$bucketName', fileName);
-
-      await _client.storage.from(bucketName).upload(fileName, File(filePath));
-
-      final url = _client.storage.from(bucketName).getPublicUrl(fileName);
-
-      SupabaseLogger.logResponse('UPLOAD', 'storage/$bucketName', url);
-
+      // Generate a unique organization ID for the upload path
+      final orgId = _firebaseService.generateId();
+      final url = await _firebaseService.uploadOrganizationLogo(orgId, filePath);
       return Right(url);
-    } on StorageException catch (e) {
-      SupabaseLogger.logError('uploadFile', 'storage', e);
-
-      // If bucket not found, try to create it and retry
-      if (e.statusCode == 404 && e.message.contains('Bucket not found')) {
-        try {
-          await _createBucket(bucketName);
-          return _uploadFile(filePath, bucketName); // Retry upload
-        } catch (createError) {
-          return Left(StorageFailure('Failed to create bucket and upload file: ${createError.toString()}'));
-        }
-      }
-
-      return Left(StorageFailure(e.message));
     } catch (e) {
-      SupabaseLogger.logError('uploadFile', 'general', e);
-      return Left(GeneralFailure(e.toString()));
-    }
-  }
-
-  // Ensure bucket exists, create if not
-  Future<void> _ensureBucketExists(String bucketName) async {
-    // Check cache first
-    if (_bucketExists[bucketName] == true) return;
-
-    try {
-      // List buckets to check if our bucket exists
-      final buckets = await _client.storage.listBuckets();
-      final bucketExists = buckets.any((bucket) => bucket.name == bucketName);
-
-      if (!bucketExists) {
-        await _createBucket(bucketName);
-      }
-
-      _bucketExists[bucketName] = true;
-    } catch (e) {
-      SupabaseLogger.logError('ensureBucketExists', 'storage', e);
-      // Don't throw here, let the upload method handle the error
-    }
-  }
-
-  // Create storage bucket with appropriate policies
-  Future<void> _createBucket(String bucketName) async {
-    try {
-      SupabaseLogger.logRequest('CREATE_BUCKET', 'storage', bucketName);
-
-      // Create the bucket
-      await _client.storage.createBucket(
-        bucketName,
-        const BucketOptions(
-          public: true,
-          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
-          fileSizeLimit: "5242880", // 5MB
-        ),
-      );
-
-      SupabaseLogger.logResponse('CREATE_BUCKET', 'storage', 'Bucket $bucketName created successfully');
-
-      // Set policies for the bucket
-      await _setBucketPolicies(bucketName);
-    } catch (e) {
-      SupabaseLogger.logError('createBucket', 'storage', e);
-      throw Exception('Failed to create bucket $bucketName: ${e.toString()}');
-    }
-  }
-
-  // Set appropriate policies for the bucket
-  Future<void> _setBucketPolicies(String bucketName) async {
-    try {
-      // Note: In a real app, you'd want more restrictive policies
-      // This is a basic setup for development
-
-      final policies = [
-        {
-          'policy_name': '${bucketName}_select_policy',
-          'definition':
-              'CREATE POLICY "${bucketName}_select_policy" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = \'$bucketName\');',
-        },
-        {
-          'policy_name': '${bucketName}_insert_policy',
-          'definition':
-              'CREATE POLICY "${bucketName}_insert_policy" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = \'$bucketName\');',
-        },
-        {
-          'policy_name': '${bucketName}_update_policy',
-          'definition':
-              'CREATE POLICY "${bucketName}_update_policy" ON storage.objects FOR UPDATE TO authenticated USING (bucket_id = \'$bucketName\');',
-        },
-        {
-          'policy_name': '${bucketName}_delete_policy',
-          'definition':
-              'CREATE POLICY "${bucketName}_delete_policy" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = \'$bucketName\');',
-        },
-      ];
-
-      for (final policy in policies) {
-        try {
-          await _client.rpc('create_storage_policy', params: policy);
-        } catch (e) {
-          // Policy might already exist, log but don't fail
-          SupabaseLogger.logError('setBucketPolicies', 'storage', 'Policy creation failed: $e');
-        }
-      }
-    } catch (e) {
-      SupabaseLogger.logError('setBucketPolicies', 'storage', e);
-      // Don't throw here as policies might already exist
+      log('Organization logo upload error: $e');
+      return Left(StorageFailure(e.toString()));
     }
   }
 
   @override
   Future<Either<Failure, void>> updateFCMToken(String userId, String token) async {
     try {
-      await _client.from('users').update({'fcm_token': token}).eq('id', userId);
+      await _firebaseService.updateDocument(usersCollection, userId, {'fcmToken': token});
       return const Right(null);
-    } on PostgrestException catch (e) {
-      SupabaseLogger.logError('updateFCMToken', 'database', e);
-      return Left(DatabaseFailure(e.message));
+    } on FirebaseException catch (e) {
+      log('FCM token update error: ${e.code} - ${e.message}');
+      return Left(DatabaseFailure(e.message ?? 'Database error occurred'));
     } catch (e) {
-      SupabaseLogger.logError('updateFCMToken', 'general', e);
+      log('General Error: $e');
       return Left(GeneralFailure(e.toString()));
     }
   }
 
   @override
   User? getCurrentUser() {
-    final user = _client.auth.currentUser;
-    if (user == null) return null;
+    final firebaseUser = _firebaseService.currentUser;
+    if (firebaseUser == null) return null;
 
+    // Note: This is a simplified version. In a real app, you'd want to
+    // fetch the complete user data from Firestore
     return UserModel(
-      id: user.id,
-      email: user.email ?? '',
-      name: user.userMetadata?['name'] ?? '',
-      phone: user.userMetadata?['phone'],
-      role: UserRole.fromStr(user.userMetadata?['role'] ?? 'employee'),
-      organizationId: user.userMetadata?['organization_id'] ?? '',
-      profileImageUrl: user.userMetadata?['profile_image_url'],
+      id: firebaseUser.uid,
+      email: firebaseUser.email ?? '',
+      name: firebaseUser.displayName ?? '',
+      phone: firebaseUser.phoneNumber,
+      role: UserRole.employee, // Default role, should be fetched from Firestore
+      organizationId: '', // Should be fetched from Firestore
+      profileImageUrl: firebaseUser.photoURL,
       isActive: true,
-      isVerified: user.emailConfirmedAt != null,
+      isVerified: firebaseUser.emailVerified,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
@@ -537,23 +364,66 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Stream<User?> getAuthStateChanges() {
-    return _client.auth.onAuthStateChange.map((authState) {
-      final user = authState.session?.user;
-      if (user == null) return null;
+    return _firebaseService.authStateChanges.asyncMap((firebaseUser) async {
+      if (firebaseUser == null) return null;
 
-      return UserModel(
-        id: user.id,
-        email: user.email ?? '',
-        name: user.userMetadata?['name'] ?? '',
-        phone: user.userMetadata?['phone'],
-        role: UserRoleExtension.fromString(user.userMetadata?['role'] ?? 'employee'),
-        organizationId: user.userMetadata?['organization_id'] ?? '',
-        profileImageUrl: user.userMetadata?['profile_image_url'],
-        isActive: true,
-        isVerified: user.emailConfirmedAt != null,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
+      try {
+        // Fetch complete user data from Firestore
+        final userDoc = await _firebaseService.getDocument(usersCollection, firebaseUser.uid);
+
+        if (!userDoc.exists) return null;
+
+        final userData = userDoc.data() as Map<String, dynamic>;
+
+        return UserModel.fromJson({
+          ...userData,
+          'createdAt':
+              _firebaseService.timestampToDateTime(userData['createdAt'])?.toIso8601String() ??
+              DateTime.now().toIso8601String(),
+          'updatedAt':
+              _firebaseService.timestampToDateTime(userData['updatedAt'])?.toIso8601String() ??
+              DateTime.now().toIso8601String(),
+          'role': userData['role'],
+        });
+      } catch (e) {
+        log('Error fetching user data in auth stream: $e');
+        return null;
+      }
     });
+  }
+
+  // ================================
+  // HELPER METHODS
+  // ================================
+
+  String _handleAuthException(firebase_auth.FirebaseAuthException e) {
+    switch (e.code) {
+      case 'weak-password':
+        return 'The password provided is too weak.';
+      case 'email-already-in-use':
+        return 'The account already exists for that email.';
+      case 'user-not-found':
+        return 'No user found for that email.';
+      case 'wrong-password':
+        return 'Wrong password provided for that user.';
+      case 'user-disabled':
+        return 'This user account has been disabled.';
+      case 'too-many-requests':
+        return 'Too many requests. Try again later.';
+      case 'operation-not-allowed':
+        return 'Operation not allowed.';
+      case 'invalid-email':
+        return 'The email address is not valid.';
+      case 'requires-recent-login':
+        return 'This operation requires recent authentication. Please sign in again.';
+      case 'account-exists-with-different-credential':
+        return 'An account already exists with the same email address but different sign-in credentials.';
+      case 'invalid-credential':
+        return 'The supplied auth credential is malformed or has expired.';
+      case 'credential-already-in-use':
+        return 'This credential is already associated with a different user account.';
+      default:
+        return e.message ?? 'An unknown authentication error occurred.';
+    }
   }
 }
