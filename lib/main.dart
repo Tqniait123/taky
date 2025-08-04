@@ -1,5 +1,6 @@
 // lib/main.dart
 import 'package:easy_localization/easy_localization.dart';
+import 'package:firebase_core/firebase_core.dart';
 // import 'package:firebase_core/firebase_core.dart';
 // import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +13,7 @@ import 'package:taqy/core/observers/bloc_observer.dart';
 import 'package:taqy/core/services/di.dart';
 import 'package:taqy/core/static/locales.dart';
 import 'package:taqy/core/translations/codegen_loader.g.dart';
+import 'package:taqy/firebase_options.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -58,7 +60,7 @@ Future<void> main() async {
   // 3. Initialize the dependency injection container AFTER Supabase
   await initLocator(sharedPreferences);
 
-  // await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Initialize FCM
   // FcmService fcmService = FcmService(preferences: sl());

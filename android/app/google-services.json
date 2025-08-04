@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "897786519651",
+    "project_id": "taqy-f28b7",
+    "storage_bucket": "taqy-f28b7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:897786519651:android:3801684dca23f4ba005856",
+        "android_client_info": {
+          "package_name": "com.tqniait.taqy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQCy9PM3rJN7lNpaREKSXLhKSp8VAeN4M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

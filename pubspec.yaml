@@ -65,6 +65,7 @@ dependencies:
   shared_preferences: ^2.5.3
   image_picker: ^1.1.2
   freezed_annotation: ^3.1.0
+  firebase_core: ^4.0.0
 
 dev_dependencies:
   flutter_test:
