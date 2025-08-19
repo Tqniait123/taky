@@ -19,7 +19,8 @@ class ForgetPasswordScreen extends StatefulWidget {
   State<ForgetPasswordScreen> createState() => _ForgetPasswordScreenState();
 }
 
-class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with TickerProviderStateMixin {
+class _ForgetPasswordScreenState extends State<ForgetPasswordScreen>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
 
@@ -32,17 +33,22 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(duration: const Duration(milliseconds: 1200), vsync: this);
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
 
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
 
     _animationController.forward();
   }
@@ -72,17 +78,26 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
                 ],
               ),
-              child: Icon(Icons.arrow_back_ios_new, color: AppColors.onSurface, size: 20),
+              child: Icon(
+                Icons.arrow_back_ios_new,
+                color: AppColors.onSurface,
+                size: 20,
+              ),
             ),
           ),
           title: Text(
             LocaleKeys.forgotPassword.tr(),
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600, color: AppColors.onSurface),
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: AppColors.onSurface,
+            ),
           ),
           centerTitle: true,
         ),
@@ -93,7 +108,10 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
 
               state.maybeWhen(
                 passwordResetSent: () {
-                  showSuccessToast(context, LocaleKeys.passwordResetEmailSent.tr());
+                  showSuccessToast(
+                    context,
+                    LocaleKeys.passwordResetEmailSent.tr(),
+                  );
                   // ScaffoldMessenger.of(context).showSnackBar(
                   //   SnackBar(
                   //     content: Text(LocaleKeys.passwordResetEmailSent.tr()),
@@ -107,7 +125,10 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
                     if (mounted && !_isDisposed) {
                       context.go(
                         Routes.checkYourEmail,
-                        extra: {'email': _emailController.text, 'isPasswordReset': true},
+                        extra: {
+                          'email': _emailController.text,
+                          'isPasswordReset': true,
+                        },
                       );
                     }
                   });
@@ -119,7 +140,9 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
                         content: Text(failure),
                         backgroundColor: AppColors.error,
                         behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     );
                   }
@@ -128,7 +151,10 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
               );
             },
             builder: (context, state) {
-              final isLoading = state.maybeWhen(loading: () => true, orElse: () => false);
+              final isLoading = state.maybeWhen(
+                loading: () => true,
+                orElse: () => false,
+              );
 
               return AnimatedBuilder(
                 animation: _animationController,
@@ -150,13 +176,20 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
                                 padding: const EdgeInsets.all(24),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
-                                    colors: [AppColors.primary.withOpacity(0.1), AppColors.secondary.withOpacity(0.1)],
+                                    colors: [
+                                      AppColors.primary.withOpacity(0.1),
+                                      AppColors.secondary.withOpacity(0.1),
+                                    ],
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                   ),
                                   shape: BoxShape.circle,
                                 ),
-                                child: Icon(Icons.lock_reset_outlined, size: 52, color: AppColors.primary),
+                                child: Icon(
+                                  Icons.lock_reset_outlined,
+                                  size: 52,
+                                  color: AppColors.primary,
+                                ),
                               ),
                             ),
                             const SizedBox(height: 32),
@@ -165,16 +198,22 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
                             Center(
                               child: ShaderMask(
                                 shaderCallback: (bounds) => LinearGradient(
-                                  colors: [AppColors.primary, AppColors.secondary],
+                                  colors: [
+                                    AppColors.primary,
+                                    AppColors.secondary,
+                                  ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                 ).createShader(bounds),
                                 child: Text(
                                   LocaleKeys.resetPassword.tr(),
-                                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineMedium
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
                                 ),
                               ),
                             ),
@@ -185,9 +224,11 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
                               child: Text(
                                 LocaleKeys.passwordResetInstructions.tr(),
                                 textAlign: TextAlign.center,
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.bodyLarge?.copyWith(color: AppColors.onSurfaceVariant, height: 1.5),
+                                style: Theme.of(context).textTheme.bodyLarge
+                                    ?.copyWith(
+                                      color: AppColors.onSurfaceVariant,
+                                      height: 1.5,
+                                    ),
                               ),
                             ),
 
@@ -221,10 +262,15 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
                                       focusColor: AppColors.primary,
                                       validator: (value) {
                                         if (value == null || value.isEmpty) {
-                                          return LocaleKeys.pleaseEnterEmail.tr();
+                                          return LocaleKeys.pleaseEnterEmail
+                                              .tr();
                                         }
-                                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                                          return LocaleKeys.pleaseEnterValidEmail.tr();
+                                        if (!RegExp(
+                                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                                        ).hasMatch(value)) {
+                                          return LocaleKeys
+                                              .pleaseEnterValidEmail
+                                              .tr();
                                         }
                                         return null;
                                       },
@@ -237,7 +283,11 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
                                       width: double.infinity,
                                       child: AnimatedButton(
                                         text: LocaleKeys.sendResetEmail.tr(),
-                                        onPressed: isLoading ? null : () => _handleForgotPassword(context),
+                                        onPressed: isLoading
+                                            ? null
+                                            : () => _handleForgotPassword(
+                                                context,
+                                              ),
                                         isLoading: isLoading,
                                         backgroundColor: AppColors.primary,
                                         width: double.infinity,
@@ -255,6 +305,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
                             Center(
                               child: Container(
                                 padding: const EdgeInsets.all(20),
+                                width: double.infinity,
                                 decoration: BoxDecoration(
                                   color: AppColors.surface,
                                   borderRadius: BorderRadius.circular(16),
@@ -271,7 +322,10 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
                                   children: [
                                     Text(
                                       LocaleKeys.rememberPassword.tr(),
-                                      style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 16),
+                                      style: TextStyle(
+                                        color: AppColors.onSurfaceVariant,
+                                        fontSize: 16,
+                                      ),
                                     ),
                                     const SizedBox(height: 12),
                                     GestureDetector(
@@ -281,21 +335,32 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
                                         }
                                       },
                                       child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 24,
+                                          vertical: 12,
+                                        ),
+                                        width: double.infinity,
                                         decoration: BoxDecoration(
                                           gradient: LinearGradient(
-                                            colors: [AppColors.primary, AppColors.secondary],
+                                            colors: [
+                                              AppColors.primary,
+                                              AppColors.secondary,
+                                            ],
                                             begin: Alignment.centerLeft,
                                             end: Alignment.centerRight,
                                           ),
-                                          borderRadius: BorderRadius.circular(20),
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
                                         ),
-                                        child: Text(
-                                          LocaleKeys.backToLogin.tr(),
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 16,
+                                        child: Center(
+                                          child: Text(
+                                            LocaleKeys.backToLogin.tr(),
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 16,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -327,7 +392,10 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
       debugPrint('Forgot password error: $e');
       if (mounted && !_isDisposed) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(LocaleKeys.passwordResetEmailFailed.tr()), backgroundColor: AppColors.error),
+          SnackBar(
+            content: Text(LocaleKeys.passwordResetEmailFailed.tr()),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     }

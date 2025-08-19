@@ -20,7 +20,8 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -35,17 +36,22 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(duration: const Duration(milliseconds: 1200), vsync: this);
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
 
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
 
     _animationController.forward();
   }
@@ -95,7 +101,10 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
               );
             },
             builder: (context, state) {
-              final isLoading = state.maybeWhen(loading: () => true, orElse: () => false);
+              final isLoading = state.maybeWhen(
+                loading: () => true,
+                orElse: () => false,
+              );
 
               return AnimatedBuilder(
                 animation: _animationController,
@@ -116,13 +125,20 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                 padding: const EdgeInsets.all(24),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
-                                    colors: [AppColors.primary.withOpacity(0.1), AppColors.secondary.withOpacity(0.1)],
+                                    colors: [
+                                      AppColors.primary.withOpacity(0.1),
+                                      AppColors.secondary.withOpacity(0.1),
+                                    ],
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                   ),
                                   shape: BoxShape.circle,
                                 ),
-                                child: Icon(Icons.business_center_outlined, size: 52, color: AppColors.primary),
+                                child: Icon(
+                                  Icons.business_center_outlined,
+                                  size: 52,
+                                  color: AppColors.primary,
+                                ),
                               ),
                             ),
                             const SizedBox(height: 32),
@@ -130,16 +146,22 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                             Center(
                               child: ShaderMask(
                                 shaderCallback: (bounds) => LinearGradient(
-                                  colors: [AppColors.primary, AppColors.secondary],
+                                  colors: [
+                                    AppColors.primary,
+                                    AppColors.secondary,
+                                  ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                 ).createShader(bounds),
                                 child: Text(
                                   LocaleKeys.welcomeBack.tr(),
-                                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineMedium
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
                                 ),
                               ),
                             ),
@@ -147,9 +169,11 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                             Center(
                               child: Text(
                                 LocaleKeys.signInToAccount.tr(),
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.bodyLarge?.copyWith(color: AppColors.onSurfaceVariant, height: 1.5),
+                                style: Theme.of(context).textTheme.bodyLarge
+                                    ?.copyWith(
+                                      color: AppColors.onSurfaceVariant,
+                                      height: 1.5,
+                                    ),
                               ),
                             ),
 
@@ -183,10 +207,15 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                       focusColor: AppColors.primary,
                                       validator: (value) {
                                         if (value == null || value.isEmpty) {
-                                          return LocaleKeys.pleaseEnterEmail.tr();
+                                          return LocaleKeys.pleaseEnterEmail
+                                              .tr();
                                         }
-                                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                                          return LocaleKeys.pleaseEnterValidEmail.tr();
+                                        if (!RegExp(
+                                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                                        ).hasMatch(value)) {
+                                          return LocaleKeys
+                                              .pleaseEnterValidEmail
+                                              .tr();
                                         }
                                         return null;
                                       },
@@ -205,15 +234,18 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                       focusColor: AppColors.primary,
                                       onTogglePassword: () {
                                         setState(() {
-                                          _isPasswordVisible = !_isPasswordVisible;
+                                          _isPasswordVisible =
+                                              !_isPasswordVisible;
                                         });
                                       },
                                       validator: (value) {
                                         if (value == null || value.isEmpty) {
-                                          return LocaleKeys.pleaseEnterPassword.tr();
+                                          return LocaleKeys.pleaseEnterPassword
+                                              .tr();
                                         }
                                         if (value.length < 6) {
-                                          return LocaleKeys.passwordMinLength.tr();
+                                          return LocaleKeys.passwordMinLength
+                                              .tr();
                                         }
                                         return null;
                                       },
@@ -226,7 +258,8 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                       width: double.infinity,
                                       alignment: Alignment.centerRight,
                                       child: GestureDetector(
-                                        onTap: () => _handleForgotPassword(context),
+                                        onTap: () =>
+                                            _handleForgotPassword(context),
                                         child: Text(
                                           LocaleKeys.forgotPassword.tr(),
                                           style: TextStyle(
@@ -245,7 +278,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                       width: double.infinity,
                                       child: AnimatedButton(
                                         text: LocaleKeys.signIn.tr(),
-                                        onPressed: isLoading ? null : () => _handleLogin(context),
+                                        onPressed: isLoading
+                                            ? null
+                                            : () => _handleLogin(context),
                                         isLoading: isLoading,
                                         backgroundColor: AppColors.primary,
                                         width: double.infinity,
@@ -262,15 +297,30 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                             // Divider
                             Row(
                               children: [
-                                Expanded(child: Container(height: 1, color: AppColors.outline)),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                                  child: Text(
-                                    LocaleKeys.or.tr(),
-                                    style: TextStyle(color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w500),
+                                Expanded(
+                                  child: Container(
+                                    height: 1,
+                                    color: AppColors.outline,
                                   ),
                                 ),
-                                Expanded(child: Container(height: 1, color: AppColors.outline)),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
+                                  child: Text(
+                                    LocaleKeys.or.tr(),
+                                    style: TextStyle(
+                                      color: AppColors.onSurfaceVariant,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Container(
+                                    height: 1,
+                                    color: AppColors.outline,
+                                  ),
+                                ),
                               ],
                             ),
 
@@ -280,6 +330,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                             Center(
                               child: Container(
                                 padding: const EdgeInsets.all(20),
+                                width: double.infinity,
                                 decoration: BoxDecoration(
                                   color: AppColors.surface,
                                   borderRadius: BorderRadius.circular(16),
@@ -296,31 +347,47 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                   children: [
                                     Text(
                                       LocaleKeys.dontHaveAccount.tr(),
-                                      style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 16),
+                                      style: TextStyle(
+                                        color: AppColors.onSurfaceVariant,
+                                        fontSize: 16,
+                                      ),
                                     ),
                                     const SizedBox(height: 12),
                                     GestureDetector(
                                       onTap: () {
                                         if (mounted && !_isDisposed) {
-                                          context.push(Routes.accountTypeSelection);
+                                          context.push(
+                                            Routes.accountTypeSelection,
+                                          );
                                         }
                                       },
                                       child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 24,
+                                          vertical: 12,
+                                        ),
+                                        width: double.infinity,
                                         decoration: BoxDecoration(
                                           gradient: LinearGradient(
-                                            colors: [AppColors.primary, AppColors.secondary],
+                                            colors: [
+                                              AppColors.primary,
+                                              AppColors.secondary,
+                                            ],
                                             begin: Alignment.centerLeft,
                                             end: Alignment.centerRight,
                                           ),
-                                          borderRadius: BorderRadius.circular(20),
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
                                         ),
-                                        child: Text(
-                                          LocaleKeys.signUp.tr(),
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 16,
+                                        child: Center(
+                                          child: Text(
+                                            LocaleKeys.signUp.tr(),
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 16,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -347,7 +414,10 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     if (!_formKey.currentState!.validate()) return;
 
     try {
-      context.read<AuthCubit>().signIn(email: _emailController.text.trim(), password: _passwordController.text);
+      context.read<AuthCubit>().signIn(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
     } catch (e) {
       debugPrint('Login error: $e');
       if (mounted && !_isDisposed) {

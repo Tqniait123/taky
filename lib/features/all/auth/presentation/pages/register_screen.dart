@@ -39,7 +39,8 @@ class ImagePickerAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    bool isLight = Theme.of(context).scaffoldBackgroundColor == AppColors.background;
+    bool isLight =
+        Theme.of(context).scaffoldBackgroundColor == AppColors.background;
 
     return SizedBox(
       height: height ?? (isLarge! ? 300 : 100),
@@ -51,16 +52,28 @@ class ImagePickerAvatar extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(50),
-                color: pickedImage == null ? (isLight ? AppColors.background : AppColors.secondary) : null,
-                image: (initialImage != null && initialImage!.isNotEmpty && pickedImage == null)
-                    ? DecorationImage(fit: BoxFit.cover, image: NetworkImage(initialImage!))
+                color: pickedImage == null
+                    ? (isLight ? AppColors.background : AppColors.secondary)
+                    : null,
+                image:
+                    (initialImage != null &&
+                        initialImage!.isNotEmpty &&
+                        pickedImage == null)
+                    ? DecorationImage(
+                        fit: BoxFit.cover,
+                        image: NetworkImage(initialImage!),
+                      )
                     : pickedImage != null && pickedImage!.path != null
-                    ? DecorationImage(fit: BoxFit.cover, image: FileImage(File(pickedImage!.path!)))
+                    ? DecorationImage(
+                        fit: BoxFit.cover,
+                        image: FileImage(File(pickedImage!.path!)),
+                      )
                     : null,
               ),
             ),
           ),
-          if (pickedImage == null && (initialImage == null || initialImage!.isEmpty))
+          if (pickedImage == null &&
+              (initialImage == null || initialImage!.isEmpty))
             Positioned.fill(
               child: GestureDetector(
                 onTap: () async {
@@ -89,7 +102,10 @@ class ImagePickerAvatar extends StatelessWidget {
                       },
                       splashRadius: 50,
                       color: Theme.of(context).colorScheme.primary,
-                      icon: Icon(Icons.add_photo_alternate_outlined, size: isLarge! ? 30 : 25.0),
+                      icon: Icon(
+                        Icons.add_photo_alternate_outlined,
+                        size: isLarge! ? 30 : 25.0,
+                      ),
                     ),
                   ),
                 ),
@@ -104,7 +120,10 @@ class ImagePickerAvatar extends StatelessWidget {
               child: Container(
                 height: 120,
                 width: 120,
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(60), color: Colors.white),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(60),
+                  color: Colors.white,
+                ),
                 padding: const EdgeInsets.all(5),
                 child: Material(
                   clipBehavior: Clip.hardEdge,
@@ -113,14 +132,19 @@ class ImagePickerAvatar extends StatelessWidget {
                   child: Center(
                     child: IconButton(
                       onPressed: () async {
-                        final result = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
+                        final result = await FilePicker.platform.pickFiles(
+                          type: FileType.image,
+                          withData: true,
+                        );
                         if (result != null) {
                           onPick(result.files.first);
                         }
                       },
                       iconSize: 35,
                       splashRadius: 35,
-                      color: isLight ? AppColors.background : AppColors.onSurface,
+                      color: isLight
+                          ? AppColors.background
+                          : AppColors.onSurface,
                       icon: const Icon(Icons.edit),
                     ),
                   ),
@@ -142,7 +166,8 @@ class RegisterScreen extends StatefulWidget {
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStateMixin {
+class _RegisterScreenState extends State<RegisterScreen>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -170,15 +195,20 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(duration: const Duration(milliseconds: 1200), vsync: this);
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
 
     _animationController.forward();
   }
@@ -208,7 +238,10 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
               loading: () {},
               authenticated: (user) {
                 // Show success message
-                showSuccessToast(context, LocaleKeys.accountCreatedSuccessfully.tr());
+                showSuccessToast(
+                  context,
+                  LocaleKeys.accountCreatedSuccessfully.tr(),
+                );
 
                 // Navigate based on account type
                 context.go(Routes.login);
@@ -221,7 +254,10 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
               checkingOrganizationCode: () {},
               organizationCodeChecked: (exists) {
                 if (!exists) {
-                  showErrorToast(context, LocaleKeys.organizationCodeNotFound.tr());
+                  showErrorToast(
+                    context,
+                    LocaleKeys.organizationCodeNotFound.tr(),
+                  );
                 }
               },
             );
@@ -232,7 +268,11 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
               return Opacity(
                 opacity: _fadeAnimation.value,
                 child: Transform.translate(
-                  offset: Offset(0, _slideAnimation.value.dy * MediaQuery.of(context).size.height),
+                  offset: Offset(
+                    0,
+                    _slideAnimation.value.dy *
+                        MediaQuery.of(context).size.height,
+                  ),
                   child: child,
                 ),
               );
@@ -273,9 +313,19 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
             decoration: BoxDecoration(
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(12),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 2))],
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            child: Icon(Icons.arrow_back_ios, color: AppColors.onSurfaceVariant, size: 20),
+            child: Icon(
+              Icons.arrow_back_ios,
+              color: AppColors.onSurfaceVariant,
+              size: 20,
+            ),
           ),
         ),
         const SizedBox(width: 16),
@@ -291,15 +341,18 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
                 ).createShader(bounds),
                 child: Text(
                   LocaleKeys.createAccount.tr(),
-                  style: Theme.of(
-                    context,
-                  ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: Colors.white),
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 _getAccountTypeTitle(),
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.onSurfaceVariant),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -314,7 +367,13 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, 8))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Form(
         key: _formKey,
@@ -360,7 +419,9 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
                 if (value == null || value.isEmpty) {
                   return LocaleKeys.pleaseEnterEmail.tr();
                 }
-                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                if (!RegExp(
+                  r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                ).hasMatch(value)) {
                   return LocaleKeys.pleaseEnterValidEmail.tr();
                 }
                 return null;
@@ -471,9 +532,10 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
       children: [
         Text(
           label,
-          style: Theme.of(
-            context,
-          ).textTheme.labelMedium?.copyWith(color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600),
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            color: AppColors.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         const SizedBox(height: 12),
         ImagePickerAvatar(
@@ -591,21 +653,40 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(LocaleKeys.alreadyHaveAccount.tr(), style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 16)),
+            Text(
+              LocaleKeys.alreadyHaveAccount.tr(),
+              style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 16),
+            ),
             const SizedBox(width: 8),
             GestureDetector(
               onTap: () => context.go(Routes.login),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(color: _getAccountTypeColor(), borderRadius: BorderRadius.circular(20)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: _getAccountTypeColor(),
+                  borderRadius: BorderRadius.circular(20),
+                ),
                 child: Text(
                   LocaleKeys.signIn.tr(),
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),
@@ -686,13 +767,23 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
       password: _passwordController.text,
       name: _nameController.text.trim(),
       role: _getAccountTypeRole(),
-      phone: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
+      phone: _phoneController.text.trim().isNotEmpty
+          ? _phoneController.text.trim()
+          : null,
       profileImage: _platformFileToXFile(_profileImage),
-      organizationName: _orgNameController.text.trim().isNotEmpty ? _orgNameController.text.trim() : null,
-      organizationCode: _orgCodeController.text.trim().isNotEmpty ? _orgCodeController.text.trim() : null,
+      organizationName: _orgNameController.text.trim().isNotEmpty
+          ? _orgNameController.text.trim()
+          : null,
+      organizationCode: _orgCodeController.text.trim().isNotEmpty
+          ? _orgCodeController.text.trim()
+          : null,
       organizationLogo: _platformFileToXFile(_organizationLogo),
-      primaryColor: widget.accountType == 'admin' ? _colorToHex(_selectedPrimaryColor) : null,
-      secondaryColor: widget.accountType == 'admin' ? _colorToHex(_selectedSecondaryColor) : null,
+      primaryColor: widget.accountType == 'admin'
+          ? _colorToHex(_selectedPrimaryColor)
+          : null,
+      secondaryColor: widget.accountType == 'admin'
+          ? _colorToHex(_selectedSecondaryColor)
+          : null,
     );
   }
 }

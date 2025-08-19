@@ -22,7 +22,8 @@ class AccountTypeCard extends StatefulWidget {
   State<AccountTypeCard> createState() => _AccountTypeCardState();
 }
 
-class _AccountTypeCardState extends State<AccountTypeCard> with SingleTickerProviderStateMixin {
+class _AccountTypeCardState extends State<AccountTypeCard>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   late Animation<double> _elevationAnimation;
@@ -30,7 +31,10 @@ class _AccountTypeCardState extends State<AccountTypeCard> with SingleTickerProv
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(duration: const Duration(milliseconds: 200), vsync: this);
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
     _scaleAnimation = Tween<double>(
       begin: 1.0,
       end: 0.97,
@@ -71,7 +75,10 @@ class _AccountTypeCardState extends State<AccountTypeCard> with SingleTickerProv
                     offset: Offset(0, _elevationAnimation.value / 2),
                   ),
                 ],
-                border: Border.all(color: widget.color.withOpacity(0.1), width: 1),
+                border: Border.all(
+                  color: widget.color.withOpacity(0.1),
+                  width: 1,
+                ),
               ),
               child: Row(
                 children: [
@@ -79,7 +86,10 @@ class _AccountTypeCardState extends State<AccountTypeCard> with SingleTickerProv
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [widget.color.withOpacity(0.1), widget.color.withOpacity(0.05)],
+                        colors: [
+                          widget.color.withOpacity(0.1),
+                          widget.color.withOpacity(0.05),
+                        ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -94,18 +104,21 @@ class _AccountTypeCardState extends State<AccountTypeCard> with SingleTickerProv
                       children: [
                         Text(
                           widget.title,
-                          style: Theme.of(
-                            context,
-                          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, color: AppColors.onSurface),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.onSurface,
+                              ),
                         ),
                         const SizedBox(height: 6),
                         Text(
                           widget.description,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.onSurfaceVariant,
-                            fontSize: 14,
-                            height: 1.4,
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: AppColors.onSurfaceVariant,
+                                fontSize: 14,
+                                height: 1.4,
+                              ),
                         ),
                       ],
                     ),
@@ -116,7 +129,11 @@ class _AccountTypeCardState extends State<AccountTypeCard> with SingleTickerProv
                       color: widget.color.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(Icons.arrow_forward_ios, color: widget.color, size: 16),
+                    child: Icon(
+                      Icons.arrow_forward_ios,
+                      color: widget.color,
+                      size: 16,
+                    ),
                   ),
                 ],
               ),

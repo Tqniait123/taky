@@ -1,15 +1,16 @@
 {
-    "cSpell.words": [
-      "Almarai",
-      "Codegen",
-      "geocode",
-      "Geolocator",
-      "governorates",
-      "Placemark",
-      "placemarks",
-      "primaryshade",
-      "saudian",
-      "taqy",
-      "Tqnia"
-    ]
+  "cSpell.words": [
+    "Almarai",
+    "Codegen",
+    "geocode",
+    "Geolocator",
+    "governorates",
+    "Placemark",
+    "placemarks",
+    "primaryshade",
+    "saudian",
+    "taqy",
+    "Tqnia"
+  ],
+  "dart.flutterSdkPath": ".fvm/versions/3.32.1"
 }
