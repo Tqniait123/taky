@@ -26,7 +26,9 @@ class TaQy extends StatelessWidget {
       builder: (_, __) {
         return MultiBlocProvider(
           providers: [
-            BlocProvider<AuthCubit>(create: (context) => di.sl<AuthCubit>()..initializeAuthStream()),
+            BlocProvider<AuthCubit>(
+              create: (context) => di.sl<AuthCubit>()..initializeAuthStream(),
+            ),
             BlocProvider(create: (BuildContext context) => UserCubit()),
             BlocProvider(create: (context) => LanguagesCubit(sl())),
           ],
@@ -49,13 +51,13 @@ class TaQy extends StatelessWidget {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              FloatingActionButton(
-                                child: const Icon(Icons.refresh),
-                                onPressed: () async {
-                                  await context.setLocale(const Locale('en')); // Reload translations
-                                  await context.setLocale(const Locale('ar')); // Reload translations
-                                },
-                              ),
+                              // FloatingActionButton(
+                              //   child: const Icon(Icons.refresh),
+                              //   onPressed: () async {
+                              //     await context.setLocale(const Locale('en')); // Reload translations
+                              //     await context.setLocale(const Locale('ar')); // Reload translations
+                              //   },
+                              // ),
                             ],
                           ),
                         ),

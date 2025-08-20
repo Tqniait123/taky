@@ -1,56 +1,3 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutter_bloc/flutter_bloc.dart';
-// import 'package:go_router/go_router.dart';
-// import 'package:taqy/config/routes/routes.dart';
-// import 'package:taqy/core/theme/colors.dart';
-// import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
-// import 'package:taqy/features/all/auth/presentation/widgets/animated_button.dart';
-
-// class AdminLayout extends StatelessWidget {
-//   const AdminLayout({super.key});
-
-// void _handleLogout(BuildContext context) async {
-//   await context.read<AuthCubit>().signOut();
-//   if (context.mounted) {
-//     context.go(Routes.login);
-//   }
-// }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(title: const Text('Admin Layout')),
-//       body: Center(
-//         child: Column(
-//           mainAxisAlignment: MainAxisAlignment.center,
-//           children: [
-//             const Text('Admin Layout Page', style: TextStyle(fontSize: 24)),
-//             const SizedBox(height: 20),
-//             BlocListener<AuthCubit, AuthState>(
-//               listener: (context, state) {
-//                 state.maybeWhen(
-//                   unauthenticated: () => context.go(Routes.login),
-//                   error: (failure) {
-//                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(failure)));
-//                   },
-//                   orElse: () {},
-//                 );
-//               },
-//               child: AnimatedButton(
-//                 text: 'Logout',
-//                 onPressed: () => _handleLogout(context),
-//                 backgroundColor: AppColors.primary,
-//                 width: 200,
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
-
-// lib/features/admin/presentation/pages/admin_layout.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -343,6 +290,7 @@ class _AdminLayoutState extends State<AdminLayout>
   void _handleLogout(BuildContext context) async {
     await context.read<AuthCubit>().signOut();
     if (context.mounted) {
+      Navigator.pop(context);
       context.go(Routes.login);
     }
   }
@@ -1957,7 +1905,6 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet> {
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
               widget.onLogout();
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
