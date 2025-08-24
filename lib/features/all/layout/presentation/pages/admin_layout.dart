@@ -11,6 +11,68 @@ import 'package:taqy/core/utils/dialogs/error_toast.dart';
 import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
 import 'package:taqy/features/all/auth/presentation/widgets/animated_button.dart';
 
+// User Model for Employees and Office Boys
+class AppUser {
+  final String id;
+  final String name;
+  final String email;
+  final String phone;
+  final UserRole role;
+  final String organizationId;
+  final DateTime createdAt;
+  final bool isActive;
+  final String? profilePictureUrl;
+  final String? department;
+
+  AppUser({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.phone,
+    required this.role,
+    required this.organizationId,
+    required this.createdAt,
+    this.isActive = true,
+    this.profilePictureUrl,
+    this.department,
+  });
+
+  factory AppUser.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return AppUser(
+      id: doc.id,
+      name: data['name'] ?? '',
+      email: data['email'] ?? '',
+      phone: data['phone'] ?? '',
+      role: UserRole.values.firstWhere(
+        (e) => e.toString().split('.').last == data['role'],
+        orElse: () => UserRole.employee,
+      ),
+      organizationId: data['organizationId'] ?? '',
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      isActive: data['isActive'] ?? true,
+      profilePictureUrl: data['profilePictureUrl'],
+      department: data['department'],
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'name': name,
+      'email': email,
+      'phone': phone,
+      'role': role.toString().split('.').last,
+      'organizationId': organizationId,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'isActive': isActive,
+      'profilePictureUrl': profilePictureUrl,
+      'department': department,
+    };
+  }
+}
+
+enum UserRole { employee, officeBoy, admin }
+
 // Enhanced Order Model
 class Order {
   final String id;
@@ -93,7 +155,6 @@ class Order {
 }
 
 // Organization Model
-// Organization Model - Fixed
 class Organization {
   final String id;
   final String name;
@@ -144,51 +205,41 @@ class Organization {
     };
   }
 
-  // Fixed color parsing methods
   Color get primaryColorValue {
     try {
-      // Handle hex color strings (with or without #)
       String colorString = primaryColor;
       if (colorString.startsWith('#')) {
         colorString = colorString.substring(1);
       }
 
-      // If it's a hex string, parse as hex
       if (colorString.length == 6 || colorString.length == 8) {
         return Color(int.parse('FF$colorString', radix: 16));
       }
 
-      // If it's already a decimal string, parse normally
       return Color(int.parse(colorString));
     } catch (e) {
-      // Fallback to default primary color if parsing fails
       return AppColors.primary;
     }
   }
 
   Color get secondaryColorValue {
     try {
-      // Handle hex color strings (with or without #)
       String colorString = secondaryColor;
       if (colorString.startsWith('#')) {
         colorString = colorString.substring(1);
       }
 
-      // If it's a hex string, parse as hex
       if (colorString.length == 6 || colorString.length == 8) {
         return Color(int.parse('FF$colorString', radix: 16));
       }
 
-      // If it's already a decimal string, parse normally
       return Color(int.parse(colorString));
     } catch (e) {
-      // Fallback to default secondary color if parsing fails
       return AppColors.secondary;
     }
   }
 }
 
-// Order Status Enum
 enum OrderStatus { pending, inProgress, completed, cancelled }
 
 enum OrderType { internal, external }
@@ -207,6 +258,8 @@ class _AdminLayoutState extends State<AdminLayout>
 
   Organization? organization;
   List<Order> orders = [];
+  List<AppUser> employees = [];
+  List<AppUser> officeBoys = [];
   bool isLoading = true;
   String? errorMessage;
   OrderStatus? selectedFilter;
@@ -214,7 +267,7 @@ class _AdminLayoutState extends State<AdminLayout>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 5, vsync: this); // Updated to 5 tabs
     _loadData();
   }
 
@@ -256,8 +309,9 @@ class _AdminLayoutState extends State<AdminLayout>
         });
       }
 
-      // Load orders
+      // Load orders, employees, and office boys
       _loadOrders(organizationId);
+      _loadUsers(organizationId);
     } catch (e) {
       setState(() {
         errorMessage = e.toString();
@@ -287,6 +341,32 @@ class _AdminLayoutState extends State<AdminLayout>
         );
   }
 
+  void _loadUsers(String organizationId) {
+    _firebaseService
+        .streamOrganizationDocuments('users', organizationId)
+        .listen(
+          (snapshot) {
+            final users = snapshot.docs
+                .map((doc) => AppUser.fromFirestore(doc))
+                .toList();
+
+            setState(() {
+              employees = users
+                  .where((user) => user.role == UserRole.employee)
+                  .toList();
+              officeBoys = users
+                  .where((user) => user.role == UserRole.officeBoy)
+                  .toList();
+            });
+          },
+          onError: (error) {
+            setState(() {
+              errorMessage = error.toString();
+            });
+          },
+        );
+  }
+
   void _handleLogout(BuildContext context) async {
     await context.read<AuthCubit>().signOut();
     if (context.mounted) {
@@ -306,7 +386,6 @@ class _AdminLayoutState extends State<AdminLayout>
         organization: organization!,
         onSettingsUpdated: (updatedOrg) async {
           try {
-            // Update organization in Firebase
             await _firebaseService.updateDocument(
               'organizations',
               organization!.id,
@@ -317,20 +396,8 @@ class _AdminLayoutState extends State<AdminLayout>
               organization = updatedOrg;
             });
 
-            // ScaffoldMessenger.of(context).showSnackBar(
-            //   SnackBar(
-            //     content: Text('Settings updated successfully!'),
-            //     backgroundColor: AppColors.success,
-            //   ),
-            // );
             showSuccessToast(context, 'Settings updated successfully!');
           } catch (e) {
-            // ScaffoldMessenger.of(context).showSnackBar(
-            //   SnackBar(
-            //     content: Text('Failed to update settings: $e'),
-            //     backgroundColor: AppColors.error,
-            //   ),
-            // );
             showErrorToast(context, 'Failed to update settings: $e');
           }
         },
@@ -458,9 +525,12 @@ class _AdminLayoutState extends State<AdminLayout>
           indicatorColor: organization!.primaryColorValue,
           labelColor: organization!.primaryColorValue,
           unselectedLabelColor: AppColors.onSurfaceVariant,
+          isScrollable: true,
           tabs: [
             Tab(text: 'Overview'),
             Tab(text: 'Orders'),
+            Tab(text: 'Employees'),
+            Tab(text: 'Office Boys'),
             Tab(text: 'Analytics'),
           ],
         ),
@@ -470,7 +540,367 @@ class _AdminLayoutState extends State<AdminLayout>
         children: [
           _buildOverviewTab(),
           _buildOrdersTab(),
+          _buildEmployeesTab(),
+          _buildOfficeBoysTab(),
           _buildAnalyticsTab(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmployeesTab() {
+    return Column(
+      children: [
+        // Header Section
+        Container(
+          padding: EdgeInsets.all(16),
+          color: Colors.white,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Employees',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                  Text(
+                    '${employees.length} total employees',
+                    style: TextStyle(
+                      color: AppColors.onSurfaceVariant,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: organization!.primaryColorValue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${employees.where((e) => e.isActive).length} Active',
+                  style: TextStyle(
+                    color: organization!.primaryColorValue,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Employees List
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: _loadData,
+            child: employees.isEmpty
+                ? _buildEmptyState('No employees found', Icons.people)
+                : ListView.builder(
+                    padding: EdgeInsets.all(16),
+                    itemCount: employees.length,
+                    itemBuilder: (context, index) {
+                      return _buildUserCard(employees[index]);
+                    },
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOfficeBoysTab() {
+    return Column(
+      children: [
+        // Header Section
+        Container(
+          padding: EdgeInsets.all(16),
+          color: Colors.white,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Office Boys',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                  Text(
+                    '${officeBoys.length} total office boys',
+                    style: TextStyle(
+                      color: AppColors.onSurfaceVariant,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: organization!.secondaryColorValue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${officeBoys.where((o) => o.isActive).length} Active',
+                  style: TextStyle(
+                    color: organization!.secondaryColorValue,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Office Boys List
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: _loadData,
+            child: officeBoys.isEmpty
+                ? _buildEmptyState(
+                    'No office boys found',
+                    Icons.delivery_dining,
+                  )
+                : ListView.builder(
+                    padding: EdgeInsets.all(16),
+                    itemCount: officeBoys.length,
+                    itemBuilder: (context, index) {
+                      return _buildUserCard(officeBoys[index]);
+                    },
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUserCard(AppUser user) {
+    final userOrders = orders
+        .where(
+          (order) =>
+              order.employeeId == user.id || order.officeBoyId == user.id,
+        )
+        .length;
+
+    final completedOrders = orders
+        .where(
+          (order) =>
+              (order.employeeId == user.id || order.officeBoyId == user.id) &&
+              order.status == OrderStatus.completed,
+        )
+        .length;
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+        border: !user.isActive
+            ? Border.all(color: AppColors.error.withOpacity(0.3))
+            : null,
+      ),
+      child: Row(
+        children: [
+          // Profile Picture
+          Container(
+            height: 60,
+            width: 60,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(30),
+              gradient: LinearGradient(
+                colors: user.role == UserRole.employee
+                    ? [
+                        organization!.primaryColorValue,
+                        organization!.secondaryColorValue,
+                      ]
+                    : [
+                        organization!.secondaryColorValue,
+                        organization!.primaryColorValue,
+                      ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: user.profilePictureUrl != null
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(30),
+                    child: Image.network(
+                      user.profilePictureUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Icon(
+                        user.role == UserRole.employee
+                            ? Icons.person
+                            : Icons.delivery_dining,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                    ),
+                  )
+                : Icon(
+                    user.role == UserRole.employee
+                        ? Icons.person
+                        : Icons.delivery_dining,
+                    color: Colors.white,
+                    size: 30,
+                  ),
+          ),
+          SizedBox(width: 16),
+
+          // User Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        user.name,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: !user.isActive
+                              ? AppColors.onSurfaceVariant
+                              : AppColors.onSurface,
+                        ),
+                      ),
+                    ),
+                    if (!user.isActive)
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          'Inactive',
+                          style: TextStyle(
+                            color: AppColors.error,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.email,
+                      size: 14,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                    SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        user.email,
+                        style: TextStyle(
+                          color: AppColors.onSurfaceVariant,
+                          fontSize: 12,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 2),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.phone,
+                      size: 14,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      user.phone,
+                      style: TextStyle(
+                        color: AppColors.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+                if (user.department != null) ...[
+                  SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.business_center,
+                        size: 14,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        user.department!,
+                        style: TextStyle(
+                          color: AppColors.onSurfaceVariant,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          // Stats
+          Column(
+            children: [
+              Text(
+                '$userOrders',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: user.role == UserRole.employee
+                      ? organization!.primaryColorValue
+                      : organization!.secondaryColorValue,
+                ),
+              ),
+              Text(
+                user.role == UserRole.employee ? 'Orders' : 'Deliveries',
+                style: TextStyle(
+                  color: AppColors.onSurfaceVariant,
+                  fontSize: 12,
+                ),
+              ),
+              SizedBox(height: 4),
+              Text(
+                '$completedOrders completed',
+                style: TextStyle(
+                  color: AppColors.success,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -540,6 +970,30 @@ class _AdminLayoutState extends State<AdminLayout>
                   Colors.blue,
                 ),
                 _buildStatCard(
+                  'Employees',
+                  employees.length.toString(),
+                  Icons.people,
+                  organization!.primaryColorValue,
+                ),
+                _buildStatCard(
+                  'Office Boys',
+                  officeBoys.length.toString(),
+                  Icons.delivery_dining,
+                  organization!.secondaryColorValue,
+                ),
+                _buildStatCard(
+                  'Internal',
+                  internalOrders.toString(),
+                  Icons.pending_actions,
+                  Colors.orange,
+                ),
+                _buildStatCard(
+                  'External',
+                  externalOrders.toString(),
+                  Icons.check_circle,
+                  AppColors.success,
+                ),
+                _buildStatCard(
                   'Pending',
                   pendingOrders.toString(),
                   Icons.pending_actions,
@@ -550,18 +1004,6 @@ class _AdminLayoutState extends State<AdminLayout>
                   completedOrders.toString(),
                   Icons.check_circle,
                   AppColors.success,
-                ),
-                _buildStatCard(
-                  'Internal Orders',
-                  internalOrders.toString(),
-                  Icons.home,
-                  organization!.secondaryColorValue,
-                ),
-                _buildStatCard(
-                  'External Orders',
-                  externalOrders.toString(),
-                  Icons.store,
-                  Colors.purple,
                 ),
               ],
             ),
@@ -725,6 +1167,20 @@ class _AdminLayoutState extends State<AdminLayout>
 
             SizedBox(height: 24),
 
+            // Team Performance
+            Text(
+              'Team Performance',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.onSurface,
+              ),
+            ),
+            SizedBox(height: 16),
+            _buildTeamPerformance(),
+
+            SizedBox(height: 24),
+
             // Order Status Distribution
             Text(
               'Order Status Distribution',
@@ -738,6 +1194,125 @@ class _AdminLayoutState extends State<AdminLayout>
             _buildStatusDistribution(),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildTeamPerformance() {
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  children: [
+                    Text(
+                      '${employees.where((e) => e.isActive).length}',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: organization!.primaryColorValue,
+                      ),
+                    ),
+                    Text(
+                      'Active Employees',
+                      style: TextStyle(
+                        color: AppColors.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(width: 1, height: 40, color: AppColors.outline),
+              Expanded(
+                child: Column(
+                  children: [
+                    Text(
+                      '${officeBoys.where((o) => o.isActive).length}',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: organization!.secondaryColorValue,
+                      ),
+                    ),
+                    Text(
+                      'Active Office Boys',
+                      style: TextStyle(
+                        color: AppColors.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16),
+          Divider(color: AppColors.outline),
+          SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  children: [
+                    Text(
+                      '${(employees.isEmpty ? 0 : orders.length / employees.length).toStringAsFixed(1)}',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.onSurface,
+                      ),
+                    ),
+                    Text(
+                      'Avg Orders/Employee',
+                      style: TextStyle(
+                        color: AppColors.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  children: [
+                    Text(
+                      '${(officeBoys.isEmpty ? 0 : orders.length / officeBoys.length).toStringAsFixed(1)}',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.onSurface,
+                      ),
+                    ),
+                    Text(
+                      'Avg Deliveries/Office Boy',
+                      style: TextStyle(
+                        color: AppColors.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -1784,7 +2359,6 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet> {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.image,
         withData: true,
-        // allowedExtensions: ['jpg', 'jpeg', 'png'],
       );
 
       if (result != null && result.files.isNotEmpty) {
