@@ -5,14 +5,10 @@ import 'package:taqy/features/admin/data/models/order.dart';
 import '../../data/models/organization.dart';
 
 class OrderCard extends StatelessWidget {
-  final Order order;
-  final Organization organization;
+  final AdminOrder order;
+  final AdminOrganization organization;
 
-  const OrderCard({
-    super.key,
-    required this.order,
-    required this.organization,
-  });
+  const OrderCard({super.key, required this.order, required this.organization});
 
   @override
   Widget build(BuildContext context) {

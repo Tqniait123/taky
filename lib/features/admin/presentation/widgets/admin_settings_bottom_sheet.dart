@@ -1,14 +1,15 @@
 import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:taqy/core/services/firebase_service.dart';
 import 'package:taqy/core/theme/colors.dart';
-import 'package:taqy/features/all/auth/presentation/widgets/animated_button.dart';
 import 'package:taqy/features/admin/data/models/organization.dart';
+import 'package:taqy/features/all/auth/presentation/widgets/animated_button.dart';
 
 class AdminSettingsBottomSheet extends StatefulWidget {
-  final Organization organization;
-  final Function(Organization) onSettingsUpdated;
+  final AdminOrganization organization;
+  final Function(AdminOrganization) onSettingsUpdated;
   final VoidCallback onLogout;
 
   const AdminSettingsBottomSheet({
@@ -512,7 +513,7 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet> {
         );
       }
 
-      final updatedOrganization = Organization(
+      final updatedOrganization = AdminOrganization(
         id: widget.organization.id,
         name: _nameController.text.trim(),
         code: _codeController.text.trim().toUpperCase(),

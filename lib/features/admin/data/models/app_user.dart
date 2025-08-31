@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum UserRole { employee, officeBoy, admin }
 
-class AppUser {
+class AdminAppUser {
   final String id;
   final String name;
   final String email;
@@ -14,7 +14,7 @@ class AppUser {
   final String? profilePictureUrl;
   final String? department;
 
-  AppUser({
+  AdminAppUser({
     required this.id,
     required this.name,
     required this.email,
@@ -27,9 +27,9 @@ class AppUser {
     this.department,
   });
 
-  factory AppUser.fromFirestore(DocumentSnapshot doc) {
+  factory AdminAppUser.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
-    return AppUser(
+    return AdminAppUser(
       id: doc.id,
       name: data['name'] ?? '',
       email: data['email'] ?? '',

@@ -1,13 +1,12 @@
 import 'dart:io';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:taqy/config/routes/routes.dart';
-
 import 'package:taqy/core/services/firebase_service.dart';
-
 import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
 
 // User Model (based on your provided structure)

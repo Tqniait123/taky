@@ -6,9 +6,9 @@ import 'package:taqy/features/admin/data/models/order.dart';
 import '../../data/models/organization.dart';
 
 class UserCard extends StatelessWidget {
-  final AppUser user;
-  final List<Order> orders;
-  final Organization organization;
+  final AdminAppUser user;
+  final List<AdminOrder> orders;
+  final AdminOrganization organization;
 
   const UserCard({
     super.key,
@@ -171,7 +171,7 @@ class UserCard extends StatelessWidget {
                       style: TextStyle(
                         color: AppColors.onSurfaceVariant,
                         fontSize: 12,
-                        ),
+                      ),
                     ),
                   ],
                 ),

@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:taqy/core/theme/colors.dart';
 
-class Organization {
+class AdminOrganization {
   final String id;
   final String name;
   final String code;
@@ -13,7 +13,7 @@ class Organization {
   final DateTime updatedAt;
   final bool isActive;
 
-  Organization({
+  AdminOrganization({
     required this.id,
     required this.name,
     required this.code,
@@ -25,9 +25,9 @@ class Organization {
     this.isActive = true,
   });
 
-  factory Organization.fromFirestore(DocumentSnapshot doc) {
+  factory AdminOrganization.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
-    return Organization(
+    return AdminOrganization(
       id: doc.id,
       name: data['name'] ?? '',
       code: data['code'] ?? '',

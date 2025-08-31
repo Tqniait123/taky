@@ -1,9 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum OrderStatus { pending, inProgress, completed, cancelled }
+
 enum OrderType { internal, external }
 
-class Order {
+class AdminOrder {
   final String id;
   final String employeeId;
   final String employeeName;
@@ -19,7 +20,7 @@ class Order {
   final String organizationId;
   final String? notes;
 
-  Order({
+  AdminOrder({
     required this.id,
     required this.employeeId,
     required this.employeeName,
@@ -36,9 +37,9 @@ class Order {
     this.notes,
   });
 
-  factory Order.fromFirestore(DocumentSnapshot doc) {
+  factory AdminOrder.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
-    return Order(
+    return AdminOrder(
       id: doc.id,
       employeeId: data['employeeId'] ?? '',
       employeeName: data['employeeName'] ?? '',
