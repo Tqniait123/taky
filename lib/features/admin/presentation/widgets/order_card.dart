@@ -58,6 +58,7 @@ class OrderCard extends StatelessWidget {
                 ),
                 Text(
                   _formatTime(order.createdAt),
+                  
                   style: TextStyle(
                     color: AppColors.onSurfaceVariant,
                     fontSize: 12,

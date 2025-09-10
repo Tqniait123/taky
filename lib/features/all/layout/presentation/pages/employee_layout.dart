@@ -674,6 +674,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout> {
     switch (status) {
       case OrderStatus.pending:
         color = Colors.orange;
+        
         text = 'Pending';
         break;
       case OrderStatus.inProgress:

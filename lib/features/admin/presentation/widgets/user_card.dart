@@ -205,6 +205,7 @@ class UserCard extends StatelessWidget {
                 '$userOrders',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
+                  
                   fontSize: 18,
                   color: user.role == UserRole.employee
                       ? organization.primaryColorValue
