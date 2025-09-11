@@ -1,8 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'package:taqy/config/routes/routes.dart';
 import 'package:taqy/core/services/firebase_service.dart';
 import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
@@ -23,7 +22,6 @@ class OfficeBoyLayout extends StatefulWidget {
 class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
     with TickerProviderStateMixin {
   final FirebaseService _firebaseService = FirebaseService();
-  
   late TabController _tabController;
 
   OfficeUserModel? currentUser;
@@ -155,7 +153,50 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
     }
   }
 
-  // Replace your existing _updateOrderStatus method with this enhanced version:
+  Future<void> _updateItemStatus(
+    OfficeOrder order,
+    int itemIndex,
+    ItemStatus newStatus,
+    String? notes,
+  ) async {
+    try {
+      final updatedItems = List<OrderItem>.from(order.items);
+      updatedItems[itemIndex] = updatedItems[itemIndex].copyWith(
+        status: newStatus,
+        notes: notes?.trim().isNotEmpty == true ? notes!.trim() : null,
+      );
+
+      final updateData = <String, dynamic>{
+        'items': updatedItems.map((item) => item.toMap()).toList(),
+        'updatedAt': Timestamp.fromDate(DateTime.now()),
+      };
+
+      // Check if all items are processed
+      final bool allItemsProcessed = updatedItems.every(
+        (item) => item.status != ItemStatus.pending,
+      );
+
+      final bool hasUnavailableItems = updatedItems.any(
+        (item) => item.status == ItemStatus.notAvailable,
+      );
+
+      // Update order status based on item statuses
+      if (allItemsProcessed &&
+          hasUnavailableItems &&
+          order.status == OrderStatus.inProgress) {
+        updateData['status'] = OrderStatus.needsResponse
+            .toString()
+            .split('.')
+            .last;
+      }
+
+      await _firebaseService.updateDocument('orders', order.id, updateData);
+      _showSuccessToast('Item status updated successfully');
+    } catch (e) {
+      _showErrorToast('Failed to update item status: $e');
+    }
+  }
+
   Future<void> _updateOrderWithNotes(
     OfficeOrder order,
     OrderStatus status, {
@@ -171,7 +212,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
       if (status == OrderStatus.completed) {
         updateData['completedAt'] = Timestamp.fromDate(DateTime.now());
         if (finalPrice != null && order.type == OrderType.external) {
-          updateData['price'] = finalPrice;
+          updateData['final_price'] = finalPrice;
         }
       }
 
@@ -186,7 +227,126 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
     }
   }
 
-  // Add these new dialog methods:
+  void _showItemStatusDialog(OfficeOrder order, int itemIndex) {
+    final item = order.items[itemIndex];
+    final TextEditingController notesController = TextEditingController(
+      text: item.notes ?? '',
+    );
+    ItemStatus selectedStatus = item.status;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text('Update Item Status'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Item: ${item.name}',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 16),
+              Text('Status:'),
+              SizedBox(height: 8),
+              ...ItemStatus.values.map(
+                (status) => RadioListTile<ItemStatus>(
+                  title: Row(
+                    children: [
+                      Icon(
+                        _getItemStatusIcon(status),
+                        color: _getItemStatusColor(status),
+                        size: 20,
+                      ),
+                      SizedBox(width: 8),
+                      Text(_getItemStatusText(status)),
+                    ],
+                  ),
+                  value: status,
+                  groupValue: selectedStatus,
+                  onChanged: (value) {
+                    setDialogState(() {
+                      selectedStatus = value!;
+                    });
+                  },
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              SizedBox(height: 16),
+              TextField(
+                controller: notesController,
+                decoration: InputDecoration(
+                  labelText: 'Notes (optional)',
+                  hintText: 'Add notes about availability...',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                maxLines: 3,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                await _updateItemStatus(
+                  order,
+                  itemIndex,
+                  selectedStatus,
+                  notesController.text.trim(),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _getItemStatusColor(selectedStatus),
+              ),
+              child: Text('Update', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _getItemStatusColor(ItemStatus status) {
+    switch (status) {
+      case ItemStatus.pending:
+        return Colors.orange;
+      case ItemStatus.available:
+        return Colors.green;
+      case ItemStatus.notAvailable:
+        return Colors.red;
+    }
+  }
+
+  IconData _getItemStatusIcon(ItemStatus status) {
+    switch (status) {
+      case ItemStatus.pending:
+        return Icons.hourglass_empty;
+      case ItemStatus.available:
+        return Icons.check_circle;
+      case ItemStatus.notAvailable:
+        return Icons.cancel;
+    }
+  }
+
+  String _getItemStatusText(ItemStatus status) {
+    switch (status) {
+      case ItemStatus.pending:
+        return 'Checking...';
+      case ItemStatus.available:
+        return 'Available';
+      case ItemStatus.notAvailable:
+        return 'Not Available';
+    }
+  }
+
   void _showStatusChangeDialog(OfficeOrder order, OrderStatus newStatus) {
     final TextEditingController notesController = TextEditingController();
 
@@ -458,6 +618,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         organization: organization!,
         isOfficeBoy: true,
         onStatusUpdate: _updateOrderWithNotes,
+        // onItemStatusUpdate: _updateItemStatus,
       ),
     );
   }
@@ -504,6 +665,8 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         return Colors.green;
       case OrderStatus.cancelled:
         return Colors.red;
+      case OrderStatus.needsResponse:
+        return Colors.purple;
     }
   }
 
@@ -724,6 +887,25 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
   }
 
   Widget _buildMyOrdersTab() {
+    // Filter today's orders from my orders
+    final todayMyOrders = myOrders
+        .where(
+          (o) =>
+              o.createdAt.day == DateTime.now().day &&
+              o.createdAt.month == DateTime.now().month &&
+              o.createdAt.year == DateTime.now().year,
+        )
+        .toList();
+
+    // Calculate today's budget and final prices for my orders
+    final todayBudgetPrice = todayMyOrders
+        .where((o) => o.price != null)
+        .fold<double>(0.0, (sum, o) => sum + o.price!);
+
+    final todayFinalPrice = todayMyOrders
+        .where((o) => o.finalPrice != null)
+        .fold<double>(0.0, (sum, o) => sum + o.finalPrice!);
+
     return RefreshIndicator(
       onRefresh: _loadData,
       child: SingleChildScrollView(
@@ -732,6 +914,105 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Today's Financial Overview for My Orders
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.blue[400]!, Colors.blue[600]!],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.blue.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.account_balance_wallet,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'EGP ${todayBudgetPrice.toStringAsFixed(0)}',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          'Today\'s Budget',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.white.withOpacity(0.9),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.green[400]!, Colors.green[600]!],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.green.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.monetization_on,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'EGP ${todayFinalPrice.toStringAsFixed(0)}',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          'Today\'s Spent',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.white.withOpacity(0.9),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            SizedBox(height: 24),
+
             // Status Summary
             Row(
               children: [
@@ -778,9 +1059,11 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
               ...myOrders.map(
                 (order) => Column(
                   children: [
+                    _buildMyOrderCard(order),
+                    if (order.status == OrderStatus.inProgress)
+                      _buildItemManagementSection(order),
                     _buildQuickStatusActions(order),
                     SizedBox(height: 16),
-                    _buildMyOrderCard(order),
                   ],
                 ),
               ),
@@ -790,230 +1073,496 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
     );
   }
 
-Widget _buildStatsTab() {
-  final totalOrders = myOrders.length;
-  final completedOrders = myOrders
-      .where((o) => o.status == OrderStatus.completed)
-      .length;
-  final inProgressOrders = myOrders
-      .where((o) => o.status == OrderStatus.inProgress)
-      .length;
-  final cancelledOrders = myOrders
-      .where((o) => o.status == OrderStatus.cancelled)
-      .length;
-  final todayOrders = myOrders
-      .where(
-        (o) =>
-            o.createdAt.day == DateTime.now().day &&
-            o.createdAt.month == DateTime.now().month &&
-            o.createdAt.year == DateTime.now().year,
-      )
-      .length;
-
-  return RefreshIndicator(
-    onRefresh: _loadData,
-    child: SingleChildScrollView(
-      physics: AlwaysScrollableScrollPhysics(),
+  Widget _buildItemManagementSection(OfficeOrder order) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.blue[200]!),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'My Statistics',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          SizedBox(height: 16),
-
-          GridView.count(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 1.1,
-            shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
+          Row(
             children: [
-              _buildStatCard(
-                'Total Orders',
-                totalOrders.toString(),
-                Icons.receipt_long,
-                organization!.primaryColorValue,
-              ),
-              _buildStatCard(
-                'Today\'s Orders',
-                todayOrders.toString(),
-                Icons.today,
-                Colors.blue,
-              ),
-              _buildStatCard(
-                'Completed',
-                completedOrders.toString(),
-                Icons.check_circle,
-                Colors.green,
-              ),
-              _buildStatCard(
-                'In Progress',
-                inProgressOrders.toString(),
-                Icons.hourglass_empty,
-                Colors.orange,
-              ),
-              _buildStatCard(
-                'Cancelled',
-                cancelledOrders.toString(),
-                Icons.cancel,
-                Colors.red,
-              ),
-              _buildStatCard(
-                'Available',
-                availableOrders.length.toString(),
-                Icons.pending_actions,
-                Colors.purple,
+              Icon(Icons.checklist, color: Colors.blue[700], size: 20),
+              SizedBox(width: 8),
+              Text(
+                'Item Availability Check',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue[700],
+                ),
               ),
             ],
           ),
-
-          SizedBox(height: 24),
-
-          // Performance Card
-          Container(
-            padding: EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: Offset(0, 4),
+          SizedBox(height: 12),
+          ...order.items.asMap().entries.map((entry) {
+            final index = entry.key;
+            final item = entry.value;
+            return Container(
+              margin: EdgeInsets.only(bottom: 8),
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: _getItemStatusColor(item.status).withOpacity(0.3),
                 ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Text(
-                  'Performance',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.name,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
+                          ),
+                        ),
+                        if (item.notes != null && item.notes!.isNotEmpty) ...[
+                          SizedBox(height: 4),
+                          Text(
+                            item.notes!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
-                ),
-                SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Completion Rate'),
-                    Text(
-                      totalOrders > 0
-                          ? '${((completedOrders / totalOrders) * 100).toStringAsFixed(1)}%'
-                          : '0%',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green,
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _getItemStatusColor(item.status).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _getItemStatusIcon(item.status),
+                          size: 14,
+                          color: _getItemStatusColor(item.status),
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          _getItemStatusText(item.status),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: _getItemStatusColor(item.status),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  InkWell(
+                    onTap: () => _showItemStatusDialog(order, index),
+                    child: Container(
+                      padding: EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[100],
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Icon(
+                        Icons.edit,
+                        size: 16,
+                        color: Colors.blue[700],
                       ),
                     ),
-                  ],
-                ),
-                SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Cancellation Rate'),
-                    Text(
-                      totalOrders > 0
-                          ? '${((cancelledOrders / totalOrders) * 100).toStringAsFixed(1)}%'
-                          : '0%',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.red,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          SizedBox(height: 24),
-
-          // Order Status Breakdown
-          Container(
-            padding: EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Order Status Breakdown',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
                   ),
-                ),
-                SizedBox(height: 16),
-                _buildStatusRow('Completed', completedOrders, totalOrders, Colors.green),
-                _buildStatusRow('In Progress', inProgressOrders, totalOrders, Colors.orange),
-                _buildStatusRow('Cancelled', cancelledOrders, totalOrders, Colors.red),
-              ],
-            ),
-          ),
+                ],
+              ),
+            );
+          }),
         ],
       ),
-    ),
-  );
-}
+    );
+  }
 
-Widget _buildStatusRow(String label, int count, int total, Color color) {
-  final percentage = total > 0 ? (count / total) * 100 : 0.0;
-  
-  return Padding(
-    padding: EdgeInsets.only(bottom: 12),
-    child: Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildStatsTab() {
+    final totalOrders = myOrders.length;
+    final completedOrders = myOrders
+        .where((o) => o.status == OrderStatus.completed)
+        .length;
+    final inProgressOrders = myOrders
+        .where((o) => o.status == OrderStatus.inProgress)
+        .length;
+    final cancelledOrders = myOrders
+        .where((o) => o.status == OrderStatus.cancelled)
+        .length;
+    final needsResponseOrders = myOrders
+        .where((o) => o.status == OrderStatus.needsResponse)
+        .length;
+
+    // Filter today's orders
+    final todayOrders = myOrders
+        .where(
+          (o) =>
+              o.createdAt.day == DateTime.now().day &&
+              o.createdAt.month == DateTime.now().month &&
+              o.createdAt.year == DateTime.now().year,
+        )
+        .toList();
+
+    // Calculate today's budget and final prices
+    final todayBudgetPrice = todayOrders
+        .where((o) => o.price != null)
+        .fold<double>(0.0, (sum, o) => sum + o.price!);
+
+    final todayFinalPrice = todayOrders
+        .where((o) => o.finalPrice != null)
+        .fold<double>(0.0, (sum, o) => sum + o.finalPrice!);
+
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      child: SingleChildScrollView(
+        physics: AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              label,
+              'My Statistics',
               style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
               ),
             ),
-            Text(
-              '$count (${percentage.toStringAsFixed(1)}%)',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: color,
+            SizedBox(height: 16),
+
+            // Today's Financial Overview - Two containers side by side
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.blue[400]!, Colors.blue[600]!],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.blue.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.account_balance_wallet,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'EGP ${todayBudgetPrice.toStringAsFixed(0)}',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          'Today\'s Budget',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.white.withOpacity(0.9),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.green[400]!, Colors.green[600]!],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.green.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.monetization_on,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'EGP ${todayFinalPrice.toStringAsFixed(0)}',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          'Today\'s Spent',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.white.withOpacity(0.9),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            SizedBox(height: 24),
+
+            GridView.count(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 1.1,
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              children: [
+                _buildStatCard(
+                  'Total Orders',
+                  totalOrders.toString(),
+                  Icons.receipt_long,
+                  organization!.primaryColorValue,
+                ),
+                _buildStatCard(
+                  'Today\'s Orders',
+                  todayOrders.length.toString(),
+                  Icons.today,
+                  Colors.blue,
+                ),
+                _buildStatCard(
+                  'Completed',
+                  completedOrders.toString(),
+                  Icons.check_circle,
+                  Colors.green,
+                ),
+                _buildStatCard(
+                  'In Progress',
+                  inProgressOrders.toString(),
+                  Icons.hourglass_empty,
+                  Colors.orange,
+                ),
+                _buildStatCard(
+                  'Needs Response',
+                  needsResponseOrders.toString(),
+                  Icons.help_outline,
+                  Colors.purple,
+                ),
+                _buildStatCard(
+                  'Cancelled',
+                  cancelledOrders.toString(),
+                  Icons.cancel,
+                  Colors.red,
+                ),
+              ],
+            ),
+
+            SizedBox(height: 24),
+
+            // Performance Card
+            Container(
+              padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'Performance',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Completion Rate'),
+                      Text(
+                        totalOrders > 0
+                            ? '${((completedOrders / totalOrders) * 100).toStringAsFixed(1)}%'
+                            : '0%',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Cancellation Rate'),
+                      Text(
+                        totalOrders > 0
+                            ? '${((cancelledOrders / totalOrders) * 100).toStringAsFixed(1)}%'
+                            : '0%',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Today\'s Budget vs Spent'),
+                      Text(
+                        todayBudgetPrice > 0
+                            ? '${((todayFinalPrice / todayBudgetPrice) * 100).toStringAsFixed(1)}%'
+                            : '0%',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: todayFinalPrice <= todayBudgetPrice
+                              ? Colors.green
+                              : Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            SizedBox(height: 24),
+
+            // Order Status Breakdown
+            Container(
+              padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Order Status Breakdown',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  _buildStatusRow(
+                    'Completed',
+                    completedOrders,
+                    totalOrders,
+                    Colors.green,
+                  ),
+                  _buildStatusRow(
+                    'In Progress',
+                    inProgressOrders,
+                    totalOrders,
+                    Colors.orange,
+                  ),
+                  _buildStatusRow(
+                    'Needs Response',
+                    needsResponseOrders,
+                    totalOrders,
+                    Colors.purple,
+                  ),
+                  _buildStatusRow(
+                    'Cancelled',
+                    cancelledOrders,
+                    totalOrders,
+                    Colors.red,
+                  ),
+                ],
               ),
             ),
           ],
         ),
-        SizedBox(height: 4),
-        LinearProgressIndicator(
-          value: total > 0 ? count / total : 0,
-          backgroundColor: Colors.grey[200],
-          valueColor: AlwaysStoppedAnimation<Color>(color),
-        ),
-      ],
-    ),
-  );
-}
+      ),
+    );
+  }
+
+  Widget _buildStatusRow(String label, int count, int total, Color color) {
+    final percentage = total > 0 ? (count / total) * 100 : 0.0;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: 12),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+              Text(
+                '$count (${percentage.toStringAsFixed(1)}%)',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 4),
+          LinearProgressIndicator(
+            value: total > 0 ? count / total : 0,
+            backgroundColor: Colors.grey[200],
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildAvailableOrderCard(OfficeOrder order) {
     return Container(
@@ -1055,6 +1604,27 @@ Widget _buildStatusRow(String label, int count, int total, Color color) {
                         ),
                       ),
                     ),
+                    if (order.items.length > 1) ...[
+                      SizedBox(width: 8),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          '${order.items.length} items',
+                          style: TextStyle(
+                            color: Colors.grey[700],
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
                     Spacer(),
                     Text(
                       _formatTime(order.createdAt),
@@ -1086,7 +1656,9 @@ Widget _buildStatusRow(String label, int count, int total, Color color) {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            order.item,
+                            order.items.length == 1
+                                ? order.items.first.name
+                                : '${order.items.first.name} + ${order.items.length - 1} more',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
@@ -1134,11 +1706,60 @@ Widget _buildStatusRow(String label, int count, int total, Color color) {
                     ),
                   ],
                 ),
+
+                // Show items preview for multi-item orders
+                if (order.items.length > 1) ...[
+                  SizedBox(height: 12),
+                  Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Items:',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 12,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        ...order.items
+                            .take(3)
+                            .map(
+                              (item) => Padding(
+                                padding: EdgeInsets.symmetric(vertical: 1),
+                                child: Text(
+                                  '• ${item.name}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ),
+                            ),
+                        if (order.items.length > 3)
+                          Text(
+                            '... and ${order.items.length - 3} more items',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[500],
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
 
-          Container(
+          SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () => _acceptOrder(order),
@@ -1225,6 +1846,24 @@ Widget _buildStatusRow(String label, int count, int total, Color color) {
                       ),
                     ),
                   ),
+                  if (order.items.length > 1) ...[
+                    SizedBox(width: 8),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${order.items.length} items',
+                        style: TextStyle(
+                          color: Colors.grey[700],
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                   Spacer(),
                   Text(
                     _formatTime(order.createdAt),
@@ -1248,6 +1887,8 @@ Widget _buildStatusRow(String label, int count, int total, Color color) {
                     child: Icon(
                       order.status == OrderStatus.completed
                           ? Icons.check_circle
+                          : order.status == OrderStatus.needsResponse
+                          ? Icons.help_outline
                           : order.type == OrderType.internal
                           ? Icons.home
                           : Icons.store,
@@ -1260,7 +1901,9 @@ Widget _buildStatusRow(String label, int count, int total, Color color) {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          order.item,
+                          order.items.length == 1
+                              ? order.items.first.name
+                              : '${order.items.first.name} + ${order.items.length - 1} more',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
@@ -1291,14 +1934,31 @@ Widget _buildStatusRow(String label, int count, int total, Color color) {
                                 fontSize: 12,
                               ),
                             ),
-                            if (order.price != null) ...[
+                            // Show both prices when available
+                            if (order.price != null ||
+                                order.finalPrice != null) ...[
                               Spacer(),
-                              Text(
-                                'EGP ${order.price!.toStringAsFixed(0)}',
-                                style: TextStyle(
-                                  color: Colors.green,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  if (order.price != null)
+                                    Text(
+                                      'Budget: EGP ${order.price!.toStringAsFixed(0)}',
+                                      style: TextStyle(
+                                        color: Colors.blue,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  if (order.finalPrice != null)
+                                    Text(
+                                      'Spent: EGP ${order.finalPrice!.toStringAsFixed(0)}',
+                                      style: TextStyle(
+                                        color: Colors.green,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                ],
                               ),
                             ],
                           ],
@@ -1382,4 +2042,3 @@ Widget _buildStatusRow(String label, int count, int total, Color color) {
     );
   }
 }
-

@@ -1,4 +1,3 @@
-
 // New Order Bottom Sheet
 import 'package:flutter/material.dart';
 import 'package:taqy/features/employee/data/models/order_model.dart';
@@ -33,6 +32,8 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet> {
   OrderType _selectedType = OrderType.internal;
   EmployeeUserModel? _selectedOfficeBoy;
   bool _isSubmitting = false;
+
+  final List<String> _selectedItems = [];
 
   // Predefined items
   final Map<OrderType, List<String>> _predefinedItems = {
@@ -71,6 +72,23 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet> {
     _priceController.dispose();
     _notesController.dispose();
     super.dispose();
+  }
+
+  void _addCustomItem() {
+    final itemName = _itemController.text.trim();
+    if (itemName.isNotEmpty && !_selectedItems.contains(itemName)) {
+      setState(() {
+        _selectedItems.add(itemName);
+        _itemController.clear();
+      });
+    } else if (_selectedItems.contains(itemName)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Item "$itemName" is already added'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
   }
 
   @override
@@ -172,18 +190,150 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet> {
                         color: Colors.black87,
                       ),
                     ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Select multiple items or add custom items',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
                     SizedBox(height: 12),
 
-                    // Predefined Items Grid
+                    // Custom Item Input with Add Button
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _itemController,
+                            decoration: InputDecoration(
+                              labelText: 'Add Custom Item',
+                              hintText: 'Enter item name and tap add',
+                              prefixIcon: Icon(
+                                _selectedType == OrderType.internal
+                                    ? Icons.local_cafe
+                                    : Icons.restaurant,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: widget.organization.primaryColorValue,
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                            
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: _addCustomItem,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: widget.organization.primaryColorValue,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: EdgeInsets.all(16),
+                          ),
+                          child: Icon(
+                            Icons.add,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 20),
+
+                    // Selected Items Display
+                    if (_selectedItems.isNotEmpty) ...[
+                      Container(
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.green[50],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.green[200]!),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Selected Items (${_selectedItems.length}):',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: Colors.green[700],
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 4,
+                              children: _selectedItems.map((item) {
+                                return Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green[100],
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        item,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.green[700],
+                                        ),
+                                      ),
+                                      SizedBox(width: 4),
+                                      GestureDetector(
+                                        onTap: () {
+                                          setState(() {
+                                            _selectedItems.remove(item);
+                                          });
+                                        },
+                                        child: Icon(
+                                          Icons.close,
+                                          size: 16,
+                                          color: Colors.green[700],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                    ],
+
+                    // Predefined Items Section
+                    Text(
+                      'Quick Select:',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: _predefinedItems[_selectedType]!.map((item) {
-                        final isSelected = _itemController.text == item;
+                        final isSelected = _selectedItems.contains(item);
                         return GestureDetector(
                           onTap: () {
                             setState(() {
-                              _itemController.text = item;
+                              if (isSelected) {
+                                _selectedItems.remove(item);
+                              } else {
+                                _selectedItems.add(item);
+                              }
                             });
                           },
                           child: Container(
@@ -217,37 +367,6 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet> {
                           ),
                         );
                       }).toList(),
-                    ),
-                    SizedBox(height: 16),
-
-                    // Custom Item Input
-                    TextFormField(
-                      controller: _itemController,
-                      decoration: InputDecoration(
-                        labelText: 'Item Name',
-                        hintText: 'Enter custom item or select above',
-                        prefixIcon: Icon(
-                          _selectedType == OrderType.internal
-                              ? Icons.local_cafe
-                              : Icons.restaurant,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: widget.organization.primaryColorValue,
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Please enter an item name';
-                        }
-                        return null;
-                      },
                     ),
                     SizedBox(height: 20),
 
@@ -409,9 +528,10 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet> {
               ),
               child: SizedBox(
                 width: double.infinity,
-
                 child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submitOrder,
+                  onPressed: (_isSubmitting || _selectedItems.isEmpty)
+                      ? null
+                      : _submitOrder,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: widget.organization.primaryColorValue,
                     shape: RoundedRectangleBorder(
@@ -419,7 +539,9 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet> {
                     ),
                   ),
                   child: Text(
-                    _isSubmitting ? 'Placing Order...' : 'Place Order',
+                    _isSubmitting
+                        ? 'Placing Order...'
+                        : 'Place Order (${_selectedItems.length} items)',
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -447,7 +569,7 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet> {
       onTap: () {
         setState(() {
           _selectedType = type;
-          _itemController.clear(); // Clear item when changing type
+          _selectedItems.clear(); // Clear items when changing type
         });
       },
       child: Container(
@@ -493,7 +615,13 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet> {
   }
 
   void _submitOrder() async {
-    if (!_formKey.currentState!.validate()) {
+    if (_selectedItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please select at least one item'),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
 
@@ -512,13 +640,18 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet> {
     });
 
     try {
+      // Convert selected items to OrderItem objects
+      final items = _selectedItems
+          .map((itemName) => OrderItem(name: itemName))
+          .toList();
+
       final order = EmployeeOrder(
         id: '', // Will be set by Firestore
         employeeId: widget.employee.id,
         employeeName: widget.employee.name,
         officeBoyId: _selectedOfficeBoy!.id,
         officeBoyName: _selectedOfficeBoy!.name,
-        item: _itemController.text.trim(),
+        items: items, // Now using list of items
         description: _descriptionController.text.trim(),
         type: _selectedType,
         status: OrderStatus.pending,

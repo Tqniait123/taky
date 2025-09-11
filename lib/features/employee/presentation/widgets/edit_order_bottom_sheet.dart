@@ -1,4 +1,3 @@
-
 // Edit Order Bottom Sheet
 import 'package:flutter/material.dart';
 import 'package:taqy/features/employee/data/models/order_model.dart';
@@ -37,6 +36,8 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet> {
   bool _isSubmitting = false;
   bool _isDeleting = false;
 
+  final List<String> _selectedItems = [];
+
   // Predefined items
   final Map<OrderType, List<String>> _predefinedItems = {
     OrderType.internal: [
@@ -66,7 +67,14 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet> {
   }
 
   void _initializeForm() {
-    _itemController.text = widget.order.item;
+    // Initialize existing order items
+    if (widget.order.items.isNotEmpty) {
+      _selectedItems.addAll(widget.order.items.map((item) => item.name));
+    } else if (widget.order.item.isNotEmpty) {
+      // For backward compatibility with single item orders
+      _selectedItems.add(widget.order.item);
+    }
+
     _descriptionController.text = widget.order.description;
     _priceController.text = widget.order.price?.toString() ?? '';
     _notesController.text = widget.order.notes ?? '';
@@ -75,6 +83,23 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet> {
       (officeBoy) => officeBoy.id == widget.order.officeBoyId,
       // orElse: () => widget.officeBoys.isNotEmpty ? widget.officeBoys.first : null,
     );
+  }
+
+  void _addCustomItem() {
+    final itemName = _itemController.text.trim();
+    if (itemName.isNotEmpty && !_selectedItems.contains(itemName)) {
+      setState(() {
+        _selectedItems.add(itemName);
+        _itemController.clear();
+      });
+    } else if (_selectedItems.contains(itemName)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Item "$itemName" is already added'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
   }
 
   @override
@@ -194,18 +219,147 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet> {
                         color: Colors.black87,
                       ),
                     ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Select multiple items or add custom items',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
                     SizedBox(height: 12),
 
-                    // Predefined Items Grid
+                    // Custom Item Input with Add Button
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _itemController,
+                            decoration: InputDecoration(
+                              labelText: 'Add Custom Item',
+                              hintText: 'Enter item name and tap add',
+                              prefixIcon: Icon(
+                                _selectedType == OrderType.internal
+                                    ? Icons.local_cafe
+                                    : Icons.restaurant,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: widget.organization.primaryColorValue,
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: _addCustomItem,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                widget.organization.primaryColorValue,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: EdgeInsets.all(16),
+                          ),
+                          child: Icon(Icons.add, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 20),
+
+                    // Selected Items Display
+                    if (_selectedItems.isNotEmpty) ...[
+                      Container(
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.green[50],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.green[200]!),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Selected Items (${_selectedItems.length}):',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: Colors.green[700],
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 4,
+                              children: _selectedItems.map((item) {
+                                return Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green[100],
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        item,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.green[700],
+                                        ),
+                                      ),
+                                      SizedBox(width: 4),
+                                      GestureDetector(
+                                        onTap: () {
+                                          setState(() {
+                                            _selectedItems.remove(item);
+                                          });
+                                        },
+                                        child: Icon(
+                                          Icons.close,
+                                          size: 16,
+                                          color: Colors.green[700],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                    ],
+
+                    // Predefined Items Section
+                    Text(
+                      'Quick Select:',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: _predefinedItems[_selectedType]!.map((item) {
-                        final isSelected = _itemController.text == item;
+                        final isSelected = _selectedItems.contains(item);
                         return GestureDetector(
                           onTap: () {
                             setState(() {
-                              _itemController.text = item;
+                              if (isSelected) {
+                                _selectedItems.remove(item);
+                              } else {
+                                _selectedItems.add(item);
+                              }
                             });
                           },
                           child: Container(
@@ -239,37 +393,6 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet> {
                           ),
                         );
                       }).toList(),
-                    ),
-                    SizedBox(height: 16),
-
-                    // Custom Item Input
-                    TextFormField(
-                      controller: _itemController,
-                      decoration: InputDecoration(
-                        labelText: 'Item Name',
-                        hintText: 'Enter custom item or select above',
-                        prefixIcon: Icon(
-                          _selectedType == OrderType.internal
-                              ? Icons.local_cafe
-                              : Icons.restaurant,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: widget.organization.primaryColorValue,
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Please enter an item name';
-                        }
-                        return null;
-                      },
                     ),
                     SizedBox(height: 20),
 
@@ -435,7 +558,10 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _isSubmitting || _isDeleting
+                      onPressed:
+                          (_isSubmitting ||
+                              _isDeleting ||
+                              _selectedItems.isEmpty)
                           ? null
                           : _updateOrder,
                       style: ElevatedButton.styleFrom(
@@ -445,7 +571,9 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet> {
                         ),
                       ),
                       child: Text(
-                        _isSubmitting ? 'Updating...' : 'Update Order',
+                        _isSubmitting
+                            ? 'Updating...'
+                            : 'Update Order (${_selectedItems.length} items)',
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -548,7 +676,13 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet> {
   }
 
   void _updateOrder() async {
-    if (!_formKey.currentState!.validate()) {
+    if (_selectedItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please select at least one item'),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
 
@@ -567,8 +701,14 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet> {
     });
 
     try {
+      // Convert selected items to OrderItem objects
+      final items = _selectedItems
+          .map((itemName) => OrderItem(name: itemName))
+          .toList();
+
       final updatedOrder = widget.order.copyWith(
-        item: _itemController.text.trim(),
+        items: items, // Using items list instead of single item
+        // item: _selectedItems.isNotEmpty ? _selectedItems.first : '', // For backward compatibility
         description: _descriptionController.text.trim(),
         type: _selectedType,
         officeBoyId: _selectedOfficeBoy!.id,
@@ -645,4 +785,3 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet> {
     }
   }
 }
-

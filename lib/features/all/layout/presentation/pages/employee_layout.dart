@@ -11,6 +11,7 @@ import 'package:taqy/features/employee/data/models/user_model.dart';
 import 'package:taqy/features/employee/presentation/widgets/edit_order_bottom_sheet.dart';
 import 'package:taqy/features/employee/presentation/widgets/new_order_bottom_sheet.dart';
 import 'package:taqy/features/employee/presentation/widgets/profile_bottom_sheet.dart';
+import 'package:taqy/features/employee/presentation/widgets/response_bottom_sheet.dart';
 
 class EmployeeLayout extends StatefulWidget {
   const EmployeeLayout({super.key});
@@ -193,6 +194,36 @@ class _EmployeeLayoutState extends State<EmployeeLayout> {
             _showSuccessToast('Order deleted successfully!');
           } catch (e) {
             _showErrorToast('Failed to delete order: $e');
+          }
+        },
+      ),
+    );
+  }
+
+  void _showResponseBottomSheet(EmployeeOrder order) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => OrderResponseBottomSheet(
+        order: order,
+        organization: organization!,
+        onResponse: (orderId, response, newStatus) async {
+          try {
+            final updateData = <String, dynamic>{
+              'status': newStatus.toString().split('.').last,
+              'employeeResponse': response,
+              'updatedAt': Timestamp.fromDate(DateTime.now()),
+            };
+
+            await _firebaseService.updateDocument('orders', orderId, updateData);
+            _showSuccessToast(
+              newStatus == OrderStatus.cancelled 
+                  ? 'Order cancelled successfully!' 
+                  : 'Order updated successfully!'
+            );
+          } catch (e) {
+            _showErrorToast('Failed to update order: $e');
           }
         },
       ),
@@ -452,23 +483,68 @@ class _EmployeeLayoutState extends State<EmployeeLayout> {
                   SizedBox(width: 12),
                   Expanded(
                     child: _buildStatCard(
-                      'Today\'s Orders',
+                      'Need Response',
                       myOrders
-                          .where(
-                            (o) =>
-                                o.createdAt.day == DateTime.now().day &&
-                                o.createdAt.month == DateTime.now().month &&
-                                o.createdAt.year == DateTime.now().year,
-                          )
+                          .where((o) => o.status == OrderStatus.needsResponse)
                           .length
                           .toString(),
-                      Icons.today,
-                      Colors.blue,
+                      Icons.help_outline,
+                      Colors.purple,
                     ),
                   ),
                 ],
               ),
               SizedBox(height: 24),
+
+              // Orders that need response - Priority section
+              if (myOrders.any((o) => o.status == OrderStatus.needsResponse)) ...[
+                Container(
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.purple[400]!, Colors.purple[600]!],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.purple.withOpacity(0.3),
+                        blurRadius: 10,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.priority_high, color: Colors.white, size: 24),
+                          SizedBox(width: 8),
+                          Text(
+                            'Response Required',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Some of your orders need your response due to item availability issues.',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 16),
+              ],
 
               // My Orders
               Text(
@@ -543,15 +619,22 @@ class _EmployeeLayoutState extends State<EmployeeLayout> {
   }
 
   Widget _buildOrderCard(EmployeeOrder order) {
+    final needsResponse = order.status == OrderStatus.needsResponse;
+    
     return Container(
       margin: EdgeInsets.only(bottom: 12),
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
+        border: needsResponse 
+            ? Border.all(color: Colors.purple, width: 2)
+            : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: needsResponse 
+                ? Colors.purple.withOpacity(0.1) 
+                : Colors.black.withOpacity(0.05),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -588,6 +671,20 @@ class _EmployeeLayoutState extends State<EmployeeLayout> {
                       ),
                     ),
                   ],
+                  if (needsResponse) ...[
+                    SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () => _showResponseBottomSheet(order),
+                      child: Container(
+                        padding: EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.purple.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(Icons.reply, size: 16, color: Colors.purple),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ],
@@ -599,12 +696,20 @@ class _EmployeeLayoutState extends State<EmployeeLayout> {
                 height: 50,
                 width: 50,
                 decoration: BoxDecoration(
-                  color: _getOrderTypeColor(order.type).withOpacity(0.1),
+                  color: needsResponse 
+                      ? Colors.purple.withOpacity(0.1)
+                      : _getOrderTypeColor(order.type).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(25),
                 ),
                 child: Icon(
-                  order.type == OrderType.internal ? Icons.home : Icons.store,
-                  color: _getOrderTypeColor(order.type),
+                  needsResponse 
+                      ? Icons.help_outline
+                      : order.type == OrderType.internal 
+                          ? Icons.home 
+                          : Icons.store,
+                  color: needsResponse 
+                      ? Colors.purple
+                      : _getOrderTypeColor(order.type),
                 ),
               ),
               SizedBox(width: 12),
@@ -613,7 +718,9 @@ class _EmployeeLayoutState extends State<EmployeeLayout> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      order.item,
+                      order.items.length == 1
+                          ? order.items.first.name
+                          : '${order.items.length} Items Order',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
@@ -641,15 +748,32 @@ class _EmployeeLayoutState extends State<EmployeeLayout> {
                             fontSize: 12,
                           ),
                         ),
-                        Spacer(),
-                        if (order.price != null)
-                          Text(
-                            'EGP ${order.price!.toStringAsFixed(0)}',
-                            style: TextStyle(
-                              color: Colors.green,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        if (order.price != null ||
+                            order.finalPrice != null) ...[
+                          Spacer(),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              if (order.price != null)
+                                Text(
+                                  'Budget: EGP ${order.price!.toStringAsFixed(0)}',
+                                  style: TextStyle(
+                                    color: Colors.blue,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              if (order.finalPrice != null)
+                                Text(
+                                  'Spent: EGP ${order.finalPrice!.toStringAsFixed(0)}',
+                                  style: TextStyle(
+                                    color: Colors.green,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                            ],
                           ),
+                        ],
                       ],
                     ),
                   ],
@@ -657,6 +781,98 @@ class _EmployeeLayoutState extends State<EmployeeLayout> {
               ),
             ],
           ),
+          
+          // Show availability summary for orders needing response
+          if (needsResponse && order.items.isNotEmpty) ...[
+            SizedBox(height: 12),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.purple[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.purple.withOpacity(0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.purple[700], size: 16),
+                      SizedBox(width: 6),
+                      Text(
+                        'Item Availability Update',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.purple[700],
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  ...order.items.take(2).map((item) => Padding(
+                    padding: EdgeInsets.only(bottom: 4),
+                    child: Row(
+                      children: [
+                        Icon(
+                          item.status == ItemStatus.available 
+                              ? Icons.check_circle 
+                              : item.status == ItemStatus.notAvailable
+                                  ? Icons.cancel
+                                  : Icons.hourglass_empty,
+                          size: 14,
+                          color: item.status == ItemStatus.available 
+                              ? Colors.green
+                              : item.status == ItemStatus.notAvailable
+                                  ? Colors.red
+                                  : Colors.orange,
+                        ),
+                        SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            '${item.name} - ${item.status == ItemStatus.available ? "Available" : item.status == ItemStatus.notAvailable ? "Not Available" : "Checking"}',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )),
+                  if (order.items.length > 2)
+                    Text(
+                      '... and ${order.items.length - 2} more items',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => _showResponseBottomSheet(order),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.purple,
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(
+                        'Respond Now',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          
           SizedBox(height: 8),
           Text(
             _formatTime(order.createdAt),
@@ -674,7 +890,6 @@ class _EmployeeLayoutState extends State<EmployeeLayout> {
     switch (status) {
       case OrderStatus.pending:
         color = Colors.orange;
-        
         text = 'Pending';
         break;
       case OrderStatus.inProgress:
@@ -688,6 +903,10 @@ class _EmployeeLayoutState extends State<EmployeeLayout> {
       case OrderStatus.cancelled:
         color = Colors.red;
         text = 'Cancelled';
+        break;
+      case OrderStatus.needsResponse:
+        color = Colors.purple;
+        text = 'Need Response';
         break;
     }
 
