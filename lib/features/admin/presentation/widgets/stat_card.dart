@@ -32,6 +32,7 @@ class StatCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -51,7 +52,6 @@ class StatCard extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              
               color: AppColors.onSurfaceVariant,
               fontSize: 14,
               fontWeight: FontWeight.w500,

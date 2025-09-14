@@ -9,7 +9,6 @@ import 'package:taqy/features/admin/data/models/app_user.dart';
 import 'package:taqy/features/admin/data/models/order.dart';
 import 'package:taqy/features/admin/data/models/organization.dart';
 import 'package:taqy/features/admin/presentation/widgets/admin_settings_bottom_sheet.dart';
-import 'package:taqy/features/admin/presentation/widgets/order_card.dart';
 import 'package:taqy/features/admin/presentation/widgets/stat_card.dart';
 import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
 
@@ -101,7 +100,7 @@ class _AdminLayoutState extends State<AdminLayout>
           onError: (error) {
             setState(() {
               errorMessage = error.toString();
-              
+
               isLoading = false;
             });
           },
@@ -632,6 +631,7 @@ class _AdminLayoutState extends State<AdminLayout>
           ),
 
           Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
                 '$userOrders',
@@ -709,9 +709,9 @@ class _AdminLayoutState extends State<AdminLayout>
 
             GridView.count(
               crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1.3,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              childAspectRatio: 1.8,
               shrinkWrap: true,
               physics: NeverScrollableScrollPhysics(),
               children: [
@@ -763,39 +763,48 @@ class _AdminLayoutState extends State<AdminLayout>
                   icon: Icons.check_circle,
                   color: AppColors.success,
                 ),
+                StatCard(
+                  title: 'Cancelled',
+                  value: orders
+                      .where((o) => o.status == OrderStatus.cancelled)
+                      .length
+                      .toString(),
+                  icon: Icons.cancel,
+                  color: AppColors.error,
+                ),
               ],
             ),
 
             SizedBox(height: 24),
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Recent Orders',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.onSurface,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => _tabController.animateTo(1),
-                  child: Text('View All'),
-                ),
-              ],
-            ),
-            SizedBox(height: 16),
+            // Row(
+            //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            //   children: [
+            //     Text(
+            //       'Recent Orders',
+            //       style: TextStyle(
+            //         fontSize: 18,
+            //         fontWeight: FontWeight.bold,
+            //         color: AppColors.onSurface,
+            //       ),
+            //     ),
+            //     TextButton(
+            //       onPressed: () => _tabController.animateTo(1),
+            //       child: Text('View All'),
+            //     ),
+            //   ],
+            // ),
+            // SizedBox(height: 16),
 
-            if (orders.isEmpty)
-              _buildEmptyState('No orders yet', Icons.receipt_long)
-            else
-              ...orders
-                  .take(5)
-                  .map(
-                    (order) =>
-                        OrderCard(order: order, organization: organization!),
-                  ),
+            // if (orders.isEmpty)
+            //   _buildEmptyState('No orders yet', Icons.receipt_long)
+            // else
+            //   ...orders
+            //       .take(5)
+            //       .map(
+            //         (order) =>
+            //             OrderCard(order: order, organization: organization!),
+            //       ),
           ],
         ),
       ),
@@ -866,11 +875,18 @@ class _AdminLayoutState extends State<AdminLayout>
     );
   }
 
-   Widget _buildAnalyticsTab() {
+  Widget _buildAnalyticsTab() {
     // Updated to use finalPrice when available, otherwise fallback to price
     final totalRevenue = orders
-        .where((o) => o.status == OrderStatus.completed && (o.finalPrice != null || o.price != null))
-        .fold(0.0, (sum, order) => sum + (order.finalPrice ?? order.price ?? 0.0));
+        .where(
+          (o) =>
+              o.status == OrderStatus.completed &&
+              (o.finalPrice != null || o.price != null),
+        )
+        .fold(
+          0.0,
+          (sum, order) => sum + (order.finalPrice ?? order.price ?? 0.0),
+        );
 
     final mostActiveEmployee = _getMostActiveEmployee();
     final mostActiveOfficeBoy = _getMostActiveOfficeBoy();
@@ -955,6 +971,7 @@ class _AdminLayoutState extends State<AdminLayout>
       ),
     );
   }
+
   Widget _buildTeamPerformance() {
     return Container(
       padding: EdgeInsets.all(20),
@@ -1144,10 +1161,13 @@ class _AdminLayoutState extends State<AdminLayout>
     );
   }
 
-   Widget _buildDetailedOrderCard(AdminOrder order) {
+  Widget _buildDetailedOrderCard(AdminOrder order) {
     // Calculate display price (finalPrice if available, otherwise price)
     final displayPrice = order.finalPrice ?? order.price;
-    final hasPriceChange = order.finalPrice != null && order.price != null && order.finalPrice != order.price;
+    final hasPriceChange =
+        order.finalPrice != null &&
+        order.price != null &&
+        order.finalPrice != order.price;
 
     return Container(
       margin: EdgeInsets.only(bottom: 16),
@@ -1238,48 +1258,50 @@ class _AdminLayoutState extends State<AdminLayout>
                 ],
               ),
               SizedBox(height: 8),
-              
+
               // Display each item with its status
-              ...order.items.map((item) => Padding(
-                padding: EdgeInsets.only(left: 28, bottom: 4),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: _getItemStatusColor(item.status),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        item.name,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: item.status == ItemStatus.notAvailable 
-                            ? AppColors.onSurfaceVariant 
-                            : AppColors.onSurface,
-                          decoration: item.status == ItemStatus.notAvailable 
-                            ? TextDecoration.lineThrough 
-                            : null,
+              ...order.items.map(
+                (item) => Padding(
+                  padding: EdgeInsets.only(left: 28, bottom: 4),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: _getItemStatusColor(item.status),
+                          borderRadius: BorderRadius.circular(4),
                         ),
                       ),
-                    ),
-                    if (item.notes != null && item.notes!.isNotEmpty)
-                      Text(
-                        item.notes!,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.onSurfaceVariant,
-                          fontStyle: FontStyle.italic,
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          item.name,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: item.status == ItemStatus.notAvailable
+                                ? AppColors.onSurfaceVariant
+                                : AppColors.onSurface,
+                            decoration: item.status == ItemStatus.notAvailable
+                                ? TextDecoration.lineThrough
+                                : null,
+                          ),
                         ),
                       ),
-                  ],
+                      if (item.notes != null && item.notes!.isNotEmpty)
+                        Text(
+                          item.notes!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.onSurfaceVariant,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-              )).toList(),
-              
+              ),
+
               if (order.description.isNotEmpty) ...[
                 SizedBox(height: 8),
                 Padding(
@@ -1375,7 +1397,8 @@ class _AdminLayoutState extends State<AdminLayout>
           ),
 
           // Show employee response if available
-          if (order.employeeResponse != null && order.employeeResponse!.isNotEmpty) ...[
+          if (order.employeeResponse != null &&
+              order.employeeResponse!.isNotEmpty) ...[
             SizedBox(height: 8),
             Container(
               padding: EdgeInsets.all(12),
