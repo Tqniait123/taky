@@ -1,5 +1,6 @@
 // lib/features/auth/presentation/screens/register_screen.dart
 import 'package:flutter/material.dart';
+import 'package:taqy/core/theme/colors.dart';
 
 // lib/features/auth/presentation/widgets/auth_text_field.dart
 class AuthTextField extends StatefulWidget {
@@ -68,7 +69,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
           widget.label,
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            color: _isFocused ? widget.focusColor : Colors.grey[600],
+            color: Colors.black,
           ),
         ),
         const SizedBox(height: 8),
@@ -76,12 +77,20 @@ class _AuthTextFieldState extends State<AuthTextField> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: _isFocused ? widget.focusColor : Colors.grey.withOpacity(0.3),
+              color: _isFocused
+                  ? widget.focusColor
+                  : Colors.grey.withOpacity(0.3),
               width: _isFocused ? 2 : 1,
             ),
-            boxShadow: _isFocused
-                ? [BoxShadow(color: widget.focusColor.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 2))]
-                : null,
+            // boxShadow: _isFocused
+            //     ? [
+            //         BoxShadow(
+            //           color: widget.focusColor.withOpacity(0.1),
+            //           blurRadius: 8,
+            //           offset: const Offset(0, 2),
+            //         ),
+            //       ]
+            //     : null,
           ),
           child: TextFormField(
             controller: widget.controller,
@@ -89,17 +98,27 @@ class _AuthTextFieldState extends State<AuthTextField> {
             keyboardType: widget.keyboardType,
             obscureText: widget.isPassword && !widget.isPasswordVisible,
             validator: widget.validator,
+
             decoration: InputDecoration(
+              // labelText: widget.label,
+              // labelStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
               hintText: widget.hint,
-              hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
+              hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
               prefixIcon: widget.prefixIcon != null
-                  ? Icon(widget.prefixIcon, color: _isFocused ? widget.focusColor : Colors.grey[400])
+                  ? Icon(
+                      widget.prefixIcon,
+                      color: _isFocused ? widget.focusColor : Colors.grey[400],
+                    )
                   : null,
               suffixIcon: widget.isPassword
                   ? IconButton(
                       icon: Icon(
-                        widget.isPasswordVisible ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                        color: _isFocused ? widget.focusColor : Colors.grey[400],
+                        widget.isPasswordVisible
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        color: _isFocused
+                            ? AppColors.primary
+                            : Colors.grey[400],
                       ),
                       onPressed: widget.onTogglePassword,
                     )
@@ -108,7 +127,12 @@ class _AuthTextFieldState extends State<AuthTextField> {
               contentPadding: const EdgeInsets.all(16),
               errorStyle: const TextStyle(fontSize: 12, height: 1.2),
             ),
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[800],
+            ),
+            onTapOutside: (event) => FocusScope.of(context).unfocus(),
           ),
         ),
       ],

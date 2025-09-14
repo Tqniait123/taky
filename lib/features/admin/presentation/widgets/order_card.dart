@@ -58,7 +58,7 @@ class OrderCard extends StatelessWidget {
                 ),
                 Text(
                   _formatTime(order.createdAt),
-                  
+
                   style: TextStyle(
                     color: AppColors.onSurfaceVariant,
                     fontSize: 12,
@@ -93,6 +93,10 @@ class OrderCard extends StatelessWidget {
       case OrderStatus.cancelled:
         color = AppColors.error;
         text = 'Cancelled';
+        break;
+      case OrderStatus.needsResponse:
+        color = Colors.purple;
+        text = 'Need Response';
         break;
     }
 

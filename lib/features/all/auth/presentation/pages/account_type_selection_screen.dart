@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:taqy/config/routes/routes.dart';
 import 'package:taqy/core/theme/colors.dart';
 import 'package:taqy/core/translations/locale_keys.g.dart';
-import 'package:taqy/features/all/auth/presentation/widgets/account_type_selector_widget.dart';
 
 class AccountTypeSelectionScreen extends StatefulWidget {
   const AccountTypeSelectionScreen({super.key});
@@ -18,26 +17,29 @@ class AccountTypeSelectionScreen extends StatefulWidget {
 class _AccountTypeSelectionScreenState extends State<AccountTypeSelectionScreen>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
+  late List<Animation<double>> _itemAnimations;
 
   @override
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
-          CurvedAnimation(
-            parent: _animationController,
+
+    // Create staggered animations for each item
+    _itemAnimations = List.generate(3, (index) {
+      return Tween<double>(begin: 0.0, end: 1.0).animate(
+        CurvedAnimation(
+          parent: _animationController,
+          curve: Interval(
+            index * 0.2,
+            0.6 + (index * 0.2),
             curve: Curves.easeOutCubic,
           ),
-        );
+        ),
+      );
+    });
 
     _animationController.forward();
   }
@@ -53,157 +55,213 @@ class _AccountTypeSelectionScreenState extends State<AccountTypeSelectionScreen>
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: AnimatedBuilder(
-          animation: _animationController,
-          builder: (context, child) {
-            return FadeTransition(
-              opacity: _fadeAnimation,
-              child: SlideTransition(
-                position: _slideAnimation,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    children: [
-                      // Header
-                      const SizedBox(height: 40),
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              AppColors.primary.withOpacity(0.1),
-                              AppColors.secondary.withOpacity(0.1),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.business_center_outlined,
-                          size: 52,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                      const SizedBox(height: 32),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            children: [
+              const SizedBox(height: 60),
 
-                      ShaderMask(
-                        shaderCallback: (bounds) => LinearGradient(
-                          colors: [AppColors.primary, AppColors.secondary],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ).createShader(bounds),
-                        child: Text(
-                          LocaleKeys.welcomeToTaQy.tr(),
-                          style: Theme.of(context).textTheme.headlineMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        LocaleKeys.chooseAccountType.tr(),
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: AppColors.onSurfaceVariant,
-                          height: 1.5,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-
-                      const SizedBox(height: 56),
-
-                      // Account Type Cards
-                      AccountTypeCard(
-                        title: LocaleKeys.organizationAdmin.tr(),
-                        description: LocaleKeys.organizationAdminDesc.tr(),
-                        icon: Icons.admin_panel_settings_outlined,
-                        color: AppColors.primary,
-                        onTap: () => _navigateToRegister(context, 'admin'),
-                      ),
-                      const SizedBox(height: 20),
-                      AccountTypeCard(
-                        title: LocaleKeys.employee.tr(),
-                        description: LocaleKeys.employeeDesc.tr(),
-                        icon: Icons.person_outline,
-                        color: AppColors.secondary,
-                        onTap: () => _navigateToRegister(context, 'employee'),
-                      ),
-                      const SizedBox(height: 20),
-                      AccountTypeCard(
-                        title: LocaleKeys.officeBoy.tr(),
-                        description: LocaleKeys.officeBoyDesc.tr(),
-                        icon: Icons.delivery_dining_outlined,
-                        color: Colors.teal,
-                        onTap: () => _navigateToRegister(context, 'office_boy'),
-                      ),
-                      const SizedBox(height: 32),
-
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              LocaleKeys.alreadyHaveAccount.tr(),
-                              style: TextStyle(
-                                color: AppColors.onSurfaceVariant,
-                                fontSize: 16,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            GestureDetector(
-                              onTap: () {
-                                context.pop();
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      AppColors.primary,
-                                      AppColors.secondary,
-                                    ],
-                                    begin: Alignment.centerLeft,
-                                    end: Alignment.centerRight,
-                                  ),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  LocaleKeys.signIn.tr(),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-                  ),
+              // Header
+              Text(
+                LocaleKeys.welcomeToTaQy.tr(),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 28,
+                  color: AppColors.primary,
                 ),
               ),
-            );
-          },
+              const SizedBox(height: 12),
+              Text(
+                LocaleKeys.chooseAccountType.tr(),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 40),
+
+              // Account Types
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    // Organization Admin
+                    AnimatedBuilder(
+                      animation: _itemAnimations[0],
+                      builder: (context, child) {
+                        return Transform.translate(
+                          offset: Offset(
+                            50 * (1 - _itemAnimations[0].value),
+                            0,
+                          ),
+                          child: Opacity(
+                            opacity: _itemAnimations[0].value,
+                            child: _buildAccountTypeItem(
+                              context: context,
+                              title: LocaleKeys.organizationAdmin.tr(),
+                              icon: Icons.admin_panel_settings_outlined,
+                              color: AppColors.primary,
+                              onTap: () =>
+                                  _navigateToRegister(context, 'admin'),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+
+                    // Curved Divider 1
+                    _buildCurvedDivider(true),
+
+                    // Employee
+                    AnimatedBuilder(
+                      animation: _itemAnimations[1],
+                      builder: (context, child) {
+                        return Transform.translate(
+                          offset: Offset(
+                            -50 * (1 - _itemAnimations[1].value),
+                            0,
+                          ),
+                          child: Opacity(
+                            opacity: _itemAnimations[1].value,
+                            child: _buildAccountTypeItem(
+                              context: context,
+                              title: LocaleKeys.employee.tr(),
+                              icon: Icons.person_outline,
+                              color: AppColors.secondary,
+                              onTap: () =>
+                                  _navigateToRegister(context, 'employee'),
+                              isReversed: true,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+
+                    // Curved Divider 2
+                    _buildCurvedDivider(false),
+
+                    // Office Boy
+                    AnimatedBuilder(
+                      animation: _itemAnimations[2],
+                      builder: (context, child) {
+                        return Transform.translate(
+                          offset: Offset(
+                            50 * (1 - _itemAnimations[2].value),
+                            0,
+                          ),
+                          child: Opacity(
+                            opacity: _itemAnimations[2].value,
+                            child: _buildAccountTypeItem(
+                              context: context,
+                              title: LocaleKeys.officeBoy.tr(),
+                              icon: Icons.delivery_dining_outlined,
+                              color: Colors.teal,
+                              onTap: () =>
+                                  _navigateToRegister(context, 'office_boy'),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 40),
+
+              // Sign In Link
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    LocaleKeys.alreadyHaveAccount.tr(),
+                    style: TextStyle(
+                      color: AppColors.onSurfaceVariant,
+                      fontSize: 16,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => context.pop(),
+                    child: Text(
+                      LocaleKeys.signIn.tr(),
+                      style: TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAccountTypeItem({
+    required BuildContext context,
+    required String title,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+    bool isReversed = false,
+  }) {
+    final avatar = GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 80,
+        height: 80,
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          shape: BoxShape.circle,
+          border: Border.all(color: color.withOpacity(0.3), width: 2),
+        ),
+        child: Icon(icon, size: 40, color: color),
+      ),
+    );
+
+    final text = GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(25),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: color,
+          ),
+        ),
+      ),
+    );
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: isReversed ? [text, avatar] : [avatar, text],
+    );
+  }
+
+  Widget _buildCurvedDivider(bool curveRight) {
+    return SizedBox(
+      height: 60,
+      width: double.infinity,
+      child: CustomPaint(
+        painter: CurvedDividerPainter(
+          color: AppColors.onSurfaceVariant.withOpacity(0.2),
+          curveRight: curveRight,
         ),
       ),
     );
@@ -212,4 +270,46 @@ class _AccountTypeSelectionScreenState extends State<AccountTypeSelectionScreen>
   void _navigateToRegister(BuildContext context, String accountType) {
     context.push(Routes.register, extra: accountType);
   }
+}
+
+class CurvedDividerPainter extends CustomPainter {
+  final Color color;
+  final bool curveRight;
+
+  CurvedDividerPainter({required this.color, required this.curveRight});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    final path = Path();
+
+    if (curveRight) {
+      // Start from left, curve to right
+      path.moveTo(size.width * 0.2, size.height * 0.2);
+      path.quadraticBezierTo(
+        size.width * 0.5,
+        size.height * 0.8,
+        size.width * 0.8,
+        size.height * 0.4,
+      );
+    } else {
+      // Start from right, curve to left
+      path.moveTo(size.width * 0.8, size.height * 0.2);
+      path.quadraticBezierTo(
+        size.width * 0.5,
+        size.height * 0.8,
+        size.width * 0.2,
+        size.height * 0.4,
+      );
+    }
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -196,25 +196,15 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen>
 
                             // Title
                             Center(
-                              child: ShaderMask(
-                                shaderCallback: (bounds) => LinearGradient(
-                                  colors: [
-                                    AppColors.primary,
-                                    AppColors.secondary,
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ).createShader(bounds),
-                                child: Text(
-                                  LocaleKeys.resetPassword.tr(),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineMedium
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                ),
+                              child: Text(
+                                LocaleKeys.resetPassword.tr(),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.primary,
+                                    ),
                               ),
                             ),
                             const SizedBox(height: 12),
@@ -259,7 +249,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen>
                                       hint: LocaleKeys.enterEmail.tr(),
                                       prefixIcon: Icons.email_outlined,
                                       keyboardType: TextInputType.emailAddress,
-                                      focusColor: AppColors.primary,
+                                      focusColor: AppColors.secondary,
                                       validator: (value) {
                                         if (value == null || value.isEmpty) {
                                           return LocaleKeys.pleaseEnterEmail
@@ -303,70 +293,36 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen>
 
                             // Back to Login Link
                             Center(
-                              child: Container(
-                                padding: const EdgeInsets.all(20),
-                                width: double.infinity,
-                                decoration: BoxDecoration(
-                                  color: AppColors.surface,
-                                  borderRadius: BorderRadius.circular(16),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      LocaleKeys.rememberPassword.tr(),
-                                      style: TextStyle(
-                                        color: AppColors.onSurfaceVariant,
-                                        fontSize: 16,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Column(
+                                    children: [
+                                      Text(
+                                        LocaleKeys.rememberPassword.tr(),
+                                        style: TextStyle(
+                                          color: AppColors.onSurfaceVariant,
+                                          fontSize: 16,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    GestureDetector(
-                                      onTap: () {
-                                        if (mounted && !_isDisposed) {
-                                          context.go(Routes.login);
-                                        }
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 24,
-                                          vertical: 12,
-                                        ),
-                                        width: double.infinity,
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              AppColors.primary,
-                                              AppColors.secondary,
-                                            ],
-                                            begin: Alignment.centerLeft,
-                                            end: Alignment.centerRight,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            20,
-                                          ),
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            LocaleKeys.backToLogin.tr(),
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 16,
-                                            ),
+                                      TextButton(
+                                        onPressed: () {
+                                          if (mounted && !_isDisposed) {
+                                            context.go(Routes.login);
+                                          }
+                                        },
+                                        child: Text(
+                                          LocaleKeys.backToLogin.tr(),
+                                          style: const TextStyle(
+                                            color: AppColors.primary,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 16,
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  ],
-                                ),
+                                    ],
+                                  ),
+                                ],
                               ),
                             ),
                           ],

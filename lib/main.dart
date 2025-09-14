@@ -83,13 +83,13 @@ Future<void> main() async {
     EasyLocalization(
       path: 'assets/translations',
       supportedLocales: const [
-        Locales.arabic,
+        // Locales.arabic,
         Locales.english,
         // Locales.french,
         // Locales.dutch,
       ],
-      startLocale: Locales.arabic,
-      fallbackLocale: Locales.arabic,
+      startLocale: Locales.english,
+      fallbackLocale: Locales.english,
       useOnlyLangCode: true,
       assetLoader: const CodegenLoader(),
       child: TaQy(),

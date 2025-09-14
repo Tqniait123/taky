@@ -866,10 +866,11 @@ class _AdminLayoutState extends State<AdminLayout>
     );
   }
 
-  Widget _buildAnalyticsTab() {
+   Widget _buildAnalyticsTab() {
+    // Updated to use finalPrice when available, otherwise fallback to price
     final totalRevenue = orders
-        .where((o) => o.price != null && o.status == OrderStatus.completed)
-        .fold(0.0, (sum, order) => sum + order.price!);
+        .where((o) => o.status == OrderStatus.completed && (o.finalPrice != null || o.price != null))
+        .fold(0.0, (sum, order) => sum + (order.finalPrice ?? order.price ?? 0.0));
 
     final mostActiveEmployee = _getMostActiveEmployee();
     final mostActiveOfficeBoy = _getMostActiveOfficeBoy();
@@ -919,7 +920,7 @@ class _AdminLayoutState extends State<AdminLayout>
             _buildAnalyticsCard(
               'Total Revenue',
               'EGP ${totalRevenue.toStringAsFixed(0)}',
-              'From external orders',
+              'From completed orders',
               Icons.attach_money,
               AppColors.success,
             ),
@@ -954,7 +955,6 @@ class _AdminLayoutState extends State<AdminLayout>
       ),
     );
   }
-
   Widget _buildTeamPerformance() {
     return Container(
       padding: EdgeInsets.all(20),
@@ -1144,7 +1144,11 @@ class _AdminLayoutState extends State<AdminLayout>
     );
   }
 
-  Widget _buildDetailedOrderCard(AdminOrder order) {
+   Widget _buildDetailedOrderCard(AdminOrder order) {
+    // Calculate display price (finalPrice if available, otherwise price)
+    final displayPrice = order.finalPrice ?? order.price;
+    final hasPriceChange = order.finalPrice != null && order.price != null && order.finalPrice != order.price;
+
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       padding: EdgeInsets.all(16),
@@ -1178,44 +1182,118 @@ class _AdminLayoutState extends State<AdminLayout>
           ),
           SizedBox(height: 12),
 
-          Row(
+          // Display items (support multiple items)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                order.type == OrderType.internal ? Icons.home : Icons.store,
-                color: _getOrderTypeColor(order.type),
-                size: 20,
-              ),
-              SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      order.item,
+              Row(
+                children: [
+                  Icon(
+                    order.type == OrderType.internal ? Icons.home : Icons.store,
+                    color: _getOrderTypeColor(order.type),
+                    size: 20,
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Items (${order.items.length}):',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 14,
                         fontWeight: FontWeight.w600,
+                        color: AppColors.onSurfaceVariant,
                       ),
                     ),
-                    if (order.description.isNotEmpty)
-                      Text(
-                        order.description,
+                  ),
+                  if (displayPrice != null)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        if (hasPriceChange) ...[
+                          Text(
+                            'EGP ${order.price!.toStringAsFixed(0)}',
+                            style: TextStyle(
+                              color: AppColors.onSurfaceVariant,
+                              fontSize: 12,
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                          ),
+                          Text(
+                            'EGP ${order.finalPrice!.toStringAsFixed(0)}',
+                            style: TextStyle(
+                              color: AppColors.success,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ] else
+                          Text(
+                            'EGP ${displayPrice.toStringAsFixed(0)}',
+                            style: TextStyle(
+                              color: AppColors.success,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                      ],
+                    ),
+                ],
+              ),
+              SizedBox(height: 8),
+              
+              // Display each item with its status
+              ...order.items.map((item) => Padding(
+                padding: EdgeInsets.only(left: 28, bottom: 4),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: _getItemStatusColor(item.status),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        item.name,
                         style: TextStyle(
-                          color: AppColors.onSurfaceVariant,
                           fontSize: 14,
+                          color: item.status == ItemStatus.notAvailable 
+                            ? AppColors.onSurfaceVariant 
+                            : AppColors.onSurface,
+                          decoration: item.status == ItemStatus.notAvailable 
+                            ? TextDecoration.lineThrough 
+                            : null,
+                        ),
+                      ),
+                    ),
+                    if (item.notes != null && item.notes!.isNotEmpty)
+                      Text(
+                        item.notes!,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.onSurfaceVariant,
+                          fontStyle: FontStyle.italic,
                         ),
                       ),
                   ],
                 ),
-              ),
-              if (order.price != null)
-                Text(
-                  'EGP ${order.price!.toStringAsFixed(0)}',
-                  style: TextStyle(
-                    color: AppColors.success,
-                    fontWeight: FontWeight.bold,
+              )).toList(),
+              
+              if (order.description.isNotEmpty) ...[
+                SizedBox(height: 8),
+                Padding(
+                  padding: EdgeInsets.only(left: 28),
+                  child: Text(
+                    order.description,
+                    style: TextStyle(
+                      color: AppColors.onSurfaceVariant,
+                      fontSize: 14,
+                      fontStyle: FontStyle.italic,
+                    ),
                   ),
                 ),
+              ],
             ],
           ),
           SizedBox(height: 12),
@@ -1295,9 +1373,47 @@ class _AdminLayoutState extends State<AdminLayout>
               ],
             ],
           ),
+
+          // Show employee response if available
+          if (order.employeeResponse != null && order.employeeResponse!.isNotEmpty) ...[
+            SizedBox(height: 8),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.chat_bubble_outline, color: Colors.blue, size: 16),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Employee Response: ${order.employeeResponse}',
+                      style: TextStyle(
+                        color: Colors.blue.shade700,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  Color _getItemStatusColor(ItemStatus status) {
+    switch (status) {
+      case ItemStatus.pending:
+        return Colors.orange;
+      case ItemStatus.available:
+        return AppColors.success;
+      case ItemStatus.notAvailable:
+        return AppColors.error;
+    }
   }
 
   Widget _buildFilterChip(String label, bool isSelected) {
@@ -1427,6 +1543,8 @@ class _AdminLayoutState extends State<AdminLayout>
         return AppColors.success;
       case OrderStatus.cancelled:
         return AppColors.error;
+      case OrderStatus.needsResponse:
+        return Colors.purple;
     }
   }
 
@@ -1520,6 +1638,10 @@ class _AdminLayoutState extends State<AdminLayout>
       case OrderStatus.cancelled:
         color = AppColors.error;
         text = 'Cancelled';
+        break;
+      case OrderStatus.needsResponse:
+        color = Colors.purple;
+        text = 'Need Response';
         break;
     }
 

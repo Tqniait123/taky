@@ -1,12 +1,8 @@
 // lib/features/auth/presentation/screens/register_screen.dart
-import 'dart:io';
-
 import 'package:easy_localization/easy_localization.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:taqy/config/routes/routes.dart';
 import 'package:taqy/core/theme/colors.dart';
 import 'package:taqy/core/translations/locale_keys.g.dart';
@@ -18,144 +14,144 @@ import 'package:taqy/features/all/auth/presentation/widgets/color_picker_widget.
 import '../widgets/animated_button.dart';
 import '../widgets/auth_text_field.dart';
 
-// Your ImagePickerAvatar widget
-class ImagePickerAvatar extends StatelessWidget {
-  final bool? isLarge;
-  final void Function(PlatformFile image) onPick;
-  final double? height;
-  final double? width;
-  final PlatformFile? pickedImage;
-  final String? initialImage;
+// // Your ImagePickerAvatar widget
+// class ImagePickerAvatar extends StatelessWidget {
+//   final bool? isLarge;
+//   final void Function(PlatformFile image) onPick;
+//   final double? height;
+//   final double? width;
+//   final PlatformFile? pickedImage;
+//   final String? initialImage;
 
-  const ImagePickerAvatar({
-    super.key,
-    this.pickedImage,
-    required this.onPick,
-    this.isLarge = false,
-    this.height,
-    this.width,
-    this.initialImage,
-  });
+//   const ImagePickerAvatar({
+//     super.key,
+//     this.pickedImage,
+//     required this.onPick,
+//     this.isLarge = false,
+//     this.height,
+//     this.width,
+//     this.initialImage,
+//   });
 
-  @override
-  Widget build(BuildContext context) {
-    bool isLight =
-        Theme.of(context).scaffoldBackgroundColor == AppColors.background;
+//   @override
+//   Widget build(BuildContext context) {
+//     bool isLight =
+//         Theme.of(context).scaffoldBackgroundColor == AppColors.background;
 
-    return SizedBox(
-      height: height ?? (isLarge! ? 300 : 100),
-      width: width ?? (isLarge! ? 300 : 100),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(50),
-                color: pickedImage == null
-                    ? (isLight ? AppColors.background : AppColors.secondary)
-                    : null,
-                image:
-                    (initialImage != null &&
-                        initialImage!.isNotEmpty &&
-                        pickedImage == null)
-                    ? DecorationImage(
-                        fit: BoxFit.cover,
-                        image: NetworkImage(initialImage!),
-                      )
-                    : pickedImage != null && pickedImage!.path != null
-                    ? DecorationImage(
-                        fit: BoxFit.cover,
-                        image: FileImage(File(pickedImage!.path!)),
-                      )
-                    : null,
-              ),
-            ),
-          ),
-          if (pickedImage == null &&
-              (initialImage == null || initialImage!.isEmpty))
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: () async {
-                  final result = await FilePicker.platform.pickFiles(
-                    type: FileType.image,
-                    withData: true,
-                    compressionQuality: 0,
-                  );
-                  if (result != null) {
-                    onPick(result.files.first);
-                  }
-                },
-                child: Material(
-                  color: Colors.transparent,
-                  child: SizedBox.expand(
-                    child: IconButton(
-                      onPressed: () async {
-                        final result = await FilePicker.platform.pickFiles(
-                          type: FileType.image,
-                          withData: true,
-                          compressionQuality: 0,
-                        );
-                        if (result != null) {
-                          onPick(result.files.first);
-                        }
-                      },
-                      splashRadius: 50,
-                      color: Theme.of(context).colorScheme.primary,
-                      icon: Icon(
-                        Icons.add_photo_alternate_outlined,
-                        size: isLarge! ? 30 : 25.0,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            )
-          else
-            PositionedDirectional(
-              bottom: -10,
-              start: -10,
-              height: 40,
-              width: 40,
-              child: Container(
-                height: 120,
-                width: 120,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(60),
-                  color: Colors.white,
-                ),
-                padding: const EdgeInsets.all(5),
-                child: Material(
-                  clipBehavior: Clip.hardEdge,
-                  color: Theme.of(context).colorScheme.primary,
-                  borderRadius: BorderRadius.circular(20),
-                  child: Center(
-                    child: IconButton(
-                      onPressed: () async {
-                        final result = await FilePicker.platform.pickFiles(
-                          type: FileType.image,
-                          withData: true,
-                        );
-                        if (result != null) {
-                          onPick(result.files.first);
-                        }
-                      },
-                      iconSize: 35,
-                      splashRadius: 35,
-                      color: isLight
-                          ? AppColors.background
-                          : AppColors.onSurface,
-                      icon: const Icon(Icons.edit),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
+//     return SizedBox(
+//       height: height ?? (isLarge! ? 300 : 100),
+//       width: width ?? (isLarge! ? 300 : 100),
+//       child: Stack(
+//         clipBehavior: Clip.none,
+//         children: [
+//           Positioned.fill(
+//             child: Container(
+//               decoration: BoxDecoration(
+//                 borderRadius: BorderRadius.circular(50),
+//                 color: pickedImage == null
+//                     ? (isLight ? AppColors.background : AppColors.secondary)
+//                     : null,
+//                 image:
+//                     (initialImage != null &&
+//                         initialImage!.isNotEmpty &&
+//                         pickedImage == null)
+//                     ? DecorationImage(
+//                         fit: BoxFit.cover,
+//                         image: NetworkImage(initialImage!),
+//                       )
+//                     : pickedImage != null && pickedImage!.path != null
+//                     ? DecorationImage(
+//                         fit: BoxFit.cover,
+//                         image: FileImage(File(pickedImage!.path!)),
+//                       )
+//                     : null,
+//               ),
+//             ),
+//           ),
+//           if (pickedImage == null &&
+//               (initialImage == null || initialImage!.isEmpty))
+//             Positioned.fill(
+//               child: GestureDetector(
+//                 onTap: () async {
+//                   final result = await FilePicker.platform.pickFiles(
+//                     type: FileType.image,
+//                     withData: true,
+//                     compressionQuality: 0,
+//                   );
+//                   if (result != null) {
+//                     onPick(result.files.first);
+//                   }
+//                 },
+//                 child: Material(
+//                   color: Colors.transparent,
+//                   child: SizedBox.expand(
+//                     child: IconButton(
+//                       onPressed: () async {
+//                         final result = await FilePicker.platform.pickFiles(
+//                           type: FileType.image,
+//                           withData: true,
+//                           compressionQuality: 0,
+//                         );
+//                         if (result != null) {
+//                           onPick(result.files.first);
+//                         }
+//                       },
+//                       splashRadius: 50,
+//                       color: Theme.of(context).colorScheme.primary,
+//                       icon: Icon(
+//                         Icons.add_photo_alternate_outlined,
+//                         size: isLarge! ? 30 : 25.0,
+//                       ),
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//             )
+//           else
+//             PositionedDirectional(
+//               bottom: -10,
+//               start: -10,
+//               height: 40,
+//               width: 40,
+//               child: Container(
+//                 height: 120,
+//                 width: 120,
+//                 decoration: BoxDecoration(
+//                   borderRadius: BorderRadius.circular(60),
+//                   color: Colors.white,
+//                 ),
+//                 padding: const EdgeInsets.all(5),
+//                 child: Material(
+//                   clipBehavior: Clip.hardEdge,
+//                   color: Theme.of(context).colorScheme.primary,
+//                   borderRadius: BorderRadius.circular(20),
+//                   child: Center(
+//                     child: IconButton(
+//                       onPressed: () async {
+//                         final result = await FilePicker.platform.pickFiles(
+//                           type: FileType.image,
+//                           withData: true,
+//                         );
+//                         if (result != null) {
+//                           onPick(result.files.first);
+//                         }
+//                       },
+//                       iconSize: 35,
+//                       splashRadius: 35,
+//                       color: isLight
+//                           ? AppColors.background
+//                           : AppColors.onSurface,
+//                       icon: const Icon(Icons.edit),
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//             ),
+//         ],
+//       ),
+//     );
+//   }
+// }
 
 class RegisterScreen extends StatefulWidget {
   final String accountType;
@@ -189,8 +185,8 @@ class _RegisterScreenState extends State<RegisterScreen>
   Color _selectedSecondaryColor = AppColors.secondary;
 
   // Image picker for profile and organization logo
-  PlatformFile? _profileImage;
-  PlatformFile? _organizationLogo;
+  // PlatformFile? _profileImage;
+  // PlatformFile? _organizationLogo;
 
   @override
   void initState() {
@@ -333,24 +329,17 @@ class _RegisterScreenState extends State<RegisterScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ShaderMask(
-                shaderCallback: (bounds) => LinearGradient(
-                  colors: [_selectedPrimaryColor, _selectedSecondaryColor],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ).createShader(bounds),
-                child: Text(
-                  LocaleKeys.createAccount.tr(),
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+              Text(
+                LocaleKeys.createAccount.tr(),
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 _getAccountTypeTitle(),
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColors.onSurfaceVariant,
                 ),
               ),
@@ -380,16 +369,16 @@ class _RegisterScreenState extends State<RegisterScreen>
         child: Column(
           children: [
             // Profile Image Picker
-            _buildImageSection(
-              label: LocaleKeys.profileImage.tr(),
-              image: _profileImage,
-              onPick: (image) {
-                setState(() {
-                  _profileImage = image;
-                });
-              },
-            ),
-            const SizedBox(height: 24),
+            // _buildImageSection(
+            //   label: LocaleKeys.profileImage.tr(),
+            //   image: _profileImage,
+            //   onPick: (image) {
+            //     setState(() {
+            //       _profileImage = image;
+            //     });
+            //   },
+            // ),
+            // const SizedBox(height: 24),
 
             // Name Field
             AuthTextField(
@@ -509,7 +498,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                   text: LocaleKeys.createAccount.tr(),
                   onPressed: isLoading ? null : _handleRegister,
                   isLoading: isLoading,
-                  backgroundColor: _getAccountTypeColor(),
+                  backgroundColor: AppColors.primary,
                   width: double.infinity,
                   height: 56,
                 );
@@ -521,33 +510,33 @@ class _RegisterScreenState extends State<RegisterScreen>
     );
   }
 
-  Widget _buildImageSection({
-    required String label,
-    required PlatformFile? image,
-    required Function(PlatformFile) onPick,
-    bool isLarge = false,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            color: AppColors.onSurfaceVariant,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 12),
-        ImagePickerAvatar(
-          pickedImage: image,
-          onPick: onPick,
-          isLarge: isLarge,
-          height: isLarge ? 150 : 100,
-          width: isLarge ? 150 : 100,
-        ),
-      ],
-    );
-  }
+  // Widget _buildImageSection({
+  //   required String label,
+  //   required PlatformFile? image,
+  //   required Function(PlatformFile) onPick,
+  //   bool isLarge = false,
+  // }) {
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.center,
+  //     children: [
+  //       Text(
+  //         label,
+  //         style: Theme.of(context).textTheme.labelMedium?.copyWith(
+  //           color: AppColors.onSurfaceVariant,
+  //           fontWeight: FontWeight.w600,
+  //         ),
+  //       ),
+  //       const SizedBox(height: 12),
+  //       ImagePickerAvatar(
+  //         pickedImage: image,
+  //         onPick: onPick,
+  //         isLarge: isLarge,
+  //         height: isLarge ? 150 : 100,
+  //         width: isLarge ? 150 : 100,
+  //       ),
+  //     ],
+  //   );
+  // }
 
   List<Widget> _buildOrganizationFields() {
     List<Widget> fields = [];
@@ -600,19 +589,19 @@ class _RegisterScreenState extends State<RegisterScreen>
             return null;
           },
         ),
-        const SizedBox(height: 24),
+        // const SizedBox(height: 24),
 
-        // Organization Logo Picker for Admin
-        _buildImageSection(
-          label: LocaleKeys.organizationLogo.tr(),
-          image: _organizationLogo,
-          onPick: (image) {
-            setState(() {
-              _organizationLogo = image;
-            });
-          },
-          isLarge: true,
-        ),
+        // // Organization Logo Picker for Admin
+        // _buildImageSection(
+        //   label: LocaleKeys.organizationLogo.tr(),
+        //   image: _organizationLogo,
+        //   onPick: (image) {
+        //     setState(() {
+        //       _organizationLogo = image;
+        //     });
+        //   },
+        //   isLarge: true,
+        // ),
         const SizedBox(height: 24),
 
         // Primary Color Selection
@@ -648,50 +637,25 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   Widget _buildSignInLink(BuildContext context) {
     return Center(
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              LocaleKeys.alreadyHaveAccount.tr(),
-              style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 16),
-            ),
-            const SizedBox(width: 8),
-            GestureDetector(
-              onTap: () => context.go(Routes.login),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: _getAccountTypeColor(),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  LocaleKeys.signIn.tr(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
-                ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            LocaleKeys.alreadyHaveAccount.tr(),
+            style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 16),
+          ),
+          TextButton(
+            onPressed: () => context.go(Routes.login),
+            child: Text(
+              LocaleKeys.signIn.tr(),
+              style: const TextStyle(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -710,16 +674,16 @@ class _RegisterScreenState extends State<RegisterScreen>
   }
 
   Color _getAccountTypeColor() {
-    switch (widget.accountType) {
-      case 'admin':
-        return _selectedPrimaryColor;
-      case 'employee':
-        return AppColors.secondary;
-      case 'office_boy':
-        return Colors.teal;
-      default:
-        return AppColors.primary;
-    }
+    // switch (widget.accountType) {
+    // case 'admin':
+    //   return _selectedPrimaryColor;
+    // case 'employee':
+    //   return AppColors.secondary;
+    // case 'office_boy':
+    //   return Colors.teal;
+    // default:
+    return AppColors.secondary;
+    // }
   }
 
   entities.UserRole _getAccountTypeRole() {
@@ -740,10 +704,10 @@ class _RegisterScreenState extends State<RegisterScreen>
   }
 
   // Helper method to convert PlatformFile to XFile for compatibility
-  XFile? _platformFileToXFile(PlatformFile? platformFile) {
-    if (platformFile?.path == null) return null;
-    return XFile(platformFile!.path!);
-  }
+  // XFile? _platformFileToXFile(PlatformFile? platformFile) {
+  //   if (platformFile?.path == null) return null;
+  //   return XFile(platformFile!.path!);
+  // }
 
   void _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
@@ -770,14 +734,14 @@ class _RegisterScreenState extends State<RegisterScreen>
       phone: _phoneController.text.trim().isNotEmpty
           ? _phoneController.text.trim()
           : null,
-      profileImage: _platformFileToXFile(_profileImage),
+      // profileImage: _platformFileToXFile(_profileImage),
       organizationName: _orgNameController.text.trim().isNotEmpty
           ? _orgNameController.text.trim()
           : null,
       organizationCode: _orgCodeController.text.trim().isNotEmpty
           ? _orgCodeController.text.trim()
           : null,
-      organizationLogo: _platformFileToXFile(_organizationLogo),
+      // organizationLogo: _platformFileToXFile(_organizationLogo),
       primaryColor: widget.accountType == 'admin'
           ? _colorToHex(_selectedPrimaryColor)
           : null,

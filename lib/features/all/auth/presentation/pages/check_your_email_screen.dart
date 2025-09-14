@@ -16,13 +16,18 @@ class CheckYourEmailScreen extends StatefulWidget {
   final String email;
   final bool isPasswordReset;
 
-  const CheckYourEmailScreen({super.key, required this.email, this.isPasswordReset = false});
+  const CheckYourEmailScreen({
+    super.key,
+    required this.email,
+    this.isPasswordReset = false,
+  });
 
   @override
   State<CheckYourEmailScreen> createState() => _CheckYourEmailScreenState();
 }
 
-class _CheckYourEmailScreenState extends State<CheckYourEmailScreen> with TickerProviderStateMixin {
+class _CheckYourEmailScreenState extends State<CheckYourEmailScreen>
+    with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -33,7 +38,10 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen> with Ticker
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(duration: const Duration(milliseconds: 1500), vsync: this);
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
@@ -42,12 +50,13 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen> with Ticker
       ),
     );
 
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.2, 0.8, curve: Curves.easeOutCubic),
-      ),
-    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: const Interval(0.2, 0.8, curve: Curves.easeOutCubic),
+          ),
+        );
 
     _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
@@ -83,10 +92,18 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen> with Ticker
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
                 ],
               ),
-              child: Icon(Icons.arrow_back_ios_new, color: AppColors.onSurface, size: 20),
+              child: Icon(
+                Icons.arrow_back_ios_new,
+                color: AppColors.onSurface,
+                size: 20,
+              ),
             ),
           ),
         ),
@@ -102,7 +119,9 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen> with Ticker
                       content: Text(LocaleKeys.passwordResetEmailSent.tr()),
                       backgroundColor: AppColors.success,
                       behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   );
                 },
@@ -113,7 +132,9 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen> with Ticker
                         content: Text(failure),
                         backgroundColor: AppColors.error,
                         behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     );
                   }
@@ -122,7 +143,10 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen> with Ticker
               );
             },
             builder: (context, state) {
-              final isLoading = state.maybeWhen(loading: () => true, orElse: () => false);
+              final isLoading = state.maybeWhen(
+                loading: () => true,
+                orElse: () => false,
+              );
 
               return AnimatedBuilder(
                 animation: _animationController,
@@ -142,7 +166,10 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen> with Ticker
                                 padding: const EdgeInsets.all(32),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
-                                    colors: [AppColors.primary.withOpacity(0.1), AppColors.secondary.withOpacity(0.1)],
+                                    colors: [
+                                      AppColors.primary.withOpacity(0.1),
+                                      AppColors.secondary.withOpacity(0.1),
+                                    ],
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                   ),
@@ -152,13 +179,20 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen> with Ticker
                                   padding: const EdgeInsets.all(24),
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
-                                      colors: [AppColors.primary, AppColors.secondary],
+                                      colors: [
+                                        AppColors.primary,
+                                        AppColors.secondary,
+                                      ],
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                     ),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(Icons.mark_email_read_outlined, size: 60, color: Colors.white),
+                                  child: const Icon(
+                                    Icons.mark_email_read_outlined,
+                                    size: 60,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
                             ),
@@ -171,20 +205,16 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen> with Ticker
                             opacity: _fadeAnimation,
                             child: SlideTransition(
                               position: _slideAnimation,
-                              child: ShaderMask(
-                                shaderCallback: (bounds) => LinearGradient(
-                                  colors: [AppColors.primary, AppColors.secondary],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ).createShader(bounds),
-                                child: Text(
-                                  LocaleKeys.checkYourEmail.tr(),
-                                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
+                              child: Text(
+                                LocaleKeys.checkYourEmail.tr(),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.primary,
+                                    ),
+                                textAlign: TextAlign.center,
                               ),
                             ),
                           ),
@@ -198,12 +228,18 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen> with Ticker
                               position: _slideAnimation,
                               child: Text(
                                 widget.isPasswordReset
-                                    ? LocaleKeys.passwordResetEmailSentDescription.tr()
-                                    : LocaleKeys.verificationEmailSentDescription.tr(),
+                                    ? LocaleKeys
+                                          .passwordResetEmailSentDescription
+                                          .tr()
+                                    : LocaleKeys
+                                          .verificationEmailSentDescription
+                                          .tr(),
                                 textAlign: TextAlign.center,
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.bodyLarge?.copyWith(color: AppColors.onSurfaceVariant, height: 1.5),
+                                style: Theme.of(context).textTheme.bodyLarge
+                                    ?.copyWith(
+                                      color: AppColors.onSurfaceVariant,
+                                      height: 1.5,
+                                    ),
                               ),
                             ),
                           ),
@@ -216,14 +252,21 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen> with Ticker
                             child: SlideTransition(
                               position: _slideAnimation,
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
                                 decoration: BoxDecoration(
                                   color: AppColors.primary.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
                                   widget.email,
-                                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 16),
+                                  style: TextStyle(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                  ),
                                 ),
                               ),
                             ),
@@ -236,57 +279,43 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen> with Ticker
                             opacity: _fadeAnimation,
                             child: SlideTransition(
                               position: _slideAnimation,
-                              child: Container(
-                                padding: const EdgeInsets.all(24),
-                                decoration: BoxDecoration(
-                                  color: AppColors.surface,
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.08),
-                                      blurRadius: 20,
-                                      offset: const Offset(0, 8),
-                                    ),
-                                  ],
-                                ),
-                                child: Column(
-                                  children: [
-                                    // Open Email App Button
-                                    SizedBox(
+                              child: Column(
+                                children: [
+                                  // Open Email App Button
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: AnimatedButton(
+                                      text: LocaleKeys.openEmailApp.tr(),
+                                      onPressed: () => _openEmailApp(),
+                                      backgroundColor: AppColors.primary,
                                       width: double.infinity,
-                                      child: AnimatedButton(
-                                        text: LocaleKeys.openEmailApp.tr(),
-                                        onPressed: () => _openEmailApp(),
-                                        backgroundColor: AppColors.primary,
-                                        width: double.infinity,
-                                        height: 56,
-                                        // icon: Icons.email_outlined,
-                                      ),
+                                      height: 56,
+                                      // icon: Icons.email_outlined,
                                     ),
+                                  ),
 
-                                    const SizedBox(height: 16),
+                                  const SizedBox(height: 16),
 
-                                    // Skip Button (for verification) or Back to Login (for password reset)
-                                    SizedBox(
+                                  // Skip Button (for verification) or Back to Login (for password reset)
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: AnimatedButton(
+                                      text: widget.isPasswordReset
+                                          ? LocaleKeys.backToLogin.tr()
+                                          : LocaleKeys.skipIllConfirmLater.tr(),
+                                      onPressed: () {
+                                        if (mounted && !_isDisposed) {
+                                          context.go(Routes.login);
+                                        }
+                                      },
+                                      backgroundColor: AppColors.surface,
+                                      // textColor: AppColors.onSurface,
+                                      // borderColor: AppColors.outline,
                                       width: double.infinity,
-                                      child: AnimatedButton(
-                                        text: widget.isPasswordReset
-                                            ? LocaleKeys.backToLogin.tr()
-                                            : LocaleKeys.skipIllConfirmLater.tr(),
-                                        onPressed: () {
-                                          if (mounted && !_isDisposed) {
-                                            context.go(Routes.login);
-                                          }
-                                        },
-                                        backgroundColor: AppColors.surface,
-                                        // textColor: AppColors.onSurface,
-                                        // borderColor: AppColors.outline,
-                                        width: double.infinity,
-                                        height: 56,
-                                      ),
+                                      height: 56,
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -316,12 +345,17 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen> with Ticker
                                     children: [
                                       Text(
                                         LocaleKeys.didntReceiveEmail.tr(),
-                                        style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 16),
+                                        style: TextStyle(
+                                          color: AppColors.onSurfaceVariant,
+                                          fontSize: 16,
+                                        ),
                                       ),
                                       const SizedBox(height: 12),
                                       AnimatedButton(
                                         text: LocaleKeys.resendEmail.tr(),
-                                        onPressed: isLoading ? null : () => _resendEmail(context),
+                                        onPressed: isLoading
+                                            ? null
+                                            : () => _resendEmail(context),
                                         isLoading: isLoading,
                                         backgroundColor: AppColors.secondary,
                                         width: double.infinity,
@@ -344,17 +378,21 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen> with Ticker
                               text: TextSpan(
                                 children: [
                                   TextSpan(
-                                    text: LocaleKeys.didntReceiveEmailCheck.tr(),
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodySmall?.copyWith(color: AppColors.onSurfaceVariant),
+                                    text: LocaleKeys.didntReceiveEmailCheck
+                                        .tr(),
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(
+                                          color: AppColors.onSurfaceVariant,
+                                        ),
                                   ),
                                   TextSpan(
-                                    text: ' ${LocaleKeys.tryAnotherEmailAddress.tr()}',
-                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: AppColors.primary,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    text:
+                                        ' ${LocaleKeys.tryAnotherEmailAddress.tr()}',
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(
+                                          color: AppColors.primary,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                     recognizer: TapGestureRecognizer()
                                       ..onTap = () {
                                         if (mounted && !_isDisposed) {
@@ -399,15 +437,21 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen> with Ticker
       }
 
       if (!opened && mounted && !_isDisposed) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(LocaleKeys.noEmailAppFound.tr()), backgroundColor: AppColors.warning));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(LocaleKeys.noEmailAppFound.tr()),
+            backgroundColor: AppColors.warning,
+          ),
+        );
       }
     } catch (e) {
       if (mounted && !_isDisposed) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(LocaleKeys.errorOpeningEmailApp.tr()), backgroundColor: AppColors.error));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(LocaleKeys.errorOpeningEmailApp.tr()),
+            backgroundColor: AppColors.error,
+          ),
+        );
       }
     }
   }
@@ -421,14 +465,19 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen> with Ticker
           content: Text(LocaleKeys.verificationEmailResent.tr()),
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
     } catch (e) {
       if (mounted && !_isDisposed) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(LocaleKeys.errorResendingEmail.tr()), backgroundColor: AppColors.error));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(LocaleKeys.errorResendingEmail.tr()),
+            backgroundColor: AppColors.error,
+          ),
+        );
       }
     }
   }

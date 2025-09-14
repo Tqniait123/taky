@@ -144,25 +144,15 @@ class _LoginScreenState extends State<LoginScreen>
                             const SizedBox(height: 32),
 
                             Center(
-                              child: ShaderMask(
-                                shaderCallback: (bounds) => LinearGradient(
-                                  colors: [
-                                    AppColors.primary,
-                                    AppColors.secondary,
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ).createShader(bounds),
-                                child: Text(
-                                  LocaleKeys.welcomeBack.tr(),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineMedium
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                ),
+                              child: Text(
+                                LocaleKeys.welcomeBack.tr(),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.primary,
+                                    ),
                               ),
                             ),
                             const SizedBox(height: 12),
@@ -204,7 +194,7 @@ class _LoginScreenState extends State<LoginScreen>
                                       hint: LocaleKeys.enterEmail.tr(),
                                       prefixIcon: Icons.email_outlined,
                                       keyboardType: TextInputType.emailAddress,
-                                      focusColor: AppColors.primary,
+                                      focusColor: AppColors.secondary,
                                       validator: (value) {
                                         if (value == null || value.isEmpty) {
                                           return LocaleKeys.pleaseEnterEmail
@@ -231,7 +221,7 @@ class _LoginScreenState extends State<LoginScreen>
                                       prefixIcon: Icons.lock_outline,
                                       isPassword: true,
                                       isPasswordVisible: _isPasswordVisible,
-                                      focusColor: AppColors.primary,
+                                      focusColor: AppColors.secondary,
                                       onTogglePassword: () {
                                         setState(() {
                                           _isPasswordVisible =
@@ -292,108 +282,70 @@ class _LoginScreenState extends State<LoginScreen>
                               ),
                             ),
 
-                            const SizedBox(height: 32),
+                            // const SizedBox(height: 32),
 
                             // Divider
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Container(
-                                    height: 1,
-                                    color: AppColors.outline,
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                  child: Text(
-                                    LocaleKeys.or.tr(),
-                                    style: TextStyle(
-                                      color: AppColors.onSurfaceVariant,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Container(
-                                    height: 1,
-                                    color: AppColors.outline,
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            const SizedBox(height: 32),
+                            // Row(
+                            //   children: [
+                            //     Expanded(
+                            //       child: Container(
+                            //         height: 1,
+                            //         color: AppColors.outline,
+                            //       ),
+                            //     ),
+                            //     Padding(
+                            //       padding: const EdgeInsets.symmetric(
+                            //         horizontal: 16,
+                            //       ),
+                            //       child: Text(
+                            //         LocaleKeys.or.tr(),
+                            //         style: TextStyle(
+                            //           color: AppColors.onSurfaceVariant,
+                            //           fontWeight: FontWeight.w500,
+                            //         ),
+                            //       ),
+                            //     ),
+                            //     Expanded(
+                            //       child: Container(
+                            //         height: 1,
+                            //         color: AppColors.outline,
+                            //       ),
+                            //     ),
+                            //   ],
+                            // ),
+                            const SizedBox(height: 16),
 
                             // Sign Up Link
                             Center(
-                              child: Container(
-                                padding: const EdgeInsets.all(20),
-                                width: double.infinity,
-                                decoration: BoxDecoration(
-                                  color: AppColors.surface,
-                                  borderRadius: BorderRadius.circular(16),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    LocaleKeys.dontHaveAccount.tr(),
+                                    style: TextStyle(
+                                      color: AppColors.onSurfaceVariant,
+                                      fontSize: 16,
                                     ),
-                                  ],
-                                ),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      LocaleKeys.dontHaveAccount.tr(),
-                                      style: TextStyle(
-                                        color: AppColors.onSurfaceVariant,
+                                  ),
+                                  // SizedBox(width: 16),
+                                  TextButton(
+                                    onPressed: () {
+                                      if (mounted && !_isDisposed) {
+                                        context.push(
+                                          Routes.accountTypeSelection,
+                                        );
+                                      }
+                                    },
+                                    child: Text(
+                                      LocaleKeys.signUp.tr(),
+                                      style: const TextStyle(
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.w600,
                                         fontSize: 16,
                                       ),
                                     ),
-                                    const SizedBox(height: 12),
-                                    GestureDetector(
-                                      onTap: () {
-                                        if (mounted && !_isDisposed) {
-                                          context.push(
-                                            Routes.accountTypeSelection,
-                                          );
-                                        }
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 24,
-                                          vertical: 12,
-                                        ),
-                                        width: double.infinity,
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              AppColors.primary,
-                                              AppColors.secondary,
-                                            ],
-                                            begin: Alignment.centerLeft,
-                                            end: Alignment.centerRight,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            20,
-                                          ),
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            LocaleKeys.signUp.tr(),
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
