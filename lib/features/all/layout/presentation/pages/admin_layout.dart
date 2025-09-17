@@ -2866,7 +2866,6 @@ class _AdminLayoutState extends State<AdminLayout>
                           ),
                         ),
 
-                        // Animated text with shimmer effect
                         AnimatedBuilder(
                           animation: _shimmerController,
                           builder: (context, child) => ShaderMask(
@@ -2896,7 +2895,7 @@ class _AdminLayoutState extends State<AdminLayout>
                                 return LinearGradient(
                                   colors: [
                                     Colors.white.withOpacity(0.8),
-                                    Colors.white.withOpacity(0.6),
+                                    Colors.white.withOpacity(0.7),
                                   ],
                                 ).createShader(bounds);
                               }
