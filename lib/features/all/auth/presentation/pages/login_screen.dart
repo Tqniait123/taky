@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:taqy/config/routes/routes.dart';
 import 'package:taqy/core/services/di.dart';
-import 'package:taqy/core/static/icons.dart';
 import 'package:taqy/core/theme/colors.dart';
 import 'package:taqy/core/translations/locale_keys.g.dart';
 import 'package:taqy/core/utils/dialogs/error_toast.dart';
@@ -194,7 +193,7 @@ class _LoginScreenState extends State<LoginScreen>
                                       controller: _emailController,
                                       label: LocaleKeys.email.tr(),
                                       hint: LocaleKeys.enterEmail.tr(),
-                                      prefixIcon: AppIcons.mail,
+                                      prefixIcon: Assets.imagesSvgsMail,
                                       keyboardType: TextInputType.emailAddress,
                                       focusColor: AppColors.secondary,
                                       validator: (value) {

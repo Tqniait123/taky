@@ -332,7 +332,6 @@
 //   }
 // }
 
-
 // lib/features/auth/presentation/widgets/modern_color_picker.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -343,6 +342,8 @@ class ModernColorPicker extends StatefulWidget {
   final Color selectedColor;
   final Function(Color) onColorSelected;
   final String? hint;
+  final Color? color;
+  final Color? hintColor;
 
   const ModernColorPicker({
     super.key,
@@ -350,13 +351,16 @@ class ModernColorPicker extends StatefulWidget {
     required this.selectedColor,
     required this.onColorSelected,
     this.hint,
+    this.color,
+    this.hintColor,
   });
 
   @override
   State<ModernColorPicker> createState() => _ModernColorPickerState();
 }
 
-class _ModernColorPickerState extends State<ModernColorPicker> with SingleTickerProviderStateMixin {
+class _ModernColorPickerState extends State<ModernColorPicker>
+    with SingleTickerProviderStateMixin {
   late TextEditingController _hexController;
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
@@ -371,31 +375,26 @@ class _ModernColorPickerState extends State<ModernColorPicker> with SingleTicker
     Color(0xFFFF6B6B), // Softer red (good for backgrounds)
     Color(0xFFDC2626), // Rich red (Material Design)
     Color(0xFFB91C1C), // Dark red (for dark themes)
-    
     // Orange Family (complements your secondary)
     Color(0xFFec9d22), // Your secondary orange
     Color(0xFFFF8A65), // Coral orange (warm and inviting)
     Color(0xFFFF7043), // Material orange (accessibility friendly)
     Color(0xFFD84315), // Deep orange (good contrast)
-    
     // Cool Balance (blues/teals to balance warm palette)
     Color(0xFF1976D2), // Material blue (professional)
     Color(0xFF0288D1), // Light blue (trustworthy)
     Color(0xFF00ACC1), // Cyan (modern, fresh)
     Color(0xFF00796B), // Teal (calming, sophisticated)
-    
     // Purple/Pink Accents (trendy, works with red-orange)
     Color(0xFF7B1FA2), // Deep purple (luxury feel)
     Color(0xFF8E24AA), // Medium purple (creative)
     Color(0xFFAD1457), // Deep pink (energetic)
     Color(0xFFE91E63), // Pink (playful, matches your energy)
-    
     // Green Family (success, nature, balance)
     Color(0xFF388E3C), // Forest green (trust, stability)
     Color(0xFF43A047), // Material green (positive actions)
     Color(0xFF66BB6A), // Light green (gentle success)
     Color(0xFF2E7D32), // Dark green (serious, professional)
-    
     // Neutral Sophistication
     Color(0xFF455A64), // Blue grey (modern, clean)
     Color(0xFF546E7A), // Medium blue grey (subtle)
@@ -406,12 +405,16 @@ class _ModernColorPickerState extends State<ModernColorPicker> with SingleTicker
   @override
   void initState() {
     super.initState();
-    _hexController = TextEditingController(text: _colorToHex(widget.selectedColor));
-    _animationController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
-    _scaleAnimation = Tween<double>(
-      begin: 0.95,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.elasticOut));
+    _hexController = TextEditingController(
+      text: _colorToHex(widget.selectedColor),
+    );
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(begin: 0.95, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.elasticOut),
+    );
     _animationController.forward();
   }
 
@@ -435,17 +438,20 @@ class _ModernColorPickerState extends State<ModernColorPicker> with SingleTicker
               // Label
               Text(
                 widget.label,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600, color: AppColors.onSurfaceVariant),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: widget.color ?? AppColors.onSurfaceVariant,
+                ),
               ),
               if (widget.hint != null) ...[
                 const SizedBox(height: 2),
                 Text(
                   widget.hint!,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: AppColors.onSurfaceVariant.withOpacity(0.6)),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color:
+                        widget.hintColor ??
+                        AppColors.onSurfaceVariant.withOpacity(0.6),
+                  ),
                 ),
               ],
               const SizedBox(height: 12),
@@ -454,11 +460,15 @@ class _ModernColorPickerState extends State<ModernColorPicker> with SingleTicker
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Colors.transparent,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.outline.withOpacity(0.1)),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 16, offset: const Offset(0, 4)),
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
                   ],
                 ),
                 child: Column(
@@ -471,7 +481,9 @@ class _ModernColorPickerState extends State<ModernColorPicker> with SingleTicker
                     AnimatedSize(
                       duration: const Duration(milliseconds: 300),
                       curve: Curves.easeInOut,
-                      child: _showCustomInput ? _buildCustomInput() : const SizedBox.shrink(),
+                      child: _showCustomInput
+                          ? _buildCustomInput()
+                          : const SizedBox.shrink(),
                     ),
 
                     if (_showCustomInput) const SizedBox(height: 16),
@@ -505,8 +517,8 @@ class _ModernColorPickerState extends State<ModernColorPicker> with SingleTicker
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: widget.selectedColor.withOpacity(0.25), 
-              blurRadius: 16, 
+              color: widget.selectedColor.withOpacity(0.25),
+              blurRadius: 16,
               offset: const Offset(0, 6),
               spreadRadius: -2,
             ),
@@ -520,9 +532,14 @@ class _ModernColorPickerState extends State<ModernColorPicker> with SingleTicker
           children: [
             Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
-                  color: _getContrastColor(widget.selectedColor).withOpacity(0.1),
+                  color: _getContrastColor(
+                    widget.selectedColor,
+                  ).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -545,13 +562,15 @@ class _ModernColorPickerState extends State<ModernColorPicker> with SingleTicker
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: _getContrastColor(widget.selectedColor).withOpacity(0.1),
+                    color: _getContrastColor(
+                      widget.selectedColor,
+                    ).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Icon(
-                    Icons.keyboard_arrow_down, 
-                    color: _getContrastColor(widget.selectedColor), 
-                    size: 20
+                    Icons.keyboard_arrow_down,
+                    color: _getContrastColor(widget.selectedColor),
+                    size: 20,
                   ),
                 ),
               ),
@@ -568,18 +587,29 @@ class _ModernColorPickerState extends State<ModernColorPicker> with SingleTicker
       decoration: BoxDecoration(
         color: AppColors.background,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _isValidHex ? AppColors.outline.withOpacity(0.2) : AppColors.error.withOpacity(0.3)),
+        border: Border.all(
+          color: _isValidHex
+              ? AppColors.outline.withOpacity(0.2)
+              : AppColors.error.withOpacity(0.3),
+        ),
       ),
       child: Row(
         children: [
-          Icon(Icons.palette_outlined, color: _isValidHex ? AppColors.onSurfaceVariant : AppColors.error, size: 20),
+          Icon(
+            Icons.palette_outlined,
+            color: _isValidHex ? AppColors.onSurfaceVariant : AppColors.error,
+            size: 20,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: TextField(
               controller: _hexController,
               decoration: InputDecoration(
                 hintText: '#FF5722 or FF5722',
-                hintStyle: TextStyle(color: AppColors.onSurfaceVariant.withOpacity(0.5), fontSize: 14),
+                hintStyle: TextStyle(
+                  color: AppColors.onSurfaceVariant.withOpacity(0.5),
+                  fontSize: 14,
+                ),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.zero,
               ),
@@ -600,11 +630,15 @@ class _ModernColorPickerState extends State<ModernColorPicker> with SingleTicker
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.surface, 
+                color: AppColors.surface,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: AppColors.outline.withOpacity(0.2)),
               ),
-              child: Icon(Icons.content_paste, color: AppColors.onSurfaceVariant, size: 16),
+              child: Icon(
+                Icons.content_paste,
+                color: AppColors.onSurfaceVariant,
+                size: 16,
+              ),
             ),
           ),
         ],
@@ -622,7 +656,9 @@ class _ModernColorPickerState extends State<ModernColorPicker> with SingleTicker
           child: Text(
             'Choose from curated colors',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.onSurfaceVariant.withOpacity(0.7),
+              color:
+                  widget.hintColor ??
+                  AppColors.onSurfaceVariant.withOpacity(0.7),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -650,20 +686,22 @@ class _ModernColorPickerState extends State<ModernColorPicker> with SingleTicker
                   color: color,
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: isSelected ? AppColors.onSurface.withOpacity(0.8) : Colors.transparent,
+                    color: isSelected
+                        ? AppColors.onSurface.withOpacity(0.8)
+                        : Colors.transparent,
                     width: isSelected ? 2.5 : 0,
                   ),
                   boxShadow: [
-                    if (isSelected) 
+                    if (isSelected)
                       BoxShadow(
-                        color: color.withOpacity(0.4), 
-                        blurRadius: 16, 
+                        color: color.withOpacity(0.4),
+                        blurRadius: 16,
                         offset: const Offset(0, 6),
                         spreadRadius: -2,
                       ),
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08), 
-                      blurRadius: 8, 
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
                   ],
@@ -697,8 +735,8 @@ class _ModernColorPickerState extends State<ModernColorPicker> with SingleTicker
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(
-                            Icons.check, 
-                            color: color, 
+                            Icons.check,
+                            color: color,
                             size: 16,
                             weight: 2,
                           ),

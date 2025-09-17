@@ -1,11 +1,12 @@
-// import 'dart:io';
-
-// import 'package:file_picker/file_picker.dart';
 // import 'package:flutter/material.dart';
+// import 'package:flutter_svg/flutter_svg.dart';
 // import 'package:taqy/core/services/firebase_service.dart';
 // import 'package:taqy/core/theme/colors.dart';
+// import 'package:taqy/core/utils/dialogs/error_toast.dart';
+// import 'package:taqy/core/utils/widgets/app_images.dart';
 // import 'package:taqy/features/admin/data/models/organization.dart';
 // import 'package:taqy/features/all/auth/presentation/widgets/animated_button.dart';
+// import 'package:taqy/features/all/auth/presentation/widgets/color_picker_widget.dart';
 
 // class AdminSettingsBottomSheet extends StatefulWidget {
 //   final AdminOrganization organization;
@@ -29,7 +30,6 @@
 //   late TextEditingController _codeController;
 //   late Color _primaryColor;
 //   late Color _secondaryColor;
-//   PlatformFile? _logoFile;
 //   bool _isSaving = false;
 //   final FirebaseService _firebaseService = FirebaseService();
 
@@ -51,9 +51,8 @@
 
 //   @override
 //   Widget build(BuildContext context) {
-
 //     return Container(
-//       height: MediaQuery.of(context).size.height * 0.9,
+//       height: MediaQuery.of(context).size.height * 0.8,
 //       decoration: BoxDecoration(
 //         color: Colors.white,
 //         borderRadius: BorderRadius.only(
@@ -63,6 +62,7 @@
 //       ),
 //       child: Column(
 //         children: [
+//           // Handle bar
 //           Container(
 //             margin: EdgeInsets.only(top: 12),
 //             height: 4,
@@ -73,6 +73,7 @@
 //             ),
 //           ),
 
+//           // Header
 //           Padding(
 //             padding: EdgeInsets.all(24),
 //             child: Row(
@@ -86,9 +87,15 @@
 //                   ),
 //                 ),
 //                 Spacer(),
-//                 IconButton(
-//                   onPressed: () => Navigator.pop(context),
-//                   icon: Icon(Icons.close),
+//                 Container(
+//                   decoration: BoxDecoration(
+//                     color: AppColors.outline,
+//                     borderRadius: BorderRadius.circular(12),
+//                   ),
+//                   child: IconButton(
+//                     onPressed: () => Navigator.pop(context),
+//                     icon: SvgPicture.asset(Assets.imagesSvgsClose),
+//                   ),
 //                 ),
 //               ],
 //             ),
@@ -100,117 +107,12 @@
 //               child: Column(
 //                 crossAxisAlignment: CrossAxisAlignment.start,
 //                 children: [
-//                   Container(
-//                     padding: EdgeInsets.all(20),
-//                     decoration: BoxDecoration(
-//                       color: AppColors.background,
-//                       borderRadius: BorderRadius.circular(16),
-//                       border: Border.all(color: AppColors.outline),
-//                     ),
-//                     child: Column(
-//                       children: [
-//                         Text(
-//                           'Organization Information',
-//                           style: TextStyle(
-//                             fontSize: 16,
-//                             fontWeight: FontWeight.w600,
-//                             color: AppColors.onSurface,
-//                           ),
-//                         ),
-//                         SizedBox(height: 8),
-//                         Text(
-//                           'ID: ${widget.organization.id}',
-//                           style: TextStyle(
-//                             fontSize: 12,
-//                             color: AppColors.onSurfaceVariant,
-//                             fontFamily: 'monospace',
-//                           ),
-//                         ),
-//                         SizedBox(height: 4),
-//                         Text(
-//                           'Created: ${_formatDate(widget.organization.createdAt)}',
-//                           style: TextStyle(
-//                             fontSize: 12,
-//                             color: AppColors.onSurfaceVariant,
-//                           ),
-//                         ),
-//                       ],
-//                     ),
-//                   ),
-//                   SizedBox(height: 24),
-
-//                   Center(
-//                     child: Column(
-//                       children: [
-//                         Text(
-//                           'Company Logo',
-//                           style: TextStyle(
-//                             fontSize: 16,
-//                             fontWeight: FontWeight.w600,
-//                             color: AppColors.onSurface,
-//                           ),
-//                         ),
-//                         SizedBox(height: 12),
-//                         GestureDetector(
-//                           onTap: _pickLogo,
-//                           child: Container(
-//                             height: 120,
-//                             width: 120,
-//                             decoration: BoxDecoration(
-//                               color: AppColors.background,
-//                               borderRadius: BorderRadius.circular(60),
-//                               border: Border.all(
-//                                 color: _primaryColor,
-//                                 width: 2,
-//                               ),
-//                             ),
-//                             child: _logoFile != null
-//                                 ? ClipRRect(
-//                                     borderRadius: BorderRadius.circular(58),
-//                                     child: Image.file(
-//                                       File(_logoFile!.path!),
-//                                       fit: BoxFit.cover,
-//                                     ),
-//                                   )
-//                                 : widget.organization.logoUrl != null
-//                                 ? ClipRRect(
-//                                     borderRadius: BorderRadius.circular(58),
-//                                     child: Image.network(
-//                                       widget.organization.logoUrl!,
-//                                       fit: BoxFit.cover,
-//                                       errorBuilder:
-//                                           (context, error, stackTrace) => Icon(
-//                                             Icons.business,
-//                                             color: _primaryColor,
-//                                             size: 40,
-//                                           ),
-//                                     ),
-//                                   )
-//                                 : Icon(
-//                                     Icons.add_photo_alternate,
-//                                     size: 40,
-//                                     color: _primaryColor,
-//                                   ),
-//                           ),
-//                         ),
-//                         SizedBox(height: 8),
-//                         Text(
-//                           'Tap to change logo',
-//                           style: TextStyle(
-//                             fontSize: 12,
-//                             color: AppColors.onSurfaceVariant,
-//                           ),
-//                         ),
-//                       ],
-//                     ),
-//                   ),
-//                   SizedBox(height: 32),
-
+//                   // Company Name - moved to top
 //                   _buildTextField(
 //                     controller: _nameController,
 //                     label: 'Company Name',
 //                     hint: 'Enter company name',
-//                     icon: Icons.business,
+//                     icon: Assets.imagesSvgsCompany,
 //                     validator: (value) {
 //                       if (value == null || value.trim().isEmpty) {
 //                         return 'Company name is required';
@@ -220,11 +122,12 @@
 //                   ),
 //                   SizedBox(height: 20),
 
+//                   // Company Code
 //                   _buildTextField(
 //                     controller: _codeController,
 //                     label: 'Company Code',
 //                     hint: 'Enter unique company code',
-//                     icon: Icons.code,
+//                     icon: Assets.imagesSvgsCode,
 //                     validator: (value) {
 //                       if (value == null || value.trim().isEmpty) {
 //                         return 'Company code is required';
@@ -237,6 +140,7 @@
 //                   ),
 //                   SizedBox(height: 32),
 
+//                   // Brand Colors Section
 //                   Text(
 //                     'Brand Colors',
 //                     style: TextStyle(
@@ -246,23 +150,43 @@
 //                     ),
 //                   ),
 //                   SizedBox(height: 16),
+//                   ModernColorPicker(
+//                     label: 'Primary Color',
+//                     selectedColor: _primaryColor,
 
-//                   _buildColorSelector(
-//                     'Primary Color',
-//                     _primaryColor,
-//                     (color) => setState(() => _primaryColor = color),
+//                     onColorSelected: (color) {
+//                       setState(() {
+//                         _primaryColor = color;
+//                       });
+//                     },
 //                   ),
+//                   // _buildColorSelector(
+//                   //   'Primary Color',
+//                   //   _primaryColor,
+//                   //   (color) => setState(() => _primaryColor = color),
+//                   // ),
 //                   SizedBox(height: 16),
 
-//                   _buildColorSelector(
-//                     'Secondary Color',
-//                     _secondaryColor,
-//                     (color) => setState(() => _secondaryColor = color),
-//                   ),
-//                   SizedBox(height: 32),
+//                   ModernColorPicker(
+//                     label: 'Secondary Color',
+//                     selectedColor: _secondaryColor,
 
+//                     onColorSelected: (color) {
+//                       setState(() {
+//                         _secondaryColor = color;
+//                       });
+//                     },
+//                   ),
+//                   // _buildColorSelector(
+//                   //   'Secondary Color',
+//                   //   _secondaryColor,
+//                   //   (color) => setState(() => _secondaryColor = color),
+//                   // ),
+//                   SizedBox(height: 24),
+
+//                   // Color Preview
 //                   Text(
-//                     'Color Preview',
+//                     'Preview',
 //                     style: TextStyle(
 //                       fontSize: 16,
 //                       fontWeight: FontWeight.w600,
@@ -282,27 +206,33 @@
 //                     ),
 //                     child: Row(
 //                       children: [
-//                         Icon(Icons.business, color: Colors.white, size: 24),
+//                         SvgPicture.asset(
+//                           Assets.imagesSvgsCompany,
+//                           color: Colors.white,
+//                         ),
 //                         SizedBox(width: 12),
-//                         Text(
-//                           _nameController.text.isEmpty
-//                               ? 'Company Name'
-//                               : _nameController.text,
-//                           style: TextStyle(
-//                             color: Colors.white,
-//                             fontSize: 16,
-//                             fontWeight: FontWeight.bold,
+//                         Expanded(
+//                           child: Text(
+//                             _nameController.text.isEmpty
+//                                 ? 'Company Name'
+//                                 : _nameController.text,
+//                             style: TextStyle(
+//                               color: Colors.white,
+//                               fontSize: 16,
+//                               fontWeight: FontWeight.bold,
+//                             ),
 //                           ),
 //                         ),
 //                       ],
 //                     ),
 //                   ),
-//                   SizedBox(height: 32),
+//                   SizedBox(height: 24),
 //                 ],
 //               ),
 //             ),
 //           ),
 
+//           // Bottom Actions
 //           Container(
 //             padding: EdgeInsets.all(24),
 //             decoration: BoxDecoration(
@@ -344,7 +274,7 @@
 //     required TextEditingController controller,
 //     required String label,
 //     required String hint,
-//     required IconData icon,
+//     required String icon,
 //     String? Function(String?)? validator,
 //   }) {
 //     return Column(
@@ -362,9 +292,14 @@
 //         TextFormField(
 //           controller: controller,
 //           validator: validator,
+//           style: TextStyle(color: AppColors.onSurface),
 //           decoration: InputDecoration(
 //             hintText: hint,
-//             prefixIcon: Icon(icon, color: AppColors.onSurfaceVariant),
+//             prefixIcon: SvgPicture.asset(
+//               icon,
+//               // color: AppColors.onSurfaceVariant,
+//               fit: BoxFit.scaleDown,
+//             ),
 //             border: OutlineInputBorder(
 //               borderRadius: BorderRadius.circular(12),
 //               borderSide: BorderSide(color: AppColors.outline),
@@ -378,6 +313,7 @@
 //               borderSide: BorderSide(color: AppColors.error, width: 2),
 //             ),
 //             filled: true,
+
 //             fillColor: AppColors.background,
 //           ),
 //         ),
@@ -385,118 +321,11 @@
 //     );
 //   }
 
-//   Widget _buildColorSelector(
-//     String label,
-//     Color selectedColor,
-//     Function(Color) onColorChanged,
-//   ) {
-//     final colors = [
-//       AppColors.primary,
-//       AppColors.secondary,
-//       Colors.blue,
-//       Colors.green,
-//       Colors.purple,
-//       Colors.orange,
-//       Colors.teal,
-//       Colors.indigo,
-//       Colors.pink,
-//       Colors.cyan,
-//       Colors.amber,
-//       Colors.red,
-//     ];
-
-//     return Column(
-//       crossAxisAlignment: CrossAxisAlignment.start,
-//       children: [
-//         Text(
-//           label,
-//           style: TextStyle(
-//             fontSize: 14,
-//             fontWeight: FontWeight.w600,
-//             color: AppColors.onSurface,
-//           ),
-//         ),
-//         SizedBox(height: 12),
-//         Wrap(
-//           spacing: 12,
-//           runSpacing: 12,
-//           children: colors.map((color) {
-//             final isSelected = color.value == selectedColor.value;
-//             return GestureDetector(
-//               onTap: () => onColorChanged(color),
-//               child: Container(
-//                 height: 40,
-//                 width: 40,
-//                 decoration: BoxDecoration(
-//                   color: color,
-//                   borderRadius: BorderRadius.circular(20),
-//                   border: isSelected
-//                       ? Border.all(color: AppColors.onSurface, width: 3)
-//                       : Border.all(color: Colors.grey.shade300, width: 1),
-//                   boxShadow: isSelected
-//                       ? [
-//                           BoxShadow(
-//                             color: color.withOpacity(0.3),
-//                             blurRadius: 8,
-//                             offset: Offset(0, 4),
-//                           ),
-//                         ]
-//                       : null,
-//                 ),
-//                 child: isSelected
-//                     ? Icon(Icons.check, color: Colors.white, size: 20)
-//                     : null,
-//               ),
-//             );
-//           }).toList(),
-//         ),
-//       ],
-//     );
-//   }
-
-//   void _pickLogo() async {
-//     try {
-//       final result = await FilePicker.platform.pickFiles(
-//         type: FileType.image,
-//         withData: true,
-//       );
-
-//       if (result != null && result.files.isNotEmpty) {
-//         final file = result.files.first;
-
-//         if (file.size > 5 * 1024 * 1024) {
-//           ScaffoldMessenger.of(context).showSnackBar(
-//             SnackBar(
-//               content: Text('File size must be less than 5MB'),
-//               backgroundColor: AppColors.error,
-//             ),
-//           );
-//           return;
-//         }
-
-//         setState(() {
-//           _logoFile = file;
-//         });
-//       }
-//     } catch (e) {
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         SnackBar(
-//           content: Text('Failed to pick image: $e'),
-//           backgroundColor: AppColors.error,
-//         ),
-//       );
-//     }
-//   }
-
 //   void _saveSettings() async {
 //     if (_nameController.text.trim().isEmpty ||
 //         _codeController.text.trim().isEmpty) {
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         SnackBar(
-//           content: Text('Please fill in all required fields'),
-//           backgroundColor: AppColors.error,
-//         ),
-//       );
+//       showErrorToast(context, 'Please fill in all required fields');
+
 //       return;
 //     }
 
@@ -505,20 +334,11 @@
 //     });
 
 //     try {
-//       String? logoUrl = widget.organization.logoUrl;
-
-//       if (_logoFile != null) {
-//         logoUrl = await _firebaseService.uploadOrganizationLogo(
-//           widget.organization.id,
-//           _logoFile!.path!,
-//         );
-//       }
-
 //       final updatedOrganization = AdminOrganization(
 //         id: widget.organization.id,
 //         name: _nameController.text.trim(),
 //         code: _codeController.text.trim().toUpperCase(),
-//         logoUrl: logoUrl,
+//         logoUrl: widget.organization.logoUrl,
 //         primaryColor: _primaryColor.value.toString(),
 //         secondaryColor: _secondaryColor.value.toString(),
 //         createdAt: widget.organization.createdAt,
@@ -534,27 +354,11 @@
 
 //       widget.onSettingsUpdated(updatedOrganization);
 
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         SnackBar(
-//           content: Row(
-//             children: [
-//               Icon(Icons.check_circle, color: Colors.white),
-//               SizedBox(width: 8),
-//               Text('Settings saved successfully!'),
-//             ],
-//           ),
-//           backgroundColor: AppColors.success,
-//         ),
-//       );
+//       showSuccessToast(context, 'Settings saved successfully!');
 
 //       Navigator.pop(context);
 //     } catch (e) {
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         SnackBar(
-//           content: Text('Failed to save settings: $e'),
-//           backgroundColor: AppColors.error,
-//         ),
-//       );
+//       showErrorToast(context, 'Failed to save settings: $e');
 //     } finally {
 //       setState(() {
 //         _isSaving = false;
@@ -575,6 +379,7 @@
 //           ),
 //           TextButton(
 //             onPressed: () {
+//               // Navigator.pop(context);
 //               widget.onLogout();
 //             },
 //             style: TextButton.styleFrom(foregroundColor: AppColors.error),
@@ -584,29 +389,34 @@
 //       ),
 //     );
 //   }
-
-//   String _formatDate(DateTime date) {
-//     return '${date.day}/${date.month}/${date.year}';
-//   }
 // }
 
+import 'dart:math' as math;
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
+import 'package:taqy/config/routes/routes.dart';
 import 'package:taqy/core/services/firebase_service.dart';
 import 'package:taqy/core/theme/colors.dart';
+import 'package:taqy/core/utils/dialogs/error_toast.dart';
+import 'package:taqy/core/utils/widgets/app_images.dart';
 import 'package:taqy/features/admin/data/models/organization.dart';
-import 'package:taqy/features/all/auth/presentation/widgets/animated_button.dart';
+import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
 import 'package:taqy/features/all/auth/presentation/widgets/color_picker_widget.dart';
 
 class AdminSettingsBottomSheet extends StatefulWidget {
   final AdminOrganization organization;
   final Function(AdminOrganization) onSettingsUpdated;
-  final VoidCallback onLogout;
+  // final VoidCallback onLogout;
 
   const AdminSettingsBottomSheet({
     super.key,
     required this.organization,
     required this.onSettingsUpdated,
-    required this.onLogout,
+    // required this.onLogout,
   });
 
   @override
@@ -614,13 +424,30 @@ class AdminSettingsBottomSheet extends StatefulWidget {
       _AdminSettingsBottomSheetState();
 }
 
-class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet> {
+class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
+    with TickerProviderStateMixin {
   late TextEditingController _nameController;
   late TextEditingController _codeController;
   late Color _primaryColor;
   late Color _secondaryColor;
   bool _isSaving = false;
   final FirebaseService _firebaseService = FirebaseService();
+
+  // Animation Controllers
+  late AnimationController _slideController;
+  late AnimationController _fadeController;
+  late AnimationController _scaleController;
+  late AnimationController _glowController;
+  late AnimationController _particleController;
+  late AnimationController _shimmerController;
+
+  // Animations
+  late Animation<double> _slideAnimation;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _glowAnimation;
+  late Animation<double> _particleAnimation;
+  late Animation<double> _shimmerAnimation;
 
   @override
   void initState() {
@@ -629,285 +456,854 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet> {
     _codeController = TextEditingController(text: widget.organization.code);
     _primaryColor = widget.organization.primaryColorValue;
     _secondaryColor = widget.organization.secondaryColorValue;
+
+    _initializeAnimations();
+    _startAnimations();
+  }
+
+  void _initializeAnimations() {
+    // Slide animation for content entrance
+    _slideController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _slideAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(parent: _slideController, curve: Curves.elasticOut),
+    );
+
+    // Fade animation
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeOut));
+
+    // Scale animation for cards
+    _scaleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
+    );
+
+    // Glow animation for interactive elements
+    _glowController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+    _glowAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
+    );
+
+    // Particle animation for background
+    _particleController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 10),
+    );
+    _particleAnimation = Tween<double>(begin: 0.0, end: 2 * math.pi).animate(
+      CurvedAnimation(parent: _particleController, curve: Curves.linear),
+    );
+
+    // Shimmer effect
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    );
+    _shimmerAnimation = Tween<double>(begin: -1.0, end: 2.0).animate(
+      CurvedAnimation(parent: _shimmerController, curve: Curves.easeInOut),
+    );
+  }
+
+  void _startAnimations() {
+    _slideController.forward();
+    _fadeController.forward();
+    _scaleController.forward();
+    _glowController.repeat(reverse: true);
+    _particleController.repeat();
+    _shimmerController.repeat(reverse: true);
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _codeController.dispose();
+    _slideController.dispose();
+    _fadeController.dispose();
+    _scaleController.dispose();
+    _glowController.dispose();
+    _particleController.dispose();
+    _shimmerController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.8,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
+    return AnimatedBuilder(
+      animation: Listenable.merge([
+        _slideController,
+        _fadeController,
+        _scaleController,
+      ]),
+      builder: (context, child) => Transform.translate(
+        offset: Offset(
+          0,
+          MediaQuery.of(context).size.height * 0.1 * _slideAnimation.value,
         ),
-      ),
-      child: Column(
-        children: [
-          // Handle bar
-          Container(
-            margin: EdgeInsets.only(top: 12),
-            height: 4,
-            width: 40,
-            decoration: BoxDecoration(
-              color: AppColors.outline,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-
-          // Header
-          Padding(
-            padding: EdgeInsets.all(24),
-            child: Row(
-              children: [
-                Text(
-                  'Company Settings',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.onSurface,
-                  ),
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: ScaleTransition(
+            scale: _scaleAnimation,
+            child: Container(
+              height: MediaQuery.of(context).size.height,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(32),
+                  topRight: Radius.circular(32),
                 ),
-                Spacer(),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: Icon(Icons.close),
-                ),
-              ],
-            ),
-          ),
-
-          Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              ),
+              child: Stack(
                 children: [
-                  // Company Name - moved to top
-                  _buildTextField(
-                    controller: _nameController,
-                    label: 'Company Name',
-                    hint: 'Enter company name',
-                    icon: Icons.business,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Company name is required';
-                      }
-                      return null;
-                    },
-                  ),
-                  SizedBox(height: 20),
+                  // Animated background with particles
+                  Positioned.fill(child: _buildAnimatedBackground()),
 
-                  // Company Code
-                  _buildTextField(
-                    controller: _codeController,
-                    label: 'Company Code',
-                    hint: 'Enter unique company code',
-                    icon: Icons.code,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Company code is required';
-                      }
-                      if (value.length < 3) {
-                        return 'Code must be at least 3 characters';
-                      }
-                      return null;
-                    },
-                  ),
-                  SizedBox(height: 32),
-
-                  // Brand Colors Section
-                  Text(
-                    'Brand Colors',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.onSurface,
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  ModernColorPicker(
-                    label: 'Primary Color',
-                    selectedColor: _primaryColor,
-
-                    onColorSelected: (color) {
-                      setState(() {
-                        _primaryColor = color;
-                      });
-                    },
-                  ),
-                  // _buildColorSelector(
-                  //   'Primary Color',
-                  //   _primaryColor,
-                  //   (color) => setState(() => _primaryColor = color),
-                  // ),
-                  SizedBox(height: 16),
-
-                  ModernColorPicker(
-                    label: 'Secondary Color',
-                    selectedColor: _secondaryColor,
-
-                    onColorSelected: (color) {
-                      setState(() {
-                        _secondaryColor = color;
-                      });
-                    },
-                  ),
-                  // _buildColorSelector(
-                  //   'Secondary Color',
-                  //   _secondaryColor,
-                  //   (color) => setState(() => _secondaryColor = color),
-                  // ),
-                  SizedBox(height: 24),
-
-                  // Color Preview
-                  Text(
-                    'Preview',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.onSurface,
-                    ),
-                  ),
-                  SizedBox(height: 12),
-                  Container(
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [_primaryColor, _secondaryColor],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                  // Glass morphism container
+                  Positioned.fill(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(32),
+                        topRight: Radius.circular(32),
                       ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.business, color: Colors.white, size: 24),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            _nameController.text.isEmpty
-                                ? 'Company Name'
-                                : _nameController.text,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.white.withOpacity(0.25),
+                                Colors.white.withOpacity(0.1),
+                                Colors.white.withOpacity(0.05),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(32),
+                              topRight: Radius.circular(32),
+                            ),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.2),
+                              width: 1,
                             ),
                           ),
+                          child: _buildContent(),
                         ),
-                      ],
+                      ),
                     ),
                   ),
-                  SizedBox(height: 24),
                 ],
               ),
             ),
           ),
-
-          // Bottom Actions
-          Container(
-            padding: EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              border: Border(top: BorderSide(color: AppColors.outline)),
-            ),
-            child: Column(
-              children: [
-                AnimatedButton(
-                  text: _isSaving ? 'Saving...' : 'Save Changes',
-                  onPressed: _isSaving ? null : _saveSettings,
-                  backgroundColor: _primaryColor,
-                  width: double.infinity,
-                  height: 50,
-                ),
-                SizedBox(height: 12),
-
-                AnimatedButton(
-                  text: 'Logout',
-                  onPressed: _isSaving
-                      ? null
-                      : () {
-                          Navigator.pop(context);
-                          _showLogoutConfirmation();
-                        },
-                  backgroundColor: AppColors.error,
-                  width: double.infinity,
-                  height: 50,
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-    String? Function(String?)? validator,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: AppColors.onSurface,
+  Widget _buildAnimatedBackground() {
+    return AnimatedBuilder(
+      animation: Listenable.merge([_particleController, _shimmerController]),
+      builder: (context, child) => Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              _primaryColor.withOpacity(0.1),
+              _secondaryColor.withOpacity(0.1),
+              _primaryColor.withOpacity(0.05),
+            ],
+          ),
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(32),
+            topRight: Radius.circular(32),
           ),
         ),
-        SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          validator: validator,
-          style: TextStyle(color: AppColors.onSurface),
-          decoration: InputDecoration(
-            hintText: hint,
-            prefixIcon: Icon(icon, color: AppColors.onSurfaceVariant),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.outline),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: _primaryColor, width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.error, width: 2),
-            ),
-            filled: true,
+        child: CustomPaint(
+          painter: ParticlesPainter(
+            _particleAnimation.value,
+            _primaryColor,
+            _secondaryColor,
+          ),
+          size: Size.infinite,
+        ),
+      ),
+    );
+  }
 
-            fillColor: AppColors.background,
+  Widget _buildContent() {
+    return Column(
+      children: [
+        _buildGlassHeader(),
+        Expanded(
+          child: SingleChildScrollView(
+            physics: BouncingScrollPhysics(),
+            padding: EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: 20),
+                _buildGlassTextField(
+                  controller: _nameController,
+                  label: 'Company Name',
+                  hint: 'Enter company name',
+                  icon: Assets.imagesSvgsCompany,
+                  delay: 0,
+                ),
+                SizedBox(height: 24),
+                _buildGlassTextField(
+                  controller: _codeController,
+                  label: 'Company Code',
+                  hint: 'Enter unique company code',
+                  icon: Assets.imagesSvgsCode,
+                  delay: 100,
+                ),
+                SizedBox(height: 32),
+                _buildBrandColorsSection(),
+                SizedBox(height: 32),
+                _buildAnimatedPreview(),
+                SizedBox(height: 32),
+              ],
+            ),
           ),
         ),
+        _buildGlassBottomActions(),
       ],
     );
   }
 
- 
+  Widget _buildGlassHeader() {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 800),
+      curve: Curves.elasticOut,
+      builder: (context, value, child) => Transform.translate(
+        offset: Offset(0, -50 * (1 - value)),
+        child: Container(
+          padding: EdgeInsets.fromLTRB(24, 20, 24, 16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.white.withOpacity(0.15),
+                Colors.white.withOpacity(0.05),
+              ],
+            ),
+            border: Border(
+              bottom: BorderSide(
+                color: Colors.white.withOpacity(0.1),
+                width: 1,
+              ),
+            ),
+          ),
+          child: Column(
+            children: [
+              // Handle bar with glow effect
+              AnimatedBuilder(
+                animation: _glowController,
+                builder: (context, child) => Container(
+                  margin: EdgeInsets.only(bottom: 20),
+                  height: 5,
+                  width: 50,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        _primaryColor.withOpacity(
+                          0.3 + (_glowAnimation.value * 0.4),
+                        ),
+                        _secondaryColor.withOpacity(
+                          0.3 + (_glowAnimation.value * 0.4),
+                        ),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(3),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _primaryColor.withOpacity(
+                          _glowAnimation.value * 0.3,
+                        ),
+                        blurRadius: 10,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              Row(
+                children: [
+                  // Animated title with shimmer effect
+                  Expanded(
+                    child: AnimatedBuilder(
+                      animation: _shimmerController,
+                      builder: (context, child) => ShaderMask(
+                        shaderCallback: (bounds) {
+                          return LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Colors.white.withOpacity(0.8),
+                              _primaryColor.withOpacity(0.8),
+                              _secondaryColor.withOpacity(0.8),
+                            ],
+                            stops: [
+                              (_shimmerAnimation.value - 1).clamp(0.0, 1.0),
+                              _shimmerAnimation.value.clamp(0.0, 1.0),
+                              (_shimmerAnimation.value + 1).clamp(0.0, 1.0),
+                            ],
+                          ).createShader(bounds);
+                        },
+                        child: Text(
+                          'Settings',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Animated close button
+                  TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.0, end: 1.0),
+                    duration: Duration(milliseconds: 600),
+                    curve: Curves.elasticOut,
+                    builder: (context, value, child) => Transform.scale(
+                      scale: value,
+                      child: GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: AnimatedBuilder(
+                          animation: _glowController,
+                          builder: (context, child) => Container(
+                            padding: EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              gradient: RadialGradient(
+                                colors: [
+                                  Colors.white.withOpacity(
+                                    0.2 + (_glowAnimation.value * 0.1),
+                                  ),
+                                  Colors.white.withOpacity(0.1),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.3),
+                                width: 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.white.withOpacity(
+                                    _glowAnimation.value * 0.2,
+                                  ),
+                                  blurRadius: 15,
+                                  spreadRadius: 1,
+                                ),
+                              ],
+                            ),
+                            child: SvgPicture.asset(
+                              Assets.imagesSvgsClose,
+                              color: Colors.white.withOpacity(0.9),
+                              width: 20,
+                              height: 20,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGlassTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required String icon,
+    required int delay,
+  }) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 600 + delay),
+      curve: Curves.easeOutBack,
+      builder: (context, value, child) => Transform.translate(
+        offset: Offset(100 * (1 - value), 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Animated label
+            ShaderMask(
+              shaderCallback: (bounds) => LinearGradient(
+                colors: [_primaryColor, _secondaryColor],
+              ).createShader(bounds),
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            SizedBox(height: 12),
+
+            // Glass text field
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.white.withOpacity(0.15),
+                    Colors.white.withOpacity(0.05),
+                  ],
+                ),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 20,
+                    offset: Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: TextFormField(
+                    controller: controller,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: hint,
+                      hintStyle: TextStyle(
+                        color: Colors.white.withOpacity(0.6),
+                        fontSize: 14,
+                      ),
+                      prefixIcon: Container(
+                        padding: EdgeInsets.all(12),
+                        child: SvgPicture.asset(
+                          icon,
+                          color: _primaryColor,
+                          width: 20,
+                          height: 20,
+                        ),
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 20,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBrandColorsSection() {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 800),
+      curve: Curves.easeOutBack,
+      builder: (context, value, child) => Transform.scale(
+        scale: value,
+        child: Container(
+          padding: EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.white.withOpacity(0.15),
+                Colors.white.withOpacity(0.05),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Section title with gradient
+                  ShaderMask(
+                    shaderCallback: (bounds) => LinearGradient(
+                      colors: [_primaryColor, _secondaryColor],
+                    ).createShader(bounds),
+                    child: Text(
+                      'Brand Colors',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 24),
+
+                  // Primary color picker
+                  _buildGlassColorPicker(
+                    'Primary Color',
+                    _primaryColor,
+                    (color) => setState(() => _primaryColor = color),
+                    0,
+                  ),
+                  SizedBox(height: 20),
+
+                  // Secondary color picker
+                  _buildGlassColorPicker(
+                    'Secondary Color',
+                    _secondaryColor,
+                    (color) => setState(() => _secondaryColor = color),
+                    100,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGlassColorPicker(
+    String label,
+    Color selectedColor,
+    Function(Color) onColorSelected,
+    int delay,
+  ) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 600 + delay),
+      curve: Curves.easeOutBack,
+      builder: (context, value, child) => Transform.translate(
+        offset: Offset(50 * (1 - value), 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ModernColorPicker(
+              label: label,
+              selectedColor: selectedColor,
+              onColorSelected: onColorSelected,
+              color: Colors.white,
+              hintColor: Colors.white,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnimatedPreview() {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 1000),
+      curve: Curves.elasticOut,
+      builder: (context, value, child) => Transform.scale(
+        scale: value,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ShaderMask(
+              shaderCallback: (bounds) => LinearGradient(
+                colors: [_primaryColor, _secondaryColor],
+              ).createShader(bounds),
+              child: Text(
+                'Live Preview',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            SizedBox(height: 16),
+
+            // Animated preview card
+            AnimatedBuilder(
+              animation: _glowController,
+              builder: (context, child) => Container(
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [_primaryColor, _secondaryColor],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _primaryColor.withOpacity(
+                        0.3 + (_glowAnimation.value * 0.2),
+                      ),
+                      blurRadius: 20 + (_glowAnimation.value * 10),
+                      spreadRadius: 2,
+                      offset: Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    // Animated logo placeholder
+                    AnimatedBuilder(
+                      animation: _particleController,
+                      builder: (context, child) => Transform.rotate(
+                        angle: _particleAnimation.value * 0.1,
+                        child: Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Center(
+                            child: SvgPicture.asset(
+                              Assets.imagesSvgsCompany,
+                              color: Colors.white,
+                              width: 24,
+                              height: 24,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 16),
+
+                    // Company name
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _nameController.text.isEmpty
+                                ? 'Your Company'
+                                : _nameController.text,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            _codeController.text.isEmpty
+                                ? 'CODE'
+                                : _codeController.text.toUpperCase(),
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.8),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGlassBottomActions() {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 1200),
+      curve: Curves.elasticOut,
+      builder: (context, value, child) => Transform.translate(
+        offset: Offset(0, 100 * (1 - value)),
+        child: Container(
+          padding: EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.white.withOpacity(0.2),
+                Colors.white.withOpacity(0.1),
+              ],
+            ),
+            border: Border(
+              top: BorderSide(color: Colors.white.withOpacity(0.2), width: 1),
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Column(
+                children: [
+                  // Save button with glow effect
+                  AnimatedBuilder(
+                    animation: _glowController,
+                    builder: (context, child) => Container(
+                      width: double.infinity,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [_primaryColor, _secondaryColor],
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: _primaryColor.withOpacity(
+                              0.4 + (_glowAnimation.value * 0.2),
+                            ),
+                            blurRadius: 15 + (_glowAnimation.value * 5),
+                            spreadRadius: 1,
+                            offset: Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: _isSaving ? null : _saveSettings,
+                          child: Container(
+                            alignment: Alignment.center,
+                            child: _isSaving
+                                ? Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                      SizedBox(width: 12),
+                                      Text(
+                                        'Saving...',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : Text(
+                                    'Save Changes',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+
+                  // Logout button
+                  Container(
+                    width: double.infinity,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.white.withOpacity(0.15),
+                          Colors.white.withOpacity(0.05),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppColors.error.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: _isSaving
+                            ? null
+                            : () {
+                                Navigator.pop(context);
+                                _showLogoutConfirmation();
+                              },
+                        child: Container(
+                          alignment: Alignment.center,
+                          child: Text(
+                            'Logout',
+                            style: TextStyle(
+                              color: AppColors.error,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   void _saveSettings() async {
     if (_nameController.text.trim().isEmpty ||
         _codeController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please fill in all required fields'),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      showErrorToast(context, 'Please fill in all required fields');
       return;
     }
 
@@ -935,28 +1331,10 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet> {
       );
 
       widget.onSettingsUpdated(updatedOrganization);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.white),
-              SizedBox(width: 8),
-              Text('Settings saved successfully!'),
-            ],
-          ),
-          backgroundColor: AppColors.success,
-        ),
-      );
-
+      showSuccessToast(context, 'Settings saved successfully!');
       Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to save settings: $e'),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      showErrorToast(context, 'Failed to save settings: $e');
     } finally {
       setState(() {
         _isSaving = false;
@@ -967,24 +1345,277 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet> {
   void _showLogoutConfirmation() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Confirm Logout'),
-        content: Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
+      barrierDismissible: false,
+      builder: (context) => _buildGlassDialog(),
+    );
+  }
+
+  Widget _buildGlassDialog() {
+    return AnimatedBuilder(
+      animation: _fadeController,
+      builder: (context, child) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white.withOpacity(0.25),
+                  Colors.white.withOpacity(0.1),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Warning icon with pulse animation
+                AnimatedBuilder(
+                  animation: _glowController,
+                  builder: (context, child) => Transform.scale(
+                    scale: 1.0 + (_glowAnimation.value * 0.1),
+                    child: Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          colors: [
+                            AppColors.error.withOpacity(0.3),
+                            AppColors.error.withOpacity(0.1),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.error.withOpacity(
+                              _glowAnimation.value * 0.3,
+                            ),
+                            blurRadius: 15,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.logout_rounded,
+                        color: AppColors.error,
+                        size: 30,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+
+                // Title
+                Text(
+                  'Confirm Logout',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                SizedBox(height: 12),
+
+                // Message
+                Text(
+                  'Are you sure you want to logout?\nYou will be redirected to the login screen.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white.withOpacity(0.8),
+                  ),
+                ),
+                SizedBox(height: 24),
+
+                // Action buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 48,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.white.withOpacity(0.15),
+                              Colors.white.withOpacity(0.05),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () => Navigator.pop(context),
+                            child: Center(
+                              child: Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Container(
+                        height: 48,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.error,
+                              AppColors.error.withOpacity(0.8),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.error.withOpacity(0.4),
+                              blurRadius: 10,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () async {
+                              // widget.onLogout();
+                              await context.read<AuthCubit>().signOut();
+                              if (context.mounted) {
+                                Navigator.pop(context);
+                                context.go(Routes.login);
+                              }
+                            },
+                            child: Center(
+                              child: Text(
+                                'Logout',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-          TextButton(
-            onPressed: () {
-              // Navigator.pop(context);
-              widget.onLogout();
-            },
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: Text('Logout'),
-          ),
-        ],
+        ),
       ),
     );
   }
+}
+
+// Custom painter for animated particles background
+class ParticlesPainter extends CustomPainter {
+  final double animationValue;
+  final Color primaryColor;
+  final Color secondaryColor;
+
+  ParticlesPainter(this.animationValue, this.primaryColor, this.secondaryColor);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..style = PaintingStyle.fill;
+
+    // Draw floating particles
+    for (int i = 0; i < 20; i++) {
+      final progress = (animationValue + i * 0.1) % 1.0;
+      final x =
+          (i % 4) * size.width / 4 +
+          math.sin(animationValue * 2 * math.pi + i) * 30;
+      final y = size.height * progress;
+      final opacity = math.sin(progress * math.pi) * 0.3;
+
+      paint.color = (i % 2 == 0 ? primaryColor : secondaryColor).withOpacity(
+        opacity,
+      );
+
+      final radius = 2 + math.sin(animationValue * 4 * math.pi + i) * 1;
+      canvas.drawCircle(Offset(x, y), radius, paint);
+    }
+
+    // Draw flowing waves
+    final wavePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+
+    for (int i = 0; i < 3; i++) {
+      final path = Path();
+      final waveHeight = 20 + i * 10;
+      final waveLength = size.width / 4;
+      final waveOffset = animationValue * 2 * math.pi;
+
+      wavePaint.color = (i % 2 == 0 ? primaryColor : secondaryColor)
+          .withOpacity(0.1);
+
+      path.moveTo(0, size.height * 0.3 + i * size.height * 0.2);
+
+      for (double x = 0; x <= size.width; x += 5) {
+        final y =
+            size.height * 0.3 +
+            i * size.height * 0.2 +
+            math.sin((x / waveLength + waveOffset + i) * 2 * math.pi) *
+                waveHeight;
+        path.lineTo(x, y);
+      }
+
+      canvas.drawPath(path, wavePaint);
+    }
+
+    // Draw gradient orbs
+    for (int i = 0; i < 5; i++) {
+      final centerX = (i + 0.5) * size.width / 5;
+      final centerY =
+          size.height * 0.5 +
+          math.sin(animationValue * 2 * math.pi + i * 1.2) * 100;
+      final radius = 40 + math.sin(animationValue * 3 * math.pi + i) * 20;
+
+      final gradient = RadialGradient(
+        colors: [
+          (i % 2 == 0 ? primaryColor : secondaryColor).withOpacity(0.1),
+          Colors.transparent,
+        ],
+      );
+
+      final rect = Rect.fromCircle(
+        center: Offset(centerX, centerY),
+        radius: radius,
+      );
+      paint.shader = gradient.createShader(rect);
+      canvas.drawCircle(Offset(centerX, centerY), radius, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

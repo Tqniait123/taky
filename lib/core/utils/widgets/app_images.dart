@@ -10,6 +10,14 @@ class Assets {
   /// assets/images/svgs/cancell.svg
   static const String imagesSvgsCancell = "assets/images/svgs/cancell.svg";
 
+  /// Assets for imagesSvgsClock
+  /// assets/images/svgs/clock.svg
+  static const String imagesSvgsClock = "assets/images/svgs/clock.svg";
+
+  /// Assets for imagesSvgsClose
+  /// assets/images/svgs/close.svg
+  static const String imagesSvgsClose = "assets/images/svgs/close.svg";
+
   /// Assets for imagesSvgsCode
   /// assets/images/svgs/code.svg
   static const String imagesSvgsCode = "assets/images/svgs/code.svg";

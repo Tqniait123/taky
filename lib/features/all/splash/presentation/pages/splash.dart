@@ -48,7 +48,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   AuthState? _pendingAuthState;
 
   // Animation duration constants
-  static const Duration _totalAnimationDuration = Duration(milliseconds: 3000);
+  // static const Duration _totalAnimationDuration = Duration(milliseconds: 3000);
   static const Duration _minimumSplashDuration = Duration(milliseconds: 2500);
 
   @override

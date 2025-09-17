@@ -66,14 +66,14 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet> {
     }
   }
 
-  Color _getOrderTypeColor(OrderType type) {
-    switch (type) {
-      case OrderType.internal:
-        return Colors.blue;
-      case OrderType.external:
-        return Colors.orange;
-    }
-  }
+  // Color _getOrderTypeColor(OrderType type) {
+  //   switch (type) {
+  //     case OrderType.internal:
+  //       return Colors.blue;
+  //     case OrderType.external:
+  //       return Colors.orange;
+  //   }
+  // }
 
   Color _getItemStatusColor(ItemStatus status) {
     switch (status) {
@@ -350,7 +350,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet> {
                   ),
                   SizedBox(height: 12),
                   ...widget.order.items.asMap().entries.map((entry) {
-                    final index = entry.key;
+                    // final index = entry.key;
                     final item = entry.value;
                     return Container(
                       margin: EdgeInsets.only(bottom: 12),

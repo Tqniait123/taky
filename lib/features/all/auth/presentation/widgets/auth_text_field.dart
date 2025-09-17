@@ -108,6 +108,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
               prefixIcon: widget.prefixIcon != ''
                   ? SvgPicture.asset(
                       widget.prefixIcon,
+                      fit: BoxFit.scaleDown,
                       // color: _isFocused ? widget.focusColor : Colors.grey[400],
                     )
                   : null,
