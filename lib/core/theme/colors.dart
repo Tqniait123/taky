@@ -52,7 +52,6 @@ import 'package:flutter/material.dart';
 //   static const Color red7D = Color(0xFF7D0A0A);
 // }
 
-
 class AppColors {
   static const Color primary = Color(0xFFe72d2d);
   static const Color secondary = Color(0xFFec9d22);
@@ -72,8 +71,16 @@ class AppColors {
   static const Color success = Color(0xFF4CAF50);
   static const Color error = Color(0xFFF44336);
   static const Color warning = Color(0xFFFF9800);
-}
 
+  static const Color glass = Color(0x1AFFFFFF); // For glassmorphism effects
+  static const Color glassStroke = Color(0x33FFFFFF);
+
+  static const LinearGradient accentGradient = LinearGradient(
+    colors: [Color(0xFF6C5CE7), Color(0xFF00D2FF)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+}
 
 // class DarkColors {
 //   static const Color primary =

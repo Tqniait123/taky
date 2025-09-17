@@ -8,6 +8,7 @@ import 'package:taqy/core/services/di.dart';
 import 'package:taqy/core/theme/colors.dart';
 import 'package:taqy/core/translations/locale_keys.g.dart';
 import 'package:taqy/core/utils/dialogs/error_toast.dart';
+import 'package:taqy/core/utils/widgets/app_images.dart';
 import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
 import 'package:taqy/features/all/auth/presentation/widgets/animated_button.dart';
 import 'package:taqy/features/all/auth/presentation/widgets/auth_text_field.dart';
@@ -247,7 +248,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen>
                                       controller: _emailController,
                                       label: LocaleKeys.email.tr(),
                                       hint: LocaleKeys.enterEmail.tr(),
-                                      prefixIcon: Icons.email_outlined,
+                                      prefixIcon: Assets.imagesSvgsMail,
                                       keyboardType: TextInputType.emailAddress,
                                       focusColor: AppColors.secondary,
                                       validator: (value) {

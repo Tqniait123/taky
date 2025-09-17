@@ -1,13 +1,14 @@
 // lib/features/auth/presentation/screens/register_screen.dart
 import 'package:flutter/material.dart';
-import 'package:taqy/core/theme/colors.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:taqy/core/utils/widgets/app_images.dart';
 
 // lib/features/auth/presentation/widgets/auth_text_field.dart
 class AuthTextField extends StatefulWidget {
   final TextEditingController controller;
   final String label;
   final String hint;
-  final IconData? prefixIcon;
+  final String prefixIcon;
   final TextInputType keyboardType;
   final Color focusColor;
   final String? Function(String?)? validator;
@@ -20,7 +21,7 @@ class AuthTextField extends StatefulWidget {
     required this.controller,
     required this.label,
     required this.hint,
-    this.prefixIcon,
+    this.prefixIcon = '',
     this.keyboardType = TextInputType.text,
     required this.focusColor,
     this.validator,
@@ -104,21 +105,22 @@ class _AuthTextFieldState extends State<AuthTextField> {
               // labelStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
               hintText: widget.hint,
               hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-              prefixIcon: widget.prefixIcon != null
-                  ? Icon(
+              prefixIcon: widget.prefixIcon != ''
+                  ? SvgPicture.asset(
                       widget.prefixIcon,
-                      color: _isFocused ? widget.focusColor : Colors.grey[400],
+                      // color: _isFocused ? widget.focusColor : Colors.grey[400],
                     )
                   : null,
               suffixIcon: widget.isPassword
                   ? IconButton(
-                      icon: Icon(
+                      icon: SvgPicture.asset(
                         widget.isPasswordVisible
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
-                        color: _isFocused
-                            ? AppColors.primary
-                            : Colors.grey[400],
+                            ? Assets.imagesSvgsEyeDash
+                            : Assets.imagesSvgsEye,
+
+                        // color: _isFocused
+                        //     ? AppColors.primary
+                        //     : Colors.grey[400],
                       ),
                       onPressed: widget.onTogglePassword,
                     )

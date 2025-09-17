@@ -7,6 +7,7 @@ import 'package:taqy/config/routes/routes.dart';
 import 'package:taqy/core/theme/colors.dart';
 import 'package:taqy/core/translations/locale_keys.g.dart';
 import 'package:taqy/core/utils/dialogs/error_toast.dart';
+import 'package:taqy/core/utils/widgets/app_images.dart';
 import 'package:taqy/features/all/auth/domain/entities/user.dart' as entities;
 import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
 import 'package:taqy/features/all/auth/presentation/widgets/color_picker_widget.dart';
@@ -385,7 +386,7 @@ class _RegisterScreenState extends State<RegisterScreen>
               controller: _nameController,
               label: LocaleKeys.fullName.tr(),
               hint: LocaleKeys.enterFullName.tr(),
-              prefixIcon: Icons.person_outline,
+              prefixIcon: Assets.imagesSvgsUser,
               focusColor: _getAccountTypeColor(),
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -401,7 +402,7 @@ class _RegisterScreenState extends State<RegisterScreen>
               controller: _emailController,
               label: LocaleKeys.email.tr(),
               hint: LocaleKeys.enterEmail.tr(),
-              prefixIcon: Icons.email_outlined,
+              prefixIcon: Assets.imagesSvgsMail,
               keyboardType: TextInputType.emailAddress,
               focusColor: _getAccountTypeColor(),
               validator: (value) {
@@ -423,7 +424,7 @@ class _RegisterScreenState extends State<RegisterScreen>
               controller: _phoneController,
               label: LocaleKeys.phoneNumber.tr(),
               hint: LocaleKeys.enterPhoneNumber.tr(),
-              prefixIcon: Icons.phone_outlined,
+              prefixIcon: Assets.imagesSvgsPhone,
               keyboardType: TextInputType.phone,
               focusColor: _getAccountTypeColor(),
               validator: (value) {
@@ -443,7 +444,7 @@ class _RegisterScreenState extends State<RegisterScreen>
               controller: _passwordController,
               label: LocaleKeys.password.tr(),
               hint: LocaleKeys.createPassword.tr(),
-              prefixIcon: Icons.lock_outline,
+              prefixIcon:Assets.imagesSvgsLock,
               isPassword: true,
               isPasswordVisible: _isPasswordVisible,
               focusColor: _getAccountTypeColor(),
@@ -469,7 +470,7 @@ class _RegisterScreenState extends State<RegisterScreen>
               controller: _confirmPasswordController,
               label: LocaleKeys.confirmPassword.tr(),
               hint: LocaleKeys.confirmYourPassword.tr(),
-              prefixIcon: Icons.lock_outline,
+              prefixIcon: Assets.imagesSvgsLock,
               isPassword: true,
               isPasswordVisible: _isConfirmPasswordVisible,
               focusColor: _getAccountTypeColor(),
@@ -548,7 +549,7 @@ class _RegisterScreenState extends State<RegisterScreen>
           controller: _orgCodeController,
           label: LocaleKeys.organizationCode.tr(),
           hint: LocaleKeys.enterOrganizationCode.tr(),
-          prefixIcon: Icons.business_outlined,
+          prefixIcon: Assets.imagesSvgsCode,
           focusColor: _getAccountTypeColor(),
           validator: (value) {
             if (value == null || value.isEmpty) {
@@ -566,7 +567,7 @@ class _RegisterScreenState extends State<RegisterScreen>
           controller: _orgCodeController,
           label: LocaleKeys.organizationCode.tr(),
           hint: LocaleKeys.enterOrganizationCode.tr(),
-          prefixIcon: Icons.business_outlined,
+          prefixIcon: Assets.imagesSvgsCode,
           focusColor: _getAccountTypeColor(),
           validator: (value) {
             if (value == null || value.isEmpty) {
@@ -580,7 +581,7 @@ class _RegisterScreenState extends State<RegisterScreen>
           controller: _orgNameController,
           label: LocaleKeys.organizationName.tr(),
           hint: LocaleKeys.enterOrganizationName.tr(),
-          prefixIcon: Icons.business_outlined,
+          prefixIcon: Assets.imagesSvgsCompany,
           focusColor: _getAccountTypeColor(),
           validator: (value) {
             if (value == null || value.isEmpty) {

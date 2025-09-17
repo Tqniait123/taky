@@ -11,6 +11,7 @@ import 'package:taqy/features/admin/data/models/organization.dart';
 import 'package:taqy/features/admin/presentation/widgets/admin_settings_bottom_sheet.dart';
 import 'package:taqy/features/admin/presentation/widgets/stat_card.dart';
 import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
+import 'package:taqy/features/all/splash/presentation/pages/splash.dart';
 
 class AdminLayout extends StatefulWidget {
   const AdminLayout({super.key});
@@ -22,6 +23,7 @@ class AdminLayout extends StatefulWidget {
 class _AdminLayoutState extends State<AdminLayout>
     with TickerProviderStateMixin {
   late TabController _tabController;
+  late ScrollController _scrollController;
   final FirebaseService _firebaseService = FirebaseService();
 
   AdminOrganization? organization;
@@ -32,16 +34,44 @@ class _AdminLayoutState extends State<AdminLayout>
   String? errorMessage;
   OrderStatus? selectedFilter;
 
+  late AnimationController _backgroundController;
+
+  int _selectedIndex = 0;
+
+  // For scroll animation
+  double _scrollOffset = 0.0;
+  bool _isHeaderCollapsed = false;
+  late Animation<double> _backgroundGradient;
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
+
+    _backgroundController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    );
+
+    _backgroundGradient = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _backgroundController, curve: Curves.easeInOut),
+    );
     _loadData();
+  }
+
+  void _onScroll() {
+    setState(() {
+      _scrollOffset = _scrollController.offset;
+      _isHeaderCollapsed = _scrollOffset > 100;
+    });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -100,7 +130,6 @@ class _AdminLayoutState extends State<AdminLayout>
           onError: (error) {
             setState(() {
               errorMessage = error.toString();
-
               isLoading = false;
             });
           },
@@ -222,96 +251,344 @@ class _AdminLayoutState extends State<AdminLayout>
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        title: Row(
-          children: [
-            Container(
-              height: 40,
-              width: 40,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    organization!.primaryColorValue,
-                    organization!.secondaryColorValue,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+      body: RefreshIndicator(
+        onRefresh: _loadData,
+        child: SingleChildScrollView(
+          physics: AlwaysScrollableScrollPhysics(),
+          child: Stack(
+            children: [
+              // Main scrollable content
+
+              // Animated header
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 300),
+                top: _isHeaderCollapsed ? -50 : 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  height: MediaQuery.of(context).size.height * 0.5,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        organization!.primaryColorValue,
+                        organization!.secondaryColorValue,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: SafeArea(
+                    child: Stack(
+                      children: [
+                        // Left icon (refresh)
+                        Positioned.fill(
+                          child: CustomPaint(
+                            painter: ParticlesPainter(
+                              _backgroundGradient.value,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 20,
+                          left: 20,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: IconButton(
+                              icon: Icon(Icons.refresh, color: Colors.white),
+                              onPressed: _loadData,
+                            ),
+                          ),
+                        ),
+
+                        // Right icon (settings)
+                        Positioned(
+                          top: 20,
+                          right: 20,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: IconButton(
+                              icon: Icon(Icons.settings, color: Colors.white),
+                              onPressed: () =>
+                                  _showSettingsBottomSheet(context),
+                            ),
+                          ),
+                        ),
+
+                        // Center logo and text
+                        Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // Logo container
+                              Container(
+                                height: 80,
+                                width: 80,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.3),
+                                    width: 2,
+                                  ),
+                                ),
+                                child: organization!.logoUrl != null
+                                    ? ClipRRect(
+                                        borderRadius: BorderRadius.circular(18),
+                                        child: Image.network(
+                                          organization!.logoUrl!,
+                                          fit: BoxFit.cover,
+                                          errorBuilder:
+                                              (context, error, stackTrace) =>
+                                                  Icon(
+                                                    Icons.business,
+                                                    color: Colors.white,
+                                                    size: 40,
+                                                  ),
+                                        ),
+                                      )
+                                    : Icon(
+                                        Icons.business,
+                                        color: Colors.white,
+                                        size: 40,
+                                      ),
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Organization name
+                              Text(
+                                organization!.name,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+
+                              // Subtitle
+                              Text(
+                                'Admin Dashboard',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.8),
+                                  fontSize: 16,
+                                ),
+                              ),
+
+                              _buildNavigationBar(),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                borderRadius: BorderRadius.circular(10),
               ),
-              child: organization!.logoUrl != null
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Image.network(
-                        organization!.logoUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            Icon(Icons.business, color: Colors.white, size: 20),
+              Column(
+                children: [
+                  // Header space
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.42),
+                  // Tab content area
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(24),
+                        topRight: Radius.circular(24),
                       ),
-                    )
-                  : Icon(Icons.business, color: Colors.white, size: 20),
-            ),
-            SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  organization!.name,
-                  style: TextStyle(
-                    color: AppColors.onSurface,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                    ),
+                    child: Column(
+                      children: [
+                        // Tab bar container
+                        SizedBox(height: 16),
+                        // Tab content
+                        _buildSelectedContent(),
+                      ],
+                    ),
                   ),
-                ),
-                Text(
-                  'Admin Dashboard',
-                  style: TextStyle(
-                    color: AppColors.onSurfaceVariant,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh, color: AppColors.onSurface),
-            onPressed: _loadData,
+                ],
+              ),
+            ],
           ),
-          IconButton(
-            icon: Icon(Icons.settings, color: AppColors.onSurface),
-            onPressed: () => _showSettingsBottomSheet(context),
-          ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: organization!.primaryColorValue,
-          labelColor: organization!.primaryColorValue,
-          unselectedLabelColor: AppColors.onSurfaceVariant,
-          isScrollable: true,
-          tabs: [
-            Tab(text: 'Overview'),
-            Tab(text: 'Orders'),
-            Tab(text: 'Employees'),
-            Tab(text: 'Office Boys'),
-            Tab(text: 'Analytics'),
-          ],
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildOverviewTab(),
-          _buildOrdersTab(),
-          _buildEmployeesTab(),
-          _buildOfficeBoysTab(),
-          _buildAnalyticsTab(),
-        ],
       ),
     );
+  }
+
+  // Widget _buildNavigationBar() {
+  //   final navItems = [
+  //     {'title': 'Overview', 'icon': Icons.dashboard},
+  //     {'title': 'Orders', 'icon': Icons.receipt_long},
+  //     {'title': 'Employees', 'icon': Icons.people},
+  //     {'title': 'Office Boys', 'icon': Icons.delivery_dining},
+  //   ];
+
+  //   return SingleChildScrollView(
+  //     scrollDirection: Axis.horizontal,
+  //     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+  //     child: Row(
+  //       children: navItems.asMap().entries.map((entry) {
+  //         final index = entry.key;
+  //         final item = entry.value;
+  //         final isSelected = _selectedIndex == index;
+
+  //         return GestureDetector(
+  //           onTap: () => setState(() => _selectedIndex = index),
+  //           child: AnimatedContainer(
+  //             duration: Duration(milliseconds: 200),
+  //             margin: EdgeInsets.only(right: 12),
+  //             padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+  //             decoration: BoxDecoration(
+  //               color: isSelected
+  //                   ? organization!.primaryColorValue
+  //                   : Colors.grey.shade100,
+  //               borderRadius: BorderRadius.circular(25),
+  //               border: isSelected
+  //                   ? Border.all(color: Colors.grey[300]!, width: 2)
+  //                   : null,
+  //               boxShadow: isSelected
+  //                   ? [
+  //                       BoxShadow(
+  //                         color: organization!.primaryColorValue.withOpacity(
+  //                           0.3,
+  //                         ),
+  //                         blurRadius: 8,
+  //                         offset: Offset(0, 2),
+  //                       ),
+  //                     ]
+  //                   : null,
+  //             ),
+  //             child: Row(
+  //               mainAxisSize: MainAxisSize.min,
+  //               children: [
+  //                 Icon(
+  //                   item['icon'] as IconData,
+  //                   color: isSelected
+  //                       ? Colors.white
+  //                       : AppColors.onSurfaceVariant,
+  //                   size: 20,
+  //                 ),
+  //                 SizedBox(width: 8),
+  //                 Text(
+  //                   item['title'] as String,
+  //                   style: TextStyle(
+  //                     color: isSelected
+  //                         ? Colors.white
+  //                         : AppColors.onSurfaceVariant,
+  //                     fontWeight: isSelected
+  //                         ? FontWeight.w600
+  //                         : FontWeight.normal,
+  //                     fontSize: 14,
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         );
+  //       }).toList(),
+  //     ),
+  //   );
+  // }
+
+  Widget _buildNavigationBar() {
+    final navItems = [
+      {'title': 'Overview', 'icon': Icons.dashboard_outlined},
+      {'title': 'Orders', 'icon': Icons.receipt_long_outlined},
+      {'title': 'Employees', 'icon': Icons.people_outline},
+      {'title': 'Office Boys', 'icon': Icons.delivery_dining_outlined},
+    ];
+
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      padding: EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: AppColors.glass,
+        borderRadius: BorderRadius.circular(25),
+        border: Border.all(color: AppColors.glassStroke, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: navItems.asMap().entries.map((entry) {
+          final index = entry.key;
+          final item = entry.value;
+          final isSelected = _selectedIndex == index;
+
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => _selectedIndex = index),
+              child: AnimatedContainer(
+                duration: Duration(milliseconds: 300),
+                curve: Curves.easeInOutCubic,
+                margin: EdgeInsets.all(2),
+                padding: EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  gradient: isSelected ? AppColors.accentGradient : null,
+                  borderRadius: BorderRadius.circular(20),
+                  // boxShadow: isSelected ? [
+                  //   BoxShadow(
+                  //     color: AppColors.secondary.withOpacity(0.3),
+                  //     blurRadius: 12,
+                  //     offset: Offset(0, 4),
+                  //   ),
+                  // ] : null,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      item['icon'] as IconData,
+                      color: isSelected
+                          ? Colors.white
+                          : Colors.white.withOpacity(0.7),
+                      size: 20,
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      item['title'] as String,
+                      style: TextStyle(
+                        color: isSelected
+                            ? Colors.white
+                            : Colors.white.withOpacity(0.7),
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildSelectedContent() {
+    switch (_selectedIndex) {
+      case 0:
+        return _buildOverviewTab();
+      case 1:
+        return _buildOrdersTab();
+      case 2:
+        return _buildEmployeesTab();
+      case 3:
+        return _buildOfficeBoysTab();
+      default:
+        return _buildOverviewTab();
+    }
   }
 
   Widget _buildEmployeesTab() {
@@ -362,20 +639,17 @@ class _AdminLayoutState extends State<AdminLayout>
           ),
         ),
 
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: _loadData,
-            child: employees.isEmpty
-                ? _buildEmptyState('No employees found', Icons.people)
-                : ListView.builder(
-                    padding: EdgeInsets.all(16),
-                    itemCount: employees.length,
-                    itemBuilder: (context, index) {
-                      return _buildUserCard(employees[index]);
-                    },
-                  ),
-          ),
-        ),
+        employees.isEmpty
+            ? _buildEmptyState('No employees found', Icons.people)
+            : ListView.builder(
+                padding: EdgeInsets.all(16),
+                itemCount: employees.length,
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemBuilder: (context, index) {
+                  return _buildUserCard(employees[index]);
+                },
+              ),
       ],
     );
   }
@@ -428,23 +702,17 @@ class _AdminLayoutState extends State<AdminLayout>
           ),
         ),
 
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: _loadData,
-            child: officeBoys.isEmpty
-                ? _buildEmptyState(
-                    'No office boys found',
-                    Icons.delivery_dining,
-                  )
-                : ListView.builder(
-                    padding: EdgeInsets.all(16),
-                    itemCount: officeBoys.length,
-                    itemBuilder: (context, index) {
-                      return _buildUserCard(officeBoys[index]);
-                    },
-                  ),
-          ),
-        ),
+        officeBoys.isEmpty
+            ? _buildEmptyState('No office boys found', Icons.delivery_dining)
+            : ListView.builder(
+                padding: EdgeInsets.all(16),
+                itemCount: officeBoys.length,
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemBuilder: (context, index) {
+                  return _buildUserCard(officeBoys[index]);
+                },
+              ),
       ],
     );
   }
@@ -473,9 +741,9 @@ class _AdminLayoutState extends State<AdminLayout>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.09),
             blurRadius: 10,
-            offset: Offset(0, 4),
+            offset: Offset(0, 0),
           ),
         ],
         border: !user.isActive
@@ -689,124 +957,82 @@ class _AdminLayoutState extends State<AdminLayout>
         )
         .length;
 
-    return RefreshIndicator(
-      onRefresh: _loadData,
-      child: SingleChildScrollView(
-        physics: AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Quick Stats',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.onSurface,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GridView.count(
+            crossAxisCount: 2,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            childAspectRatio: 1.8,
+            shrinkWrap: true,
+            padding: EdgeInsets.all(0),
+            physics: NeverScrollableScrollPhysics(),
+            children: [
+              StatCard(
+                title: 'Total Orders',
+                value: totalOrders.toString(),
+                icon: Icons.receipt_long,
+                color: organization!.primaryColorValue,
               ),
-            ),
-            SizedBox(height: 16),
+              StatCard(
+                title: 'Today\'s Orders',
+                value: todayOrders.toString(),
+                icon: Icons.today,
+                color: Colors.blue,
+              ),
+              StatCard(
+                title: 'Employees',
+                value: employees.length.toString(),
+                icon: Icons.people,
+                color: organization!.primaryColorValue,
+              ),
+              StatCard(
+                title: 'Office Boys',
+                value: officeBoys.length.toString(),
+                icon: Icons.delivery_dining,
+                color: organization!.secondaryColorValue,
+              ),
+              StatCard(
+                title: 'Internal Orders',
+                value: internalOrders.toString(),
+                icon: Icons.coffee,
+                color: Colors.brown,
+              ),
+              StatCard(
+                title: 'External Orders',
+                value: externalOrders.toString(),
+                icon: Icons.attach_money,
+                color: Colors.green,
+              ),
+              StatCard(
+                title: 'Pending',
+                value: pendingOrders.toString(),
+                icon: Icons.pending_actions,
+                color: Colors.orange,
+              ),
+              StatCard(
+                title: 'Completed',
+                value: completedOrders.toString(),
+                icon: Icons.check_circle,
+                color: AppColors.success,
+              ),
+              StatCard(
+                title: 'Cancelled',
+                value: orders
+                    .where((o) => o.status == OrderStatus.cancelled)
+                    .length
+                    .toString(),
+                icon: Icons.cancel,
+                color: AppColors.error,
+              ),
+            ],
+          ),
 
-            GridView.count(
-              crossAxisCount: 2,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-              childAspectRatio: 1.8,
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              children: [
-                StatCard(
-                  title: 'Total Orders',
-                  value: totalOrders.toString(),
-                  icon: Icons.receipt_long,
-                  color: organization!.primaryColorValue,
-                ),
-                StatCard(
-                  title: 'Today\'s Orders',
-                  value: todayOrders.toString(),
-                  icon: Icons.today,
-                  color: Colors.blue,
-                ),
-                StatCard(
-                  title: 'Employees',
-                  value: employees.length.toString(),
-                  icon: Icons.people,
-                  color: organization!.primaryColorValue,
-                ),
-                StatCard(
-                  title: 'Office Boys',
-                  value: officeBoys.length.toString(),
-                  icon: Icons.delivery_dining,
-                  color: organization!.secondaryColorValue,
-                ),
-                StatCard(
-                  title: 'Internal Orders',
-                  value: internalOrders.toString(),
-                  icon: Icons.coffee,
-                  color: Colors.brown,
-                ),
-                StatCard(
-                  title: 'External Orders',
-                  value: externalOrders.toString(),
-                  icon: Icons.attach_money,
-                  color: Colors.green,
-                ),
-                StatCard(
-                  title: 'Pending',
-                  value: pendingOrders.toString(),
-                  icon: Icons.pending_actions,
-                  color: Colors.orange,
-                ),
-                StatCard(
-                  title: 'Completed',
-                  value: completedOrders.toString(),
-                  icon: Icons.check_circle,
-                  color: AppColors.success,
-                ),
-                StatCard(
-                  title: 'Cancelled',
-                  value: orders
-                      .where((o) => o.status == OrderStatus.cancelled)
-                      .length
-                      .toString(),
-                  icon: Icons.cancel,
-                  color: AppColors.error,
-                ),
-              ],
-            ),
-
-            SizedBox(height: 24),
-
-            // Row(
-            //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            //   children: [
-            //     Text(
-            //       'Recent Orders',
-            //       style: TextStyle(
-            //         fontSize: 18,
-            //         fontWeight: FontWeight.bold,
-            //         color: AppColors.onSurface,
-            //       ),
-            //     ),
-            //     TextButton(
-            //       onPressed: () => _tabController.animateTo(1),
-            //       child: Text('View All'),
-            //     ),
-            //   ],
-            // ),
-            // SizedBox(height: 16),
-
-            // if (orders.isEmpty)
-            //   _buildEmptyState('No orders yet', Icons.receipt_long)
-            // else
-            //   ...orders
-            //       .take(5)
-            //       .map(
-            //         (order) =>
-            //             OrderCard(order: order, organization: organization!),
-            //       ),
-          ],
-        ),
+          SizedBox(height: 24),
+        ],
       ),
     );
   }
@@ -857,307 +1083,18 @@ class _AdminLayoutState extends State<AdminLayout>
           ),
         ),
 
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: _loadData,
-            child: filteredOrders.isEmpty
-                ? _buildEmptyState('No orders found', Icons.search_off)
-                : ListView.builder(
-                    padding: EdgeInsets.all(16),
-                    itemCount: filteredOrders.length,
-                    itemBuilder: (context, index) {
-                      return _buildDetailedOrderCard(filteredOrders[index]);
-                    },
-                  ),
-          ),
-        ),
+        filteredOrders.isEmpty
+            ? _buildEmptyState('No orders found', Icons.search_off)
+            : ListView.builder(
+                padding: EdgeInsets.all(16),
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: filteredOrders.length,
+                itemBuilder: (context, index) {
+                  return _buildDetailedOrderCard(filteredOrders[index]);
+                },
+              ),
       ],
-    );
-  }
-
-  Widget _buildAnalyticsTab() {
-    // Updated to use finalPrice when available, otherwise fallback to price
-    final totalRevenue = orders
-        .where(
-          (o) =>
-              o.status == OrderStatus.completed &&
-              (o.finalPrice != null || o.price != null),
-        )
-        .fold(
-          0.0,
-          (sum, order) => sum + (order.finalPrice ?? order.price ?? 0.0),
-        );
-
-    final mostActiveEmployee = _getMostActiveEmployee();
-    final mostActiveOfficeBoy = _getMostActiveOfficeBoy();
-    final popularItem = _getPopularItem();
-
-    return RefreshIndicator(
-      onRefresh: _loadData,
-      child: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Analytics Overview',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.onSurface,
-              ),
-            ),
-            SizedBox(height: 16),
-
-            _buildAnalyticsCard(
-              'Most Active Employee',
-              mostActiveEmployee['name'] ?? 'N/A',
-              '${mostActiveEmployee['count']} orders',
-              Icons.person_pin,
-              organization!.primaryColorValue,
-            ),
-            SizedBox(height: 12),
-            _buildAnalyticsCard(
-              'Most Active Office Boy',
-              mostActiveOfficeBoy['name'] ?? 'N/A',
-              '${mostActiveOfficeBoy['count']} deliveries',
-              Icons.delivery_dining,
-              organization!.secondaryColorValue,
-            ),
-            SizedBox(height: 12),
-            _buildAnalyticsCard(
-              'Popular Item',
-              popularItem['item'] ?? 'N/A',
-              'Ordered ${popularItem['count']} times',
-              Icons.local_cafe,
-              Colors.brown,
-            ),
-            SizedBox(height: 12),
-            _buildAnalyticsCard(
-              'Total Revenue',
-              'EGP ${totalRevenue.toStringAsFixed(0)}',
-              'From completed orders',
-              Icons.attach_money,
-              AppColors.success,
-            ),
-
-            SizedBox(height: 24),
-
-            Text(
-              'Team Performance',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.onSurface,
-              ),
-            ),
-            SizedBox(height: 16),
-            _buildTeamPerformance(),
-
-            SizedBox(height: 24),
-
-            Text(
-              'Order Status Distribution',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.onSurface,
-              ),
-            ),
-            SizedBox(height: 16),
-            _buildStatusDistribution(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTeamPerformance() {
-    return Container(
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  children: [
-                    Text(
-                      '${employees.where((e) => e.isActive).length}',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: organization!.primaryColorValue,
-                      ),
-                    ),
-                    Text(
-                      'Active Employees',
-                      style: TextStyle(
-                        color: AppColors.onSurfaceVariant,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(width: 1, height: 40, color: AppColors.outline),
-              Expanded(
-                child: Column(
-                  children: [
-                    Text(
-                      '${officeBoys.where((o) => o.isActive).length}',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: organization!.secondaryColorValue,
-                      ),
-                    ),
-                    Text(
-                      'Active Office Boys',
-                      style: TextStyle(
-                        color: AppColors.onSurfaceVariant,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 16),
-          Divider(color: AppColors.outline),
-          SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  children: [
-                    Text(
-                      (employees.isEmpty ? 0 : orders.length / employees.length)
-                          .toStringAsFixed(1),
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.onSurface,
-                      ),
-                    ),
-                    Text(
-                      'Avg Orders/Employee',
-                      style: TextStyle(
-                        color: AppColors.onSurfaceVariant,
-                        fontSize: 12,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Column(
-                  children: [
-                    Text(
-                      (officeBoys.isEmpty
-                              ? 0
-                              : orders.length / officeBoys.length)
-                          .toStringAsFixed(1),
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.onSurface,
-                      ),
-                    ),
-                    Text(
-                      'Avg Deliveries/Office Boy',
-                      style: TextStyle(
-                        color: AppColors.onSurfaceVariant,
-                        fontSize: 12,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAnalyticsCard(
-    String title,
-    String value,
-    String subtitle,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            height: 60,
-            width: 60,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(30),
-            ),
-            child: Icon(icon, color: color, size: 30),
-          ),
-          SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: AppColors.onSurfaceVariant,
-                    fontSize: 14,
-                  ),
-                ),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                    color: AppColors.onSurface,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    color: AppColors.onSurfaceVariant,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -1177,9 +1114,9 @@ class _AdminLayoutState extends State<AdminLayout>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.09),
             blurRadius: 10,
-            offset: Offset(0, 4),
+            offset: Offset(0, 0),
           ),
         ],
       ),
@@ -1445,6 +1382,11 @@ class _AdminLayoutState extends State<AdminLayout>
       child: FilterChip(
         label: Text(label),
         selected: isSelected,
+        side: BorderSide(
+          color: isSelected
+              ? organization!.primaryColorValue
+              : Colors.grey[300]!,
+        ),
         onSelected: (bool value) {
           setState(() {
             if (label == 'All') {
@@ -1462,68 +1404,14 @@ class _AdminLayoutState extends State<AdminLayout>
         },
         selectedColor: organization!.primaryColorValue.withOpacity(0.2),
         checkmarkColor: organization!.primaryColorValue,
+        backgroundColor: Colors.white,
+
         labelStyle: TextStyle(
           color: isSelected
               ? organization!.primaryColorValue
               : AppColors.onSurfaceVariant,
           fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
         ),
-      ),
-    );
-  }
-
-  Widget _buildStatusDistribution() {
-    final statusCounts = <OrderStatus, int>{};
-    for (final status in OrderStatus.values) {
-      statusCounts[status] = orders.where((o) => o.status == status).length;
-    }
-
-    return Container(
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: statusCounts.entries.map((entry) {
-          final percentage = orders.isEmpty
-              ? 0.0
-              : (entry.value / orders.length);
-          return Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              children: [
-                Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(entry.key),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                ),
-                SizedBox(width: 12),
-                Text(
-                  entry.key.toString().split('.').last.toUpperCase(),
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                Spacer(),
-                Text('${entry.value}'),
-                SizedBox(width: 8),
-                Text(
-                  '(${(percentage * 100).toStringAsFixed(1)}%)',
-                  style: TextStyle(color: AppColors.onSurfaceVariant),
-                ),
-              ],
-            ),
-          );
-        }).toList(),
       ),
     );
   }
@@ -1556,21 +1444,6 @@ class _AdminLayoutState extends State<AdminLayout>
         : organization!.primaryColorValue;
   }
 
-  Color _getStatusColor(OrderStatus status) {
-    switch (status) {
-      case OrderStatus.pending:
-        return Colors.orange;
-      case OrderStatus.inProgress:
-        return Colors.blue;
-      case OrderStatus.completed:
-        return AppColors.success;
-      case OrderStatus.cancelled:
-        return AppColors.error;
-      case OrderStatus.needsResponse:
-        return Colors.purple;
-    }
-  }
-
   String _formatTime(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
@@ -1584,62 +1457,7 @@ class _AdminLayoutState extends State<AdminLayout>
     }
   }
 
-  Map<String, dynamic> _getMostActiveEmployee() {
-    if (orders.isEmpty) return {'name': null, 'count': 0};
-
-    final employeeCounts = <String, int>{};
-    final employeeNames = <String, String>{};
-
-    for (final order in orders) {
-      employeeCounts[order.employeeId] =
-          (employeeCounts[order.employeeId] ?? 0) + 1;
-      employeeNames[order.employeeId] = order.employeeName;
-    }
-
-    final topEmployee = employeeCounts.entries.reduce(
-      (a, b) => a.value > b.value ? a : b,
-    );
-
-    return {'name': employeeNames[topEmployee.key], 'count': topEmployee.value};
-  }
-
-  Map<String, dynamic> _getMostActiveOfficeBoy() {
-    if (orders.isEmpty) return {'name': null, 'count': 0};
-
-    final officeBoysCounts = <String, int>{};
-    final officeBoysNames = <String, String>{};
-
-    for (final order in orders) {
-      officeBoysCounts[order.officeBoyId] =
-          (officeBoysCounts[order.officeBoyId] ?? 0) + 1;
-      officeBoysNames[order.officeBoyId] = order.officeBoyName;
-    }
-
-    final topOfficeBoy = officeBoysCounts.entries.reduce(
-      (a, b) => a.value > b.value ? a : b,
-    );
-
-    return {
-      'name': officeBoysNames[topOfficeBoy.key],
-      'count': topOfficeBoy.value,
-    };
-  }
-
-  Map<String, dynamic> _getPopularItem() {
-    if (orders.isEmpty) return {'item': null, 'count': 0};
-
-    final itemCounts = <String, int>{};
-
-    for (final order in orders) {
-      itemCounts[order.item] = (itemCounts[order.item] ?? 0) + 1;
-    }
-
-    final topItem = itemCounts.entries.reduce(
-      (a, b) => a.value > b.value ? a : b,
-    );
-
-    return {'item': topItem.key, 'count': topItem.value};
-  }
+  //
 
   Widget _buildStatusChip(OrderStatus status) {
     Color color;
