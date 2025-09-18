@@ -71,6 +71,7 @@ dependencies:
   firebase_storage: ^13.0.0
   firebase_messaging: ^16.0.0
   bloc: ^9.0.0
+  lottie: ^3.3.1
 
 dev_dependencies:
   flutter_test:
@@ -101,6 +102,7 @@ flutter:
     - assets/translations/
     - assets/images/icons/
     - assets/images/svgs/
+    - assets/images/lottie/
     - assets/images/photos/
     - assets/fonts/
 

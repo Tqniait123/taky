@@ -1,9 +1,16 @@
+import 'dart:math' as math;
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lottie/lottie.dart';
 import 'package:taqy/config/routes/routes.dart';
 import 'package:taqy/core/services/firebase_service.dart';
+import 'package:taqy/core/static/app_assets.dart';
+import 'package:taqy/core/theme/colors.dart';
+import 'package:taqy/core/utils/widgets/app_images.dart';
 import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
 import 'package:taqy/features/employee/data/models/order_model.dart';
 import 'package:taqy/features/employee/data/models/organization_model.dart';
@@ -20,20 +27,141 @@ class EmployeeLayout extends StatefulWidget {
   State<EmployeeLayout> createState() => _EmployeeLayoutState();
 }
 
-class _EmployeeLayoutState extends State<EmployeeLayout> {
+class _EmployeeLayoutState extends State<EmployeeLayout>
+    with TickerProviderStateMixin {
   final FirebaseService _firebaseService = FirebaseService();
 
   EmployeeUserModel? currentUser;
   EmployeeOrganization? organization;
-  List<EmployeeOrder> myOrders = [];
+  // List<EmployeeOrder> myOrders = [];
+  List<EmployeeOrder> todayOrders = [];
+  List<EmployeeOrder> historyOrders = [];
   List<EmployeeUserModel> officeBoys = [];
   bool isLoading = true;
   String? errorMessage;
 
+  // Animation Controllers
+  late AnimationController _backgroundController;
+  late AnimationController _pulseController;
+  late AnimationController _slideController;
+  late AnimationController _fadeController;
+  late AnimationController _scaleController;
+  late AnimationController _rotationController;
+  late AnimationController _shimmerController;
+
+  // Animations
+  late Animation<double> _backgroundGradient;
+  late Animation<double> _pulseAnimation;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _rotationAnimation;
+  late Animation<double> _shimmerAnimation;
+
+  int _selectedIndex = 0;
+  double _scrollOffset = 0.0;
+  bool _isHeaderCollapsed = false;
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
+    _initializeAnimations();
     _loadData();
+  }
+
+  void _initializeAnimations() {
+    // Background animation controller
+    _backgroundController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    );
+    _backgroundGradient = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _backgroundController, curve: Curves.easeInOut),
+    );
+
+    // Pulse animation for active elements
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
+    // Slide animation for content
+    _slideController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(parent: _slideController, curve: Curves.elasticOut),
+        );
+
+    // Fade animation
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeOut));
+
+    // Scale animation
+    _scaleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
+    );
+
+    // Rotation animation
+    _rotationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 10),
+    );
+    _rotationAnimation = Tween<double>(begin: 0.0, end: 2 * math.pi).animate(
+      CurvedAnimation(parent: _rotationController, curve: Curves.linear),
+    );
+
+    // Shimmer effect
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+    _shimmerAnimation = Tween<double>(begin: -1.0, end: 2.0).animate(
+      CurvedAnimation(parent: _shimmerController, curve: Curves.easeInOut),
+    );
+
+    // Start continuous animations
+    _backgroundController.repeat(reverse: true);
+    _pulseController.repeat(reverse: true);
+    _rotationController.repeat();
+    _shimmerController.repeat();
+  }
+
+  void _onScroll() {
+    setState(() {
+      _scrollOffset = _scrollController.offset;
+      _isHeaderCollapsed = _scrollOffset > 100;
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _backgroundController.dispose();
+    _pulseController.dispose();
+    _slideController.dispose();
+    _fadeController.dispose();
+    _scaleController.dispose();
+    _rotationController.dispose();
+    _shimmerController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -42,6 +170,11 @@ class _EmployeeLayoutState extends State<EmployeeLayout> {
         isLoading = true;
         errorMessage = null;
       });
+
+      // Start entrance animations
+      _slideController.reset();
+      _fadeController.reset();
+      _scaleController.reset();
 
       final user = _firebaseService.currentUser;
       if (user == null) {
@@ -74,6 +207,11 @@ class _EmployeeLayoutState extends State<EmployeeLayout> {
 
       // Load user's orders
       _loadMyOrders();
+
+      // Trigger entrance animations
+      _slideController.forward();
+      _fadeController.forward();
+      _scaleController.forward();
     } catch (e) {
       setState(() {
         errorMessage = e.toString();
@@ -109,18 +247,38 @@ class _EmployeeLayoutState extends State<EmployeeLayout> {
         .listen(
           (snapshot) {
             if (mounted) {
+              final allOrders =
+                  snapshot.docs
+                      .map((doc) => EmployeeOrder.fromFirestore(doc))
+                      .where((order) => order.employeeId == currentUser!.id)
+                      .toList()
+                    ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+              final now = DateTime.now();
+              final today = DateTime(now.year, now.month, now.day);
+
               setState(() {
-                // Filter and sort in memory
-                myOrders =
-                    snapshot.docs
-                        .map((doc) => EmployeeOrder.fromFirestore(doc))
-                        .where(
-                          (order) => order.employeeId == currentUser!.id,
-                        ) // Filter by employee
-                        .toList()
-                      ..sort(
-                        (a, b) => b.createdAt.compareTo(a.createdAt),
-                      ); // Sort newest first
+                todayOrders = allOrders;
+
+                // Separate today's orders and history
+                todayOrders = allOrders.where((order) {
+                  final orderDate = DateTime(
+                    order.createdAt.year,
+                    order.createdAt.month,
+                    order.createdAt.day,
+                  );
+                  return orderDate.isAtSameMomentAs(today);
+                }).toList();
+
+                historyOrders = allOrders.where((order) {
+                  final orderDate = DateTime(
+                    order.createdAt.year,
+                    order.createdAt.month,
+                    order.createdAt.day,
+                  );
+                  return orderDate.isBefore(today);
+                }).toList();
+
                 isLoading = false;
               });
             }
@@ -216,11 +374,15 @@ class _EmployeeLayoutState extends State<EmployeeLayout> {
               'updatedAt': Timestamp.fromDate(DateTime.now()),
             };
 
-            await _firebaseService.updateDocument('orders', orderId, updateData);
+            await _firebaseService.updateDocument(
+              'orders',
+              orderId,
+              updateData,
+            );
             _showSuccessToast(
-              newStatus == OrderStatus.cancelled 
-                  ? 'Order cancelled successfully!' 
-                  : 'Order updated successfully!'
+              newStatus == OrderStatus.cancelled
+                  ? 'Order cancelled successfully!'
+                  : 'Order updated successfully!',
             );
           } catch (e) {
             _showErrorToast('Failed to update order: $e');
@@ -230,20 +392,91 @@ class _EmployeeLayoutState extends State<EmployeeLayout> {
     );
   }
 
+  // void _showProfileBottomSheet() {
+  //   showModalBottomSheet(
+  //     context: context,
+  //     isScrollControlled: true,
+  //     backgroundColor: Colors.transparent,
+  //     builder: (context) => ProfileBottomSheet(
+  //       user: currentUser!,
+  //       organization: organization!,
+  //       onLogout: () => _handleLogout(),
+  //       onProfileUpdated: (updatedUser) {
+  //         setState(() {
+  //           currentUser = updatedUser;
+  //         });
+  //       },
+  //     ),
+  //   );
+  // }
+
   void _showProfileBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => ProfileBottomSheet(
-        user: currentUser!,
-        organization: organization!,
-        onLogout: () => _handleLogout(),
-        onProfileUpdated: (updatedUser) {
-          setState(() {
-            currentUser = updatedUser;
-          });
+    // Create a custom page route for smooth animation
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return ProfileBottomSheet(
+            user: currentUser!,
+            organization: organization!,
+            onLogout: () => _handleLogout(),
+            onProfileUpdated: (updatedUser) {
+              setState(() {
+                currentUser = updatedUser;
+              });
+            },
+          );
         },
+        transitionDuration: const Duration(milliseconds: 600),
+        reverseTransitionDuration: const Duration(milliseconds: 400),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          // Slide up animation
+          const begin = Offset(0.0, 1.0);
+          const end = Offset.zero;
+          const curve = Curves.easeOutCubic;
+
+          var tween = Tween(
+            begin: begin,
+            end: end,
+          ).chain(CurveTween(curve: curve));
+
+          // Scale animation for backdrop
+          var scaleAnimation = Tween<double>(
+            begin: 0.9,
+            end: 1.0,
+          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut));
+
+          // Fade animation for backdrop
+          var fadeAnimation = Tween<double>(
+            begin: 0.0,
+            end: 1.0,
+          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut));
+
+          return Stack(
+            children: [
+              // Animated backdrop
+              FadeTransition(
+                opacity: fadeAnimation,
+                child: Container(color: Colors.black.withOpacity(0.5)),
+              ),
+
+              // Animated bottom sheet
+              SlideTransition(
+                position: animation.drive(tween),
+                child: FadeTransition(
+                  opacity: fadeAnimation,
+                  child: ScaleTransition(
+                    scale: scaleAnimation,
+                    alignment: Alignment.bottomCenter,
+                    child: child,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+        opaque: false,
+        barrierDismissible: true,
+        barrierColor: Colors.transparent,
       ),
     );
   }
@@ -271,614 +504,652 @@ class _EmployeeLayoutState extends State<EmployeeLayout> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (isLoading) {
-      return Scaffold(
-        backgroundColor: Colors.grey[50],
-        body: Center(
-          child: CircularProgressIndicator(
-            color: organization?.primaryColorValue ?? Colors.blue,
-          ),
+  Widget _buildAnimatedHeader() {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.5,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            organization?.primaryColorValue ?? AppColors.primary,
+            organization?.secondaryColorValue ?? AppColors.secondary,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-      );
-    }
-
-    if (errorMessage != null || currentUser == null || organization == null) {
-      return Scaffold(
-        backgroundColor: Colors.grey[50],
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, size: 64, color: Colors.red),
-              SizedBox(height: 16),
-              Text(
-                'Error loading data',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8),
-              Text(errorMessage ?? 'Unknown error'),
-              SizedBox(height: 16),
-              ElevatedButton(onPressed: _loadData, child: Text('Retry')),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        title: Row(
+      ),
+      child: SafeArea(
+        child: Stack(
           children: [
-            Container(
-              height: 40,
-              width: 40,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    organization!.primaryColorValue,
-                    organization!.secondaryColorValue,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: organization!.logoUrl != null
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Image.network(
-                        organization!.logoUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            Icon(Icons.business, color: Colors.white, size: 20),
-                      ),
-                    )
-                  : Icon(Icons.business, color: Colors.white, size: 20),
-            ),
-            SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  organization!.name,
-                  style: TextStyle(
-                    color: Colors.black87,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+            // Animated particles background
+            Positioned.fill(
+              child: AnimatedBuilder(
+                animation: _backgroundController,
+                builder: (context, child) => CustomPaint(
+                  painter: AnimatedParticlesPainter(
+                    _backgroundGradient.value,
+                    _rotationAnimation.value,
                   ),
                 ),
-                Text(
-                  'Welcome, ${currentUser!.name}',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              ),
+            ),
+
+            Positioned(
+              top: 20,
+              left: 20,
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: Duration(milliseconds: 800),
+                curve: Curves.elasticOut,
+                builder: (context, value, child) => Transform.scale(
+                  scale: value,
+                  child: AnimatedContainer(
+                    duration: Duration(milliseconds: 300),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: AnimatedBuilder(
+                        animation: _pulseController,
+                        builder: (context, child) => Transform.scale(
+                          scale: _pulseAnimation.value,
+                          child: SvgPicture.asset(
+                            Assets.imagesSvgsNotification,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      onPressed: _loadData,
+                    ),
+                  ),
                 ),
-              ],
+              ),
+            ),
+            // Animated top icons
+            Positioned(
+              top: 20,
+              right: 20,
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: Duration(milliseconds: 300),
+                curve: Curves.elasticOut,
+                builder: (context, value, child) => Transform.scale(
+                  scale: value,
+                  child: AnimatedContainer(
+                    duration: Duration(milliseconds: 300),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: AnimatedBuilder(
+                        animation: _rotationController,
+                        builder: (context, child) => Transform.rotate(
+                          angle: _rotationAnimation.value * 0.1,
+                          child: SvgPicture.asset(
+                            Assets.imagesSvgsSetting,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      onPressed: _showProfileBottomSheet,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // Animated center content
+            Center(
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: Duration(milliseconds: 1200),
+                curve: Curves.elasticOut,
+                builder: (context, value, child) => Transform.scale(
+                  scale: value,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Animated logo
+                      AnimatedBuilder(
+                        animation: _pulseController,
+                        builder: (context, child) => Transform.scale(
+                          scale: _pulseAnimation.value,
+                          child: Container(
+                            height: 80,
+                            width: 80,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.3),
+                                width: 2,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.white.withOpacity(0.2),
+                                  blurRadius: 20,
+                                  spreadRadius: 2,
+                                ),
+                              ],
+                            ),
+                            child: organization?.logoUrl != null
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(18),
+                                    child: Image.network(
+                                      organization!.logoUrl!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              Center(
+                                                child: SvgPicture.asset(
+                                                  Assets.imagesSvgsUser,
+                                                  height: 45,
+                                                  width: 45,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                    ),
+                                  )
+                                : Center(
+                                    child: SvgPicture.asset(
+                                      Assets.imagesSvgsUser,
+                                      height: 45,
+                                      width: 45,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 50.0, end: 0.0),
+                        duration: Duration(milliseconds: 1000),
+                        curve: Curves.easeOutBack,
+                        builder: (context, value, child) => Transform.translate(
+                          offset: Offset(0, value),
+                          child: Text(
+                            'Welcome, ${currentUser?.name ?? ''}',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.8),
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      _buildAnimatedNavigationBar(),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh, color: Colors.black87),
-            onPressed: _loadData,
-          ),
-          IconButton(
-            icon: Icon(Icons.person, color: Colors.black87),
-            onPressed: _showProfileBottomSheet,
-          ),
-        ],
       ),
-      body: RefreshIndicator(
-        onRefresh: _loadData,
-        child: SingleChildScrollView(
-          physics: AlwaysScrollableScrollPhysics(),
+    );
+  }
+
+  Widget _buildAnimatedNavigationBar() {
+    final navItems = [
+      {'title': 'Today\'s Orders', 'icon': Assets.imagesSvgsCalendar},
+      {'title': 'History', 'icon': Assets.imagesSvgsClock},
+    ];
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 1400),
+      curve: Curves.elasticOut,
+      builder: (context, value, child) => Transform.scale(
+        scale: value,
+        child: Container(
+          margin: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: AppColors.glass,
+            borderRadius: BorderRadius.circular(25),
+            border: Border.all(color: AppColors.glassStroke, width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            children: navItems.asMap().entries.map((entry) {
+              final index = entry.key;
+              final item = entry.value;
+              final isSelected = _selectedIndex == index;
+
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() => _selectedIndex = index);
+
+                    _slideController.forward();
+                    _fadeController.forward();
+                  },
+                  child: AnimatedContainer(
+                    duration: Duration(milliseconds: 400),
+                    curve: Curves.easeInOutCubic,
+                    margin: EdgeInsets.all(2),
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      gradient: isSelected
+                          ? LinearGradient(
+                              colors: [
+                                Colors.white.withOpacity(.1),
+                                Colors.white.withOpacity(.2),
+                                Colors.white.withOpacity(.3),
+                              ],
+                            )
+                          : null,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: Colors.white.withOpacity(0.2),
+                                blurRadius: 10,
+                                spreadRadius: 1,
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AnimatedScale(
+                          scale: isSelected ? 1.2 : 1.0,
+                          duration: Duration(milliseconds: 300),
+                          curve: Curves.elasticOut,
+                          child: navItems[index]['icon'] is String
+                              ? SvgPicture.asset(
+                                  item['icon'] as String,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : Colors.white.withOpacity(0.7),
+                                )
+                              : Icon(
+                                  item['icon'] as IconData,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : Colors.white.withOpacity(0.7),
+                                ),
+                        ),
+                        SizedBox(height: 4),
+                        AnimatedDefaultTextStyle(
+                          duration: Duration(milliseconds: 300),
+                          style: TextStyle(
+                            color: isSelected
+                                ? Colors.white
+                                : Colors.white.withOpacity(0.7),
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                            fontSize: 11,
+                          ),
+                          child: Text(item['title'] as String),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnimatedOrderCard(EmployeeOrder order, int index) {
+    final needsResponse = order.status == OrderStatus.needsResponse;
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 400 + (index * 50)),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) => Transform.translate(
+        offset: Offset(50 * (1 - value), 0),
+        child: Container(
+          margin: EdgeInsets.only(bottom: 12),
           padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: needsResponse
+                ? Border.all(color: organization!.secondaryColorValue, width: 1)
+                : null,
+            boxShadow: [
+              BoxShadow(
+                color: needsResponse
+                    ? organization!.secondaryColorValue.withOpacity(0.1)
+                    : Colors.black.withOpacity(0.1),
+                blurRadius: 12,
+                offset: Offset(0, 4),
+              ),
+            ],
+            image: DecorationImage(
+              image: AssetImage(AppImages.homePattern),
+              fit: BoxFit.fill,
+              colorFilter: ColorFilter.mode(
+                organization!.secondaryColorValue.withOpacity(.5),
+                BlendMode.modulate,
+              ),
+            ),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Quick Actions Card
-              Container(
-                padding: EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      organization!.primaryColorValue,
-                      organization!.secondaryColorValue,
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Order #${order.id.substring(0, 8)}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Colors.grey[700],
+                    ),
                   ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: organization!.primaryColorValue.withOpacity(0.3),
-                      blurRadius: 10,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      'Place a New Order',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Order internal items like tea or external food',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 14,
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _showNewOrderBottomSheet,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: organization!.primaryColorValue,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                  Row(
+                    children: [
+                      _buildStatusChip(order.status),
+                      if (order.status == OrderStatus.pending) ...[
+                        SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () => _showEditOrderBottomSheet(order),
+                          child: Container(
+                            padding: EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: organization!.secondaryColorValue
+                                  .withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: SvgPicture.asset(
+                              Assets.imagesSvgsEdit,
+                              color: organization!.primaryColorValue,
+                              height: 16,
+                              width: 16,
+                            ),
                           ),
                         ),
-                        child: Text(
-                          'New Order',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                      ],
+                      if (needsResponse) ...[
+                        SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () => _showResponseBottomSheet(order),
+                          child: Container(
+                            padding: EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.purple.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.reply_rounded,
+                              size: 16,
+                              color: Colors.purple,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+              SizedBox(height: 8),
+              Row(
+                children: [
+                  Container(
+                    height: 50,
+                    width: 50,
+                    decoration: BoxDecoration(
+                      color: organization!.secondaryColorValue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                    child: AnimatedBuilder(
+                      animation: _rotationController,
+                      builder: (context, child) => Transform.rotate(
+                        angle: _rotationAnimation.value * 0.05,
+                        child: SvgPicture.asset(
+                          needsResponse
+                              ? Assets.imagesSvgsOrder
+                              : order.type == OrderType.internal
+                              ? Assets.imagesSvgsCompany
+                              : Assets.imagesSvgsShoppingCart,
+                          color: organization!.primaryColorValue,
+                          fit: BoxFit.scaleDown,
                         ),
                       ),
                     ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 24),
-
-              // Order Stats
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildStatCard(
-                      'Total Orders',
-                      myOrders.length.toString(),
-                      Icons.receipt_long,
-                      organization!.primaryColorValue,
-                    ),
                   ),
                   SizedBox(width: 12),
                   Expanded(
-                    child: _buildStatCard(
-                      'Pending',
-                      myOrders
-                          .where((o) => o.status == OrderStatus.pending)
-                          .length
-                          .toString(),
-                      Icons.pending_actions,
-                      Colors.orange,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          order.items.length == 1
+                              ? order.items.first.name
+                              : '${order.items.length} Items Order',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        if (order.description.isNotEmpty)
+                          Text(
+                            order.description,
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.delivery_dining_rounded,
+                              size: 16,
+                              color: organization!.primaryColorValue,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              order.officeBoyName,
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                              ),
+                            ),
+                            if (order.price != null ||
+                                order.finalPrice != null) ...[
+                              Spacer(),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  if (order.price != null)
+                                    Text(
+                                      'Budget: EGP ${order.price!.toStringAsFixed(0)}',
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  if (order.finalPrice != null)
+                                    Text(
+                                      'Spent: EGP ${order.finalPrice!.toStringAsFixed(0)}',
+                                      style: TextStyle(
+                                        color:
+                                            organization!.secondaryColorValue,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildStatCard(
-                      'Completed',
-                      myOrders
-                          .where((o) => o.status == OrderStatus.completed)
-                          .length
-                          .toString(),
-                      Icons.check_circle,
-                      Colors.green,
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: _buildStatCard(
-                      'Need Response',
-                      myOrders
-                          .where((o) => o.status == OrderStatus.needsResponse)
-                          .length
-                          .toString(),
-                      Icons.help_outline,
-                      Colors.purple,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 24),
 
-              // Orders that need response - Priority section
-              if (myOrders.any((o) => o.status == OrderStatus.needsResponse)) ...[
+              // Show availability summary for orders needing response
+              if (needsResponse && order.items.isNotEmpty) ...[
+                SizedBox(height: 12),
                 Container(
-                  padding: EdgeInsets.all(16),
+                  padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.purple[400]!, Colors.purple[600]!],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                    color: organization!.secondaryColorValue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: organization!.secondaryColorValue.withOpacity(0.3),
                     ),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.purple.withOpacity(0.3),
-                        blurRadius: 10,
-                        offset: Offset(0, 4),
-                      ),
-                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.priority_high, color: Colors.white, size: 24),
-                          SizedBox(width: 8),
+                          Container(
+                            padding: EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: organization!.secondaryColorValue
+                                  .withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: SvgPicture.asset(
+                              Assets.imagesSvgsInfo,
+                              color: organization!.primaryColorValue,
+                              height: 16,
+                              width: 16,
+                            ),
+                          ),
+                          SizedBox(width: 6),
                           Text(
-                            'Response Required',
+                            'Item Availability Update',
                             style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
                               fontWeight: FontWeight.bold,
+                              color: organization!.primaryColorValue,
+                              fontSize: 14,
                             ),
                           ),
                         ],
                       ),
                       SizedBox(height: 8),
-                      Text(
-                        'Some of your orders need your response due to item availability issues.',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
-                          fontSize: 14,
+                      ...order.items
+                          .take(2)
+                          .map(
+                            (item) => Padding(
+                              padding: EdgeInsets.only(bottom: 4),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.all(4),
+
+                                    decoration: BoxDecoration(
+                                      color: item.status == ItemStatus.available
+                                          ? Colors.green.withOpacity(.2)
+                                          : item.status ==
+                                                ItemStatus.notAvailable
+                                          ? Colors.red.withOpacity(.2)
+                                          : Colors.orange.withOpacity(.2),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: SvgPicture.asset(
+                                      item.status == ItemStatus.available
+                                          ? Assets.imagesSvgsComplete
+                                          : item.status ==
+                                                ItemStatus.notAvailable
+                                          ? Assets.imagesSvgsCancell
+                                          : Assets.imagesSvgsPending,
+                                      height: 14,
+                                      width: 14,
+                                      color: item.status == ItemStatus.available
+                                          ? Colors.green
+                                          : item.status ==
+                                                ItemStatus.notAvailable
+                                          ? Colors.red
+                                          : Colors.orange,
+                                    ),
+                                  ),
+                                  SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      '${item.name} - ${item.status == ItemStatus.available
+                                          ? "Available"
+                                          : item.status == ItemStatus.notAvailable
+                                          ? "Not Available"
+                                          : "Checking"}',
+                                      style: TextStyle(fontSize: 12),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      if (order.items.length > 2)
+                        Text(
+                          '... and ${order.items.length - 2} more items',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () => _showResponseBottomSheet(order),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: organization!.secondaryColorValue,
+                            padding: EdgeInsets.symmetric(vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: Text(
+                            'Respond Now',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                SizedBox(height: 16),
               ],
-
-              // My Orders
-              Text(
-                'My Orders',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
+              SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  SvgPicture.asset(
+                    Assets.imagesSvgsClock,
+                    color: organization!.primaryColorValue,
+                    height: 16,
+                    width: 16,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    _formatTime(order.createdAt),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  ),
+                ],
               ),
-              SizedBox(height: 16),
-
-              if (myOrders.isEmpty)
-                _buildEmptyState('No orders yet', Icons.receipt_long)
-              else
-                ...myOrders.map((order) => _buildOrderCard(order)),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildStatCard(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Icon(icon, color: color, size: 24),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 8),
-          Text(
-            title,
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOrderCard(EmployeeOrder order) {
-    final needsResponse = order.status == OrderStatus.needsResponse;
-    
-    return Container(
-      margin: EdgeInsets.only(bottom: 12),
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: needsResponse 
-            ? Border.all(color: Colors.purple, width: 2)
-            : null,
-        boxShadow: [
-          BoxShadow(
-            color: needsResponse 
-                ? Colors.purple.withOpacity(0.1) 
-                : Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Order #${order.id.substring(0, 8)}',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
-              ),
-              Row(
-                children: [
-                  _buildStatusChip(order.status),
-                  if (order.status == OrderStatus.pending) ...[
-                    SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () => _showEditOrderBottomSheet(order),
-                      child: Container(
-                        padding: EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(Icons.edit, size: 16, color: Colors.blue),
-                      ),
-                    ),
-                  ],
-                  if (needsResponse) ...[
-                    SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () => _showResponseBottomSheet(order),
-                      child: Container(
-                        padding: EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.purple.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(Icons.reply, size: 16, color: Colors.purple),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ],
-          ),
-          SizedBox(height: 8),
-          Row(
-            children: [
-              Container(
-                height: 50,
-                width: 50,
-                decoration: BoxDecoration(
-                  color: needsResponse 
-                      ? Colors.purple.withOpacity(0.1)
-                      : _getOrderTypeColor(order.type).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(25),
-                ),
-                child: Icon(
-                  needsResponse 
-                      ? Icons.help_outline
-                      : order.type == OrderType.internal 
-                          ? Icons.home 
-                          : Icons.store,
-                  color: needsResponse 
-                      ? Colors.purple
-                      : _getOrderTypeColor(order.type),
-                ),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      order.items.length == 1
-                          ? order.items.first.name
-                          : '${order.items.length} Items Order',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    if (order.description.isNotEmpty)
-                      Text(
-                        order.description,
-                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.delivery_dining,
-                          size: 16,
-                          color: Colors.grey[600],
-                        ),
-                        SizedBox(width: 4),
-                        Text(
-                          order.officeBoyName,
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 12,
-                          ),
-                        ),
-                        if (order.price != null ||
-                            order.finalPrice != null) ...[
-                          Spacer(),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              if (order.price != null)
-                                Text(
-                                  'Budget: EGP ${order.price!.toStringAsFixed(0)}',
-                                  style: TextStyle(
-                                    color: Colors.blue,
-                                    fontSize: 11,
-                                  ),
-                                ),
-                              if (order.finalPrice != null)
-                                Text(
-                                  'Spent: EGP ${order.finalPrice!.toStringAsFixed(0)}',
-                                  style: TextStyle(
-                                    color: Colors.green,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          
-          // Show availability summary for orders needing response
-          if (needsResponse && order.items.isNotEmpty) ...[
-            SizedBox(height: 12),
-            Container(
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.purple[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.purple.withOpacity(0.3)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.info_outline, color: Colors.purple[700], size: 16),
-                      SizedBox(width: 6),
-                      Text(
-                        'Item Availability Update',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.purple[700],
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  ...order.items.take(2).map((item) => Padding(
-                    padding: EdgeInsets.only(bottom: 4),
-                    child: Row(
-                      children: [
-                        Icon(
-                          item.status == ItemStatus.available 
-                              ? Icons.check_circle 
-                              : item.status == ItemStatus.notAvailable
-                                  ? Icons.cancel
-                                  : Icons.hourglass_empty,
-                          size: 14,
-                          color: item.status == ItemStatus.available 
-                              ? Colors.green
-                              : item.status == ItemStatus.notAvailable
-                                  ? Colors.red
-                                  : Colors.orange,
-                        ),
-                        SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            '${item.name} - ${item.status == ItemStatus.available ? "Available" : item.status == ItemStatus.notAvailable ? "Not Available" : "Checking"}',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                        ),
-                      ],
-                    ),
-                  )),
-                  if (order.items.length > 2)
-                    Text(
-                      '... and ${order.items.length - 2} more items',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => _showResponseBottomSheet(order),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.purple,
-                        padding: EdgeInsets.symmetric(vertical: 8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: Text(
-                        'Respond Now',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-          
-          SizedBox(height: 8),
-          Text(
-            _formatTime(order.createdAt),
-            style: TextStyle(color: Colors.grey[600], fontSize: 12),
-          ),
-        ],
       ),
     );
   }
@@ -910,45 +1181,57 @@ class _EmployeeLayoutState extends State<EmployeeLayout> {
         break;
     }
 
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
+    return AnimatedBuilder(
+      animation: _scaleController,
+      builder: (context, child) => Transform.scale(
+        scale: _scaleAnimation.value,
+        child: AnimatedContainer(
+          duration: Duration(milliseconds: 300),
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: color.withOpacity(0.3), width: 1),
+            // boxShadow: [
+            //   BoxShadow(
+            //     color: color.withOpacity(0.2),
+            //     blurRadius: 4,
+            //     offset: Offset(0, 2),
+            //   ),
+            // ],
+          ),
+          child: AnimatedDefaultTextStyle(
+            duration: Duration(milliseconds: 200),
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+            child: Text(text),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildEmptyState(String message, IconData icon) {
-    return Container(
-      padding: EdgeInsets.all(32),
-      child: Center(
+  Widget _buildAnimatedEmptyState(String message, IconData icon) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 1000),
+      curve: Curves.elasticOut,
+      builder: (context, value, child) => Center(
         child: Column(
           children: [
-            Icon(icon, size: 64, color: Colors.grey[400]),
-            SizedBox(height: 16),
-            Text(
-              message,
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            Lottie.asset(
+              'assets/images/lottie/Package Delivery.json',
+              fit: BoxFit.contain,
+              repeat: true,
+              animate: true,
             ),
           ],
         ),
       ),
     );
-  }
-
-  Color _getOrderTypeColor(OrderType type) {
-    return type == OrderType.internal
-        ? organization!.secondaryColorValue
-        : organization!.primaryColorValue;
   }
 
   String _formatTime(DateTime dateTime) {
@@ -962,5 +1245,585 @@ class _EmployeeLayoutState extends State<EmployeeLayout> {
     } else {
       return '${difference.inDays}d ago';
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: AnimatedBuilder(
+            animation: _shimmerController,
+            builder: (context, child) => ShimmerLoading(
+              shimmerAnimation: _shimmerAnimation,
+              primaryColor:
+                  organization?.primaryColorValue ?? AppColors.primary,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (errorMessage != null || currentUser == null || organization == null) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.0, end: 1.0),
+          duration: const Duration(milliseconds: 800),
+          curve: Curves.elasticOut,
+          builder: (context, value, child) => Transform.scale(
+            scale: value.clamp(0.1, 1.0),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AnimatedBuilder(
+                    animation: _pulseController,
+                    builder: (context, child) => Transform.scale(
+                      scale: _pulseAnimation.value.clamp(0.5, 1.5),
+                      child: Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: AppColors.error,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Error loading data',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 8),
+                  Text(errorMessage ?? 'Unknown error'),
+                  SizedBox(height: 16),
+                  AnimatedContainer(
+                    duration: Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    child: ElevatedButton(
+                      onPressed: _loadData,
+                      child: Text('Retry'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      floatingActionButtonAnimator: FloatingActionButtonAnimator.scaling,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(
+            colors: [
+              organization!.primaryColorValue.withOpacity(.9),
+              organization!.secondaryColorValue.withOpacity(.8),
+            ],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+        ),
+        child: FloatingActionButton(
+          heroTag: null,
+          shape: CircleBorder(side: BorderSide(color: Colors.transparent)),
+          backgroundColor: Colors.transparent,
+          splashColor: Colors.transparent,
+          focusColor: Colors.transparent,
+          hoverColor: Colors.transparent,
+          hoverElevation: 0,
+          focusElevation: 0,
+          highlightElevation: 0,
+          disabledElevation: 0,
+          elevation: 0,
+
+          child: Icon(Icons.add_rounded, size: 32, color: Colors.white),
+          onPressed: () {
+            _showNewOrderBottomSheet();
+          },
+        ),
+      ),
+      body: RefreshIndicator(
+        onRefresh: _loadData,
+        color: organization!.primaryColorValue,
+        strokeWidth: 2,
+        backgroundColor: Colors.white.withOpacity(0.8),
+        elevation: 0,
+
+        child: SingleChildScrollView(
+          physics: AlwaysScrollableScrollPhysics(),
+          controller: _scrollController,
+          child: AnimatedBuilder(
+            animation: Listenable.merge([
+              _fadeController,
+              _slideController,
+              _scaleController,
+            ]),
+            builder: (context, child) => FadeTransition(
+              opacity: AlwaysStoppedAnimation(
+                _fadeAnimation.value.clamp(0.0, 1.0),
+              ),
+              child: SlideTransition(
+                position: _slideAnimation,
+                child: ScaleTransition(
+                  scale: AlwaysStoppedAnimation(
+                    _scaleAnimation.value.clamp(0.1, 1.0),
+                  ),
+                  child: Stack(
+                    children: [
+                      // Animated header
+                      AnimatedPositioned(
+                        duration: const Duration(milliseconds: 500),
+                        curve: Curves.easeInOut,
+                        top: _isHeaderCollapsed ? -50 : 0,
+                        left: 0,
+                        right: 0,
+                        child: _buildAnimatedHeader(),
+                      ),
+                      Column(
+                        children: [
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.42,
+                          ),
+                          AnimatedContainer(
+                            duration: Duration(milliseconds: 600),
+                            curve: Curves.easeOutCubic,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(24),
+                                topRight: Radius.circular(24),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 20,
+                                  offset: Offset(0, -5),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              children: [
+                                SizedBox(height: 16),
+                                _buildSelectedContent(),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSelectedContent() {
+    return AnimatedSwitcher(
+      duration: Duration(milliseconds: 600),
+      transitionBuilder: (Widget child, Animation<double> animation) {
+        return FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.3, 0),
+              end: Offset.zero,
+            ).animate(animation),
+            child: child,
+          ),
+        );
+      },
+      child: Container(
+        key: ValueKey(_selectedIndex),
+        child: _getSelectedContent(),
+      ),
+    );
+  }
+
+  Widget _getSelectedContent() {
+    switch (_selectedIndex) {
+      case 0:
+        return _buildAnimatedTodaysOrders();
+      case 1:
+        return _buildAnimatedHistoryOrders();
+
+      default:
+        return _buildAnimatedTodaysOrders();
+    }
+  }
+
+  Widget _buildAnimatedHistoryOrders() {
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      child: SingleChildScrollView(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Order History',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[700],
+              ),
+            ),
+            SizedBox(height: 16),
+
+            if (historyOrders.isEmpty)
+              _buildAnimatedEmptyState('No previous orders', Icons.history)
+            else
+              ...historyOrders.map((order) => _buildCompactOrderCard(order)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCompactOrderCard(EmployeeOrder order) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: order.status == OrderStatus.needsResponse
+            ? Border.all(color: organization!.secondaryColorValue, width: 1)
+            : null,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+        image: DecorationImage(
+          image: AssetImage(AppImages.pattern),
+          fit: BoxFit.fill,
+          colorFilter: ColorFilter.mode(
+            organization!.secondaryColorValue.withOpacity(.4),
+            BlendMode.modulate,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: _getStatusColor(order.status).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: SvgPicture.asset(
+              _getStatusIcon(order.status),
+              color: _getStatusColor(order.status),
+            ),
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  order.items.length == 1
+                      ? order.items.first.name
+                      : '${order.items.length} items',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                ),
+                Row(
+                  children: [
+                    SvgPicture.asset(
+                      Assets.imagesSvgsClock,
+                      color: organization!.primaryColorValue,
+                      height: 12,
+                      width: 12,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      _formatTime(order.createdAt),
+                      style: TextStyle(
+                        color: AppColors.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          _buildStatusChip(order.status),
+          if (order.status == OrderStatus.pending) ...[
+            SizedBox(width: 8),
+            GestureDetector(
+              onTap: () => _showEditOrderBottomSheet(order),
+              child: SvgPicture.asset(
+                Assets.imagesSvgsEdit,
+                color: organization?.primaryColorValue,
+                height: 16,
+                width: 16,
+              ),
+            ),
+          ],
+          if (order.status == OrderStatus.needsResponse) ...[
+            SizedBox(width: 8),
+            GestureDetector(
+              onTap: () => _showResponseBottomSheet(order),
+              child: Icon(Icons.reply_rounded, size: 16, color: Colors.purple),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _getStatusIcon(OrderStatus status) {
+    switch (status) {
+      case OrderStatus.pending:
+        return Assets.imagesSvgsCalendar;
+      case OrderStatus.inProgress:
+        return Assets.imagesSvgsClock;
+      case OrderStatus.completed:
+        return Assets.imagesSvgsComplete;
+      case OrderStatus.cancelled:
+        return Assets.imagesSvgsCancell;
+      case OrderStatus.needsResponse:
+        return Assets.imagesSvgsEdit;
+    }
+  }
+
+  Color _getStatusColor(OrderStatus status) {
+    switch (status) {
+      case OrderStatus.pending:
+        return Colors.orange;
+      case OrderStatus.inProgress:
+        return Colors.blue;
+      case OrderStatus.completed:
+        return Colors.green;
+      case OrderStatus.cancelled:
+        return Colors.red;
+      case OrderStatus.needsResponse:
+        return Colors.red;
+    }
+  }
+
+  Widget _buildAnimatedTodaysOrders() {
+    return Column(
+      children: [
+        SizedBox(height: 16),
+
+        if (todayOrders.any((o) => o.status == OrderStatus.needsResponse)) ...[
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Container(
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    organization!.primaryColorValue,
+                    organization!.secondaryColorValue,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: organization!.primaryColorValue.withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.priority_high, color: Colors.white, size: 24),
+                      SizedBox(width: 8),
+                      Text(
+                        'Response Required',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Some of your orders need your response due to item availability issues.',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(height: 16),
+        ],
+
+        // My Orders
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'My Orders',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[700],
+              ),
+            ),
+          ),
+        ),
+        SizedBox(height: 16),
+
+        if (todayOrders.isEmpty)
+          _buildAnimatedEmptyState('No orders yet', Icons.receipt_long)
+        else
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              children: todayOrders
+                  .asMap()
+                  .entries
+                  .map(
+                    (entry) => _buildAnimatedOrderCard(entry.value, entry.key),
+                  )
+                  .toList(),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// Add missing classes from admin layout
+class AnimatedParticlesPainter extends CustomPainter {
+  final double animationValue;
+  final double rotationValue;
+
+  AnimatedParticlesPainter(this.animationValue, this.rotationValue);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withOpacity(0.1)
+      ..style = PaintingStyle.fill;
+
+    // Create animated particles
+    for (int i = 0; i < 15; i++) {
+      final x =
+          (size.width * 0.2) +
+          (i * size.width * 0.05) +
+          (math.sin(animationValue * 2 * math.pi + i) * 20);
+      final y =
+          (size.height * 0.3) +
+          (math.cos(animationValue * 2 * math.pi + i * 0.5) * 30);
+      final radius = 2 + math.sin(animationValue * 2 * math.pi + i) * 1.5;
+
+      canvas.drawCircle(Offset(x, y), radius.abs(), paint);
+    }
+
+    // Add flowing gradient lines
+    final gradient = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          Colors.white.withOpacity(0.0),
+          Colors.white.withOpacity(0.1),
+          Colors.white.withOpacity(0.0),
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
+      ..strokeWidth = 2;
+
+    for (int i = 0; i < 3; i++) {
+      final path = Path();
+      final startY = size.height * (0.2 + i * 0.15);
+
+      path.moveTo(-50, startY);
+
+      for (double x = -50; x <= size.width + 50; x += 10) {
+        final y =
+            startY +
+            math.sin((x * 0.01) + (animationValue * 2 * math.pi) + (i * 2)) *
+                15;
+        path.lineTo(x, y);
+      }
+
+      canvas.drawPath(path, gradient);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+class ShimmerLoading extends StatelessWidget {
+  final Animation<double> shimmerAnimation;
+  final Color primaryColor;
+
+  const ShimmerLoading({
+    super.key,
+    required this.shimmerAnimation,
+    required this.primaryColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              colors: [Colors.grey[300]!, Colors.grey[100]!, Colors.grey[300]!],
+              stops: [
+                (shimmerAnimation.value - 1).clamp(0.0, 1.0),
+                shimmerAnimation.value.clamp(0.0, 1.0),
+                (shimmerAnimation.value + 1).clamp(0.0, 1.0),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        SizedBox(height: 16),
+        AnimatedContainer(
+          duration: Duration(milliseconds: 300),
+          width: 120,
+          height: 16,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            gradient: LinearGradient(
+              colors: [Colors.grey[300]!, Colors.grey[100]!, Colors.grey[300]!],
+              stops: [
+                (shimmerAnimation.value - 1).clamp(0.0, 1.0),
+                shimmerAnimation.value.clamp(0.0, 1.0),
+                (shimmerAnimation.value + 1).clamp(0.0, 1.0),
+              ],
+            ),
+          ),
+        ),
+        SizedBox(height: 24),
+        CircularProgressIndicator(color: primaryColor, strokeWidth: 3),
+      ],
+    );
   }
 }
