@@ -3,7 +3,6 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:taqy/core/static/icons.dart';
 import 'package:taqy/core/utils/dialogs/error_toast.dart';
 import 'package:taqy/core/utils/widgets/app_images.dart';
 import 'package:taqy/features/employee/data/models/order_model.dart';
@@ -56,7 +55,7 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
   late Animation<double> _scaleAnimation;
   late Animation<double> _glowAnimation;
   late Animation<double> _particleAnimation;
-  late Animation<double> _shimmerAnimation;
+  // late Animation<double> _shimmerAnimation;
 
   // Predefined items
   final Map<OrderType, List<String>> _predefinedItems = {
@@ -126,9 +125,9 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
       vsync: this,
       duration: const Duration(seconds: 3),
     );
-    _shimmerAnimation = Tween<double>(begin: -1.0, end: 2.0).animate(
-      CurvedAnimation(parent: _shimmerController, curve: Curves.easeInOut),
-    );
+    // _shimmerAnimation = Tween<double>(begin: -1.0, end: 2.0).animate(
+    //   CurvedAnimation(parent: _shimmerController, curve: Curves.easeInOut),
+    // );
   }
 
   void _startAnimations() {
@@ -240,7 +239,11 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
 
   Widget _buildAnimatedBackground() {
     return AnimatedBuilder(
-      animation: Listenable.merge([_particleController, _shimmerController]),
+      animation: Listenable.merge([
+        _particleController,
+        _shimmerController,
+        _glowController,
+      ]),
       builder: (context, child) => Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -252,6 +255,12 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
               widget.organization.primaryColorValue.withOpacity(0.05),
             ],
           ),
+          // gradient: RadialGradient(
+          //   colors: [
+          //     Colors.white.withOpacity(0.15 + (_glowAnimation.value * 0.3)),
+          //     Colors.white.withOpacity(0.05),
+          //   ],
+          // ),
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(32),
             topRight: Radius.circular(32),
@@ -328,7 +337,7 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
                   controller: _notesController,
                   label: 'Additional Notes (Optional)',
                   hint: 'Any special instructions...',
-                  icon: AppIcons.termsIc,
+                  icon: Assets.imagesSvgsNote,
                   delay: 400,
                   maxLines: 2,
                 ),
@@ -354,8 +363,8 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Colors.white.withOpacity(0.15),
-                Colors.white.withOpacity(0.05),
+                Colors.white.withOpacity(0.2),
+                Colors.white.withOpacity(0.1),
               ],
             ),
             border: Border(
@@ -377,10 +386,10 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        widget.organization.primaryColorValue.withOpacity(
+                        Colors.white.withOpacity(
                           0.3 + (_glowAnimation.value * 0.4),
                         ),
-                        widget.organization.secondaryColorValue.withOpacity(
+                        Colors.white.withOpacity(
                           0.3 + (_glowAnimation.value * 0.4),
                         ),
                       ],
@@ -404,34 +413,13 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
                   Expanded(
                     child: AnimatedBuilder(
                       animation: _shimmerController,
-                      builder: (context, child) => ShaderMask(
-                        shaderCallback: (bounds) {
-                          return LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Colors.white.withOpacity(0.8),
-                              widget.organization.primaryColorValue.withOpacity(
-                                0.8,
-                              ),
-                              widget.organization.secondaryColorValue
-                                  .withOpacity(0.8),
-                            ],
-                            stops: [
-                              (_shimmerAnimation.value - 1).clamp(0.0, 1.0),
-                              _shimmerAnimation.value.clamp(0.0, 1.0),
-                              (_shimmerAnimation.value + 1).clamp(0.0, 1.0),
-                            ],
-                          ).createShader(bounds);
-                        },
-                        child: Text(
-                          'New Order',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            letterSpacing: 0.5,
-                          ),
+                      builder: (context, child) => Text(
+                        'New Order',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ),
@@ -505,8 +493,8 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Colors.white.withOpacity(0.15),
-                Colors.white.withOpacity(0.05),
+                Colors.white.withOpacity(0.2),
+                Colors.white.withOpacity(0.1),
               ],
             ),
             borderRadius: BorderRadius.circular(20),
@@ -589,12 +577,20 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
         child: Container(
           padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.white.withOpacity(0.15),
-                Colors.white.withOpacity(0.05),
-              ],
-            ),
+            gradient: isSelected
+                ? LinearGradient(
+                    colors: [
+                      color.withOpacity(0.4),
+                      color.withOpacity(0.3),
+                      color.withOpacity(.2),
+                    ],
+                  )
+                : LinearGradient(
+                    colors: [
+                      Colors.white.withOpacity(0.2),
+                      Colors.white.withOpacity(0.1),
+                    ],
+                  ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isSelected
@@ -604,7 +600,7 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: color.withOpacity(0.05),
                 blurRadius: 10,
                 offset: Offset(0, 4),
               ),
@@ -627,7 +623,7 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
                 ),
                 child: SvgPicture.asset(
                   icon,
-                  color: isSelected ? color : color.withOpacity(0.7),
+                  color: Colors.white,
                   fit: BoxFit.scaleDown,
                 ),
               ),
@@ -686,8 +682,8 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
                       borderRadius: BorderRadius.circular(16),
                       gradient: LinearGradient(
                         colors: [
-                          Colors.white.withOpacity(0.15),
-                          Colors.white.withOpacity(0.05),
+                          Colors.white.withOpacity(0.2),
+                          Colors.white.withOpacity(0.1),
                         ],
                       ),
                       border: Border.all(
@@ -723,7 +719,7 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
                               _selectedType == OrderType.internal
                                   ? Assets.imagesSvgsCoffee
                                   : Assets.imagesSvgsShoppingCart,
-                              color: widget.organization.primaryColorValue,
+                              color: Colors.white,
                               fit: BoxFit.scaleDown,
                             ),
                             border: InputBorder.none,
@@ -742,21 +738,19 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
                   animation: _glowController,
                   builder: (context, child) => Container(
                     decoration: BoxDecoration(
+                      shape: BoxShape.circle,
                       gradient: LinearGradient(
                         colors: [
                           widget.organization.primaryColorValue,
                           widget.organization.secondaryColorValue,
                         ],
                       ),
-                      // borderRadius: BorderRadius.circular(16),
-                      shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
                           color: widget.organization.primaryColorValue
-                              .withOpacity(0.4 + (_glowAnimation.value * 0.2)),
-                          blurRadius: 15,
-                          spreadRadius: 1,
-                          offset: Offset(0, 6),
+                              .withOpacity(0.3 + (_glowAnimation.value * 0.3)),
+                          blurRadius: 20 + (_glowAnimation.value * 10),
+                          spreadRadius: 2,
                         ),
                       ],
                     ),
@@ -901,11 +895,12 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
         offset: Offset(50 * (1 - value), 0),
         child: Container(
           padding: EdgeInsets.all(24),
+          width: double.infinity,
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Colors.white.withOpacity(0.15),
-                Colors.white.withOpacity(0.05),
+                Colors.white.withOpacity(0.2),
+                Colors.white.withOpacity(0.1),
               ],
             ),
             borderRadius: BorderRadius.circular(20),
@@ -935,94 +930,89 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
                     ),
                   ),
                   SizedBox(height: 16),
-                  Center(
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _predefinedItems[_selectedType]!.map((item) {
-                        final isSelected = _selectedItems.contains(item);
-                        return AnimatedBuilder(
-                          animation: _glowController,
-                          builder: (context, child) => GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                if (isSelected) {
-                                  _selectedItems.remove(item);
-                                } else {
-                                  _selectedItems.add(item);
-                                }
-                              });
-                            },
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: isSelected
-                                      ? [
-                                          widget.organization.primaryColorValue
-                                              .withOpacity(0.3),
-                                          widget
-                                              .organization
-                                              .secondaryColorValue
-                                              .withOpacity(0.2),
-                                        ]
-                                      : [
-                                          Colors.white.withOpacity(0.15),
-                                          Colors.white.withOpacity(0.05),
-                                        ],
-                                ),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? widget.organization.primaryColorValue
-                                            .withOpacity(0.5)
-                                      : Colors.white.withOpacity(0.3),
-                                  width: isSelected ? 2 : 1,
-                                ),
-                                boxShadow: isSelected
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _predefinedItems[_selectedType]!.map((item) {
+                      final isSelected = _selectedItems.contains(item);
+                      return AnimatedBuilder(
+                        animation: _glowController,
+                        builder: (context, child) => GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              if (isSelected) {
+                                _selectedItems.remove(item);
+                              } else {
+                                _selectedItems.add(item);
+                              }
+                            });
+                          },
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: isSelected
                                     ? [
-                                        BoxShadow(
-                                          color: widget
-                                              .organization
-                                              .primaryColorValue
-                                              .withOpacity(
-                                                0.3 +
-                                                    (_glowAnimation.value *
-                                                        0.2),
-                                              ),
-                                          blurRadius: 10,
-                                          spreadRadius: 1,
-                                          offset: Offset(0, 4),
-                                        ),
+                                        widget.organization.primaryColorValue
+                                            .withOpacity(0.3),
+                                        widget.organization.secondaryColorValue
+                                            .withOpacity(0.2),
                                       ]
                                     : [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.05),
-                                          blurRadius: 5,
-                                          offset: Offset(0, 2),
-                                        ),
+                                        Colors.white.withOpacity(0.15),
+                                        Colors.white.withOpacity(0.05),
                                       ],
                               ),
-                              child: Text(
-                                item,
-                                style: TextStyle(
-                                  color: isSelected
-                                      ? Colors.white
-                                      : Colors.white.withOpacity(0.8),
-                                  fontWeight: isSelected
-                                      ? FontWeight.bold
-                                      : FontWeight.w500,
-                                  fontSize: 14,
-                                ),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: isSelected
+                                    ? widget.organization.primaryColorValue
+                                          .withOpacity(0.5)
+                                    : Colors.white.withOpacity(0.3),
+                                width: isSelected ? 2 : 1,
+                              ),
+                              boxShadow: isSelected
+                                  ? [
+                                      BoxShadow(
+                                        color: widget
+                                            .organization
+                                            .primaryColorValue
+                                            .withOpacity(
+                                              0.3 +
+                                                  (_glowAnimation.value * 0.2),
+                                            ),
+                                        blurRadius: 10,
+                                        spreadRadius: 1,
+                                        offset: Offset(0, 4),
+                                      ),
+                                    ]
+                                  : [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.05),
+                                        blurRadius: 5,
+                                        offset: Offset(0, 2),
+                                      ),
+                                    ],
+                            ),
+                            child: Text(
+                              item,
+                              style: TextStyle(
+                                color: isSelected
+                                    ? Colors.white
+                                    : Colors.white.withOpacity(0.8),
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.w500,
+                                fontSize: 14,
                               ),
                             ),
                           ),
-                        );
-                      }).toList(),
-                    ),
+                        ),
+                      );
+                    }).toList(),
                   ),
                 ],
               ),
@@ -1223,7 +1213,7 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
                         padding: const EdgeInsets.all(8.0),
                         child: SvgPicture.asset(
                           icon,
-                          color: widget.organization.primaryColorValue,
+                          color: Colors.white,
                           fit: BoxFit.scaleDown,
                         ),
                       ),

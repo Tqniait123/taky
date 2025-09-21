@@ -109,7 +109,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
                   ? SvgPicture.asset(
                       widget.prefixIcon,
                       fit: BoxFit.scaleDown,
-                      // color: _isFocused ? widget.focusColor : Colors.grey[400],
+                      color: _isFocused ? widget.focusColor : Colors.grey[400],
                     )
                   : null,
               suffixIcon: widget.isPassword
@@ -118,10 +118,9 @@ class _AuthTextFieldState extends State<AuthTextField> {
                         widget.isPasswordVisible
                             ? Assets.imagesSvgsEyeDash
                             : Assets.imagesSvgsEye,
-
-                        // color: _isFocused
-                        //     ? AppColors.primary
-                        //     : Colors.grey[400],
+                        color: _isFocused
+                            ? widget.focusColor
+                            : Colors.grey[400],
                       ),
                       onPressed: widget.onTogglePassword,
                     )

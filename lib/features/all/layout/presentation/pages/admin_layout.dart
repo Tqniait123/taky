@@ -754,38 +754,38 @@ class _AdminLayoutState extends State<AdminLayout>
             ),
 
             // Animated top icons
-            // Positioned(
-            //   top: 20,
-            //   left: 20,
-            //   child: TweenAnimationBuilder<double>(
-            //     tween: Tween(begin: 0.0, end: 1.0),
-            //     duration: Duration(milliseconds: 800),
-            //     curve: Curves.elasticOut,
-            //     builder: (context, value, child) => Transform.scale(
-            //       scale: value,
-            //       child: AnimatedContainer(
-            //         duration: Duration(milliseconds: 300),
-            //         decoration: BoxDecoration(
-            //           color: Colors.white.withOpacity(0.2),
-            //           borderRadius: BorderRadius.circular(12),
-            //         ),
-            //         child: IconButton(
-            //           icon: AnimatedBuilder(
-            //             animation: _pulseController,
-            //             builder: (context, child) => Transform.scale(
-            //               scale: _pulseAnimation.value,
-            //               child: SvgPicture.asset(
-            //                 Assets.imagesSvgsNotification,
-            //                 color: Colors.white,
-            //               ),
-            //             ),
-            //           ),
-            //           onPressed: _loadData,
-            //         ),
-            //       ),
-            //     ),
-            //   ),
-            // ),
+            Positioned(
+              top: 20,
+              left: 20,
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: Duration(milliseconds: 800),
+                curve: Curves.elasticOut,
+                builder: (context, value, child) => Transform.scale(
+                  scale: value,
+                  child: AnimatedContainer(
+                    duration: Duration(milliseconds: 300),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: AnimatedBuilder(
+                        animation: _pulseController,
+                        builder: (context, child) => Transform.scale(
+                          scale: _pulseAnimation.value,
+                          child: Icon(
+                            Icons.support_agent_rounded,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      onPressed: _loadData,
+                    ),
+                  ),
+                ),
+              ),
+            ),
             Positioned(
               top: 20,
               right: 20,
@@ -1104,7 +1104,11 @@ class _AdminLayoutState extends State<AdminLayout>
                 builder: (context, value, child) => Transform.translate(
                   offset: Offset(0, value),
                   child: Padding(
-                    padding: const EdgeInsets.only(right: 16.0, left: 16, top: 16),
+                    padding: const EdgeInsets.only(
+                      right: 16.0,
+                      left: 16,
+                      top: 16,
+                    ),
                     child: Text(
                       'Filter Orders',
                       style: TextStyle(

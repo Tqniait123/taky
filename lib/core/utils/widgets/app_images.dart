@@ -58,9 +58,17 @@ class Assets {
   /// assets/images/svgs/mail.svg
   static const String imagesSvgsMail = "assets/images/svgs/mail.svg";
 
+  /// Assets for imagesSvgsMessage
+  /// assets/images/svgs/message.svg
+  static const String imagesSvgsMessage = "assets/images/svgs/message.svg";
+
   /// Assets for imagesSvgsMoney
   /// assets/images/svgs/money.svg
   static const String imagesSvgsMoney = "assets/images/svgs/money.svg";
+
+  /// Assets for imagesSvgsNote
+  /// assets/images/svgs/note.svg
+  static const String imagesSvgsNote = "assets/images/svgs/note.svg";
 
   /// Assets for imagesSvgsNotification
   /// assets/images/svgs/notification.svg
@@ -81,6 +89,10 @@ class Assets {
   /// Assets for imagesSvgsPhone
   /// assets/images/svgs/phone.svg
   static const String imagesSvgsPhone = "assets/images/svgs/phone.svg";
+
+  /// Assets for imagesSvgsRefresh
+  /// assets/images/svgs/refresh.svg
+  static const String imagesSvgsRefresh = "assets/images/svgs/refresh.svg";
 
   /// Assets for imagesSvgsSetting
   /// assets/images/svgs/setting.svg

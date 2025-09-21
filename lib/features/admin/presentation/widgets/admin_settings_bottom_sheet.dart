@@ -52,7 +52,7 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
   late Animation<double> _scaleAnimation;
   late Animation<double> _glowAnimation;
   late Animation<double> _particleAnimation;
-  late Animation<double> _shimmerAnimation;
+  // late Animation<double> _shimmerAnimation;
 
   @override
   void initState() {
@@ -118,9 +118,9 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
       vsync: this,
       duration: const Duration(seconds: 3),
     );
-    _shimmerAnimation = Tween<double>(begin: -1.0, end: 2.0).animate(
-      CurvedAnimation(parent: _shimmerController, curve: Curves.easeInOut),
-    );
+    // _shimmerAnimation = Tween<double>(begin: -1.0, end: 2.0).animate(
+    //   CurvedAnimation(parent: _shimmerController, curve: Curves.easeInOut),
+    // );
   }
 
   void _startAnimations() {
@@ -325,10 +325,10 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        _primaryColor.withOpacity(
+                        Colors.white.withOpacity(
                           0.3 + (_glowAnimation.value * 0.4),
                         ),
-                        _secondaryColor.withOpacity(
+                        Colors.white.withOpacity(
                           0.3 + (_glowAnimation.value * 0.4),
                         ),
                       ],
@@ -353,31 +353,13 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
                   Expanded(
                     child: AnimatedBuilder(
                       animation: _shimmerController,
-                      builder: (context, child) => ShaderMask(
-                        shaderCallback: (bounds) {
-                          return LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Colors.white.withOpacity(0.8),
-                              _primaryColor.withOpacity(0.8),
-                              _secondaryColor.withOpacity(0.8),
-                            ],
-                            stops: [
-                              (_shimmerAnimation.value - 1).clamp(0.0, 1.0),
-                              _shimmerAnimation.value.clamp(0.0, 1.0),
-                              (_shimmerAnimation.value + 1).clamp(0.0, 1.0),
-                            ],
-                          ).createShader(bounds);
-                        },
-                        child: Text(
-                          'Settings',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            letterSpacing: 0.5,
-                          ),
+                      builder: (context, child) => Text(
+                        'Settings',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ),
@@ -457,18 +439,13 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Animated label
-            ShaderMask(
-              shaderCallback: (bounds) => LinearGradient(
-                colors: [_primaryColor, _secondaryColor],
-              ).createShader(bounds),
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  letterSpacing: 0.5,
-                ),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: 0.5,
               ),
             ),
             SizedBox(height: 12),
@@ -518,7 +495,7 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
                         padding: EdgeInsets.all(12),
                         child: SvgPicture.asset(
                           icon,
-                          color: _primaryColor,
+                          color: Colors.white,
                           width: 20,
                           height: 20,
                         ),
@@ -574,18 +551,13 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Section title with gradient
-                  ShaderMask(
-                    shaderCallback: (bounds) => LinearGradient(
-                      colors: [_primaryColor, _secondaryColor],
-                    ).createShader(bounds),
-                    child: Text(
-                      'Brand Colors',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        letterSpacing: 0.5,
-                      ),
+                  Text(
+                    'Brand Colors',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
                     ),
                   ),
                   SizedBox(height: 24),
@@ -653,18 +625,13 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ShaderMask(
-              shaderCallback: (bounds) => LinearGradient(
-                colors: [_primaryColor, _secondaryColor],
-              ).createShader(bounds),
-              child: Text(
-                'Live Preview',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  letterSpacing: 0.5,
-                ),
+            Text(
+              'Live Preview',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: 0.5,
               ),
             ),
             SizedBox(height: 16),
@@ -862,17 +829,18 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
                     width: double.infinity,
                     height: 56,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.white.withOpacity(0.15),
-                          Colors.white.withOpacity(0.05),
-                        ],
-                      ),
+                      // gradient: LinearGradient(
+                      //   colors: [
+                      //     Colors.white.withOpacity(0.15),
+                      //     Colors.white.withOpacity(0.05),
+                      //   ],
+                      // ),
+                      color: Colors.red,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: AppColors.error.withOpacity(0.3),
-                        width: 1,
-                      ),
+                      // border: Border.all(
+                      //   color: AppColors.error.withOpacity(0.3),
+                      //   width: 1,
+                      // ),
                     ),
                     child: Material(
                       color: Colors.transparent,
@@ -889,7 +857,7 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
                           child: Text(
                             'Logout',
                             style: TextStyle(
-                              color: AppColors.error,
+                              color: Colors.white,
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 0.5,

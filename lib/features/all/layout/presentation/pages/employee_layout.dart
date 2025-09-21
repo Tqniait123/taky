@@ -1,4 +1,6 @@
+import 'dart:developer';
 import 'dart:math' as math;
+import 'dart:ui';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +12,7 @@ import 'package:taqy/config/routes/routes.dart';
 import 'package:taqy/core/services/firebase_service.dart';
 import 'package:taqy/core/static/app_assets.dart';
 import 'package:taqy/core/theme/colors.dart';
+import 'package:taqy/core/utils/dialogs/error_toast.dart';
 import 'package:taqy/core/utils/widgets/app_images.dart';
 import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
 import 'package:taqy/features/employee/data/models/order_model.dart';
@@ -235,7 +238,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
             .toList();
       });
     } catch (e) {
-      print('Error loading office boys: $e');
+      log('Error loading office boys: $e');
     }
   }
 
@@ -258,9 +261,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
               final today = DateTime(now.year, now.month, now.day);
 
               setState(() {
-                todayOrders = allOrders;
-
-                // Separate today's orders and history
+                // Today's orders (all statuses)
                 todayOrders = allOrders.where((order) {
                   final orderDate = DateTime(
                     order.createdAt.year,
@@ -270,13 +271,26 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                   return orderDate.isAtSameMomentAs(today);
                 }).toList();
 
+                // History orders: past orders + today's cancelled/completed orders
                 historyOrders = allOrders.where((order) {
                   final orderDate = DateTime(
                     order.createdAt.year,
                     order.createdAt.month,
                     order.createdAt.day,
                   );
-                  return orderDate.isBefore(today);
+
+                  // Include past orders (before today)
+                  if (orderDate.isBefore(today)) {
+                    return true;
+                  }
+
+                  // Include today's orders that are cancelled or completed
+                  if (orderDate.isAtSameMomentAs(today)) {
+                    return order.status == OrderStatus.cancelled ||
+                        order.status == OrderStatus.completed;
+                  }
+
+                  return false;
                 }).toList();
 
                 isLoading = false;
@@ -296,7 +310,10 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
 
   void _showNewOrderBottomSheet() {
     if (officeBoys.isEmpty) {
-      _showErrorToast('No office boys available. Please contact admin.');
+      showErrorToast(
+        context,
+        'No office boys available. Please contact admin.',
+      );
       return;
     }
 
@@ -311,9 +328,9 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
         onOrderCreated: (order) async {
           try {
             await _firebaseService.addDocument('orders', order.toFirestore());
-            _showSuccessToast('Order placed successfully!');
+            showSuccessToast(context, 'Order placed successfully!');
           } catch (e) {
-            _showErrorToast('Failed to place order: $e');
+            showErrorToast(context, 'Failed to place order: $e');
           }
         },
       ),
@@ -322,7 +339,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
 
   void _showEditOrderBottomSheet(EmployeeOrder order) {
     if (order.status != OrderStatus.pending) {
-      _showErrorToast('Only pending orders can be edited.');
+      showErrorToast(context, 'Only pending orders can be edited.');
       return;
     }
 
@@ -341,17 +358,17 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
               updatedOrder.id,
               updatedOrder.toFirestore(),
             );
-            _showSuccessToast('Order updated successfully!');
+            showSuccessToast(context, 'Order updated successfully!');
           } catch (e) {
-            _showErrorToast('Failed to update order: $e');
+            showErrorToast(context, 'Failed to update order: $e');
           }
         },
         onOrderDeleted: (orderId) async {
           try {
             await _firebaseService.deleteDocument('orders', orderId);
-            _showSuccessToast('Order deleted successfully!');
+            showSuccessToast(context, 'Order deleted successfully!');
           } catch (e) {
-            _showErrorToast('Failed to delete order: $e');
+            showErrorToast(context, 'Failed to delete order: $e');
           }
         },
       ),
@@ -379,36 +396,19 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
               orderId,
               updateData,
             );
-            _showSuccessToast(
+            showSuccessToast(
+              context,
               newStatus == OrderStatus.cancelled
                   ? 'Order cancelled successfully!'
                   : 'Order updated successfully!',
             );
           } catch (e) {
-            _showErrorToast('Failed to update order: $e');
+            showErrorToast(context, 'Failed to update order: $e');
           }
         },
       ),
     );
   }
-
-  // void _showProfileBottomSheet() {
-  //   showModalBottomSheet(
-  //     context: context,
-  //     isScrollControlled: true,
-  //     backgroundColor: Colors.transparent,
-  //     builder: (context) => ProfileBottomSheet(
-  //       user: currentUser!,
-  //       organization: organization!,
-  //       onLogout: () => _handleLogout(),
-  //       onProfileUpdated: (updatedUser) {
-  //         setState(() {
-  //           currentUser = updatedUser;
-  //         });
-  //       },
-  //     ),
-  //   );
-  // }
 
   void _showProfileBottomSheet() {
     // Create a custom page route for smooth animation
@@ -488,20 +488,8 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
         context.go(Routes.login);
       }
     } catch (e) {
-      _showErrorToast('Failed to logout: $e');
+      showErrorToast(context, 'Failed to logout: $e');
     }
-  }
-
-  void _showErrorToast(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
-    );
-  }
-
-  void _showSuccessToast(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.green),
-    );
   }
 
   Widget _buildAnimatedHeader() {
@@ -956,7 +944,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                             Icon(
                               Icons.delivery_dining_rounded,
                               size: 16,
-                              color: organization!.primaryColorValue,
+                              color: Colors.grey[600],
                             ),
                             SizedBox(width: 4),
                             Text(
@@ -1134,12 +1122,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  SvgPicture.asset(
-                    Assets.imagesSvgsClock,
-                    color: organization!.primaryColorValue,
-                    height: 16,
-                    width: 16,
-                  ),
+                  Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
                   SizedBox(width: 8),
                   Text(
                     _formatTime(order.createdAt),
@@ -1192,13 +1175,6 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
             color: color.withOpacity(0.1),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: color.withOpacity(0.3), width: 1),
-            // boxShadow: [
-            //   BoxShadow(
-            //     color: color.withOpacity(0.2),
-            //     blurRadius: 4,
-            //     offset: Offset(0, 2),
-            //   ),
-            // ],
           ),
           child: AnimatedDefaultTextStyle(
             duration: Duration(milliseconds: 200),
@@ -1462,160 +1438,1746 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
   }
 
   Widget _buildAnimatedHistoryOrders() {
-    return RefreshIndicator(
-      onRefresh: _loadData,
-      child: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Order History',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[700],
+    // Separate orders by status
+    final completedOrders = historyOrders
+        .where((order) => order.status == OrderStatus.completed)
+        .toList();
+
+    final otherOrders = historyOrders
+        .where(
+          (order) =>
+              order.status == OrderStatus.cancelled ||
+              order.status == OrderStatus.pending ||
+              order.status == OrderStatus.inProgress,
+        )
+        .toList();
+
+    return Padding(
+      padding: EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildImprovedHistoryHeader(completedOrders, otherOrders),
+          SizedBox(height: 20),
+
+          if (historyOrders.isEmpty)
+            _buildAnimatedEmptyState('No order history', Icons.history)
+          else ...[
+            // Show other orders (compact view) first if any
+
+            // Show completed orders (detailed view)
+            if (completedOrders.isNotEmpty) ...[
+              _buildSectionHeader(
+                'Completed Orders',
+                completedOrders.length,
+                Assets.imagesSvgsComplete,
+              ),
+              SizedBox(height: 12),
+              ...completedOrders.asMap().entries.map(
+                (entry) => _buildDetailedHistoryCard(entry.value, entry.key),
+              ),
+            ],
+            // if (otherOrders.isNotEmpty) ...[
+            //   _buildSectionHeader(
+            //     'Previous Orders',
+            //     otherOrders.length,
+            //     Assets.imagesSvgsPending,
+            //   ),
+            //   SizedBox(height: 12),
+            //   ...otherOrders.asMap().entries.map(
+            //     (entry) => _buildCompactOrderCard(entry.value),
+            //   ),
+            //   if (completedOrders.isNotEmpty) SizedBox(height: 24),
+            // ],
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailedHistoryCard(EmployeeOrder order, int index) {
+    final displayPrice = order.finalPrice ?? order.price;
+    // final hasPriceChange =
+    //     order.finalPrice != null &&
+    //     order.price != null &&
+    //     order.finalPrice != order.price;
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 400 + (index * 50)),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) => Transform.translate(
+        offset: Offset(50 * (1 - value), 0),
+        child: Container(
+          margin: EdgeInsets.only(bottom: 16),
+          padding: EdgeInsets.all(20),
+
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: organization!.secondaryColorValue.withOpacity(0.2),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: organization!.secondaryColorValue.withOpacity(0.08),
+                blurRadius: 15,
+                offset: Offset(0, 6),
+              ),
+            ],
+            image: DecorationImage(
+              image: AssetImage(AppImages.homePattern),
+              fit: BoxFit.fill,
+              colorFilter: ColorFilter.mode(
+                organization!.secondaryColorValue.withOpacity(.5),
+                BlendMode.modulate,
               ),
             ),
-            SizedBox(height: 16),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with reorder button
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.success.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                'COMPLETED',
+                                style: TextStyle(
+                                  color: AppColors.success,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.access_time,
+                              size: 14,
+                              color: Colors.grey[500],
+                            ),
 
-            if (historyOrders.isEmpty)
-              _buildAnimatedEmptyState('No previous orders', Icons.history)
-            else
-              ...historyOrders.map((order) => _buildCompactOrderCard(order)),
-          ],
+                            if (order.completedAt != null) ...[
+                              SizedBox(width: 6),
+                              Text(
+                                _formatHistoryDate(order.completedAt!),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[500],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Reorder button
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          organization!.primaryColorValue,
+                          organization!.secondaryColorValue,
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: organization!.primaryColorValue.withOpacity(
+                            0.3,
+                          ),
+                          blurRadius: 8,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () => _showImprovedReorderDialog(order),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.refresh,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                              SizedBox(width: 6),
+                              Text(
+                                'Reorder',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              SizedBox(height: 16),
+              Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: _getOrderTypeColor(order.type).withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: _getOrderTypeColor(order.type).withOpacity(0.2),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    (displayPrice != null)
+                        ? ListTile(
+                            contentPadding: EdgeInsets.all(0),
+                            horizontalTitleGap: 0,
+                            leading: SvgPicture.asset(
+                              Assets.imagesSvgsOrder,
+                              color: organization!.primaryColorValue,
+                              height: 18,
+                            ),
+                            title: Text(
+                              'Items Delivered',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                            subtitle: Text(
+                              'Spent: EGP ${displayPrice.toInt()}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+
+                            trailing: Text(
+                              order.type == OrderType.internal
+                                  ? 'Internal'
+                                  : 'External',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          )
+                        : ListTile(
+                            contentPadding: EdgeInsets.all(0),
+                            horizontalTitleGap: 0,
+                            leading: SvgPicture.asset(
+                              Assets.imagesSvgsOrder,
+                              color: organization!.primaryColorValue,
+                              height: 18,
+                            ),
+                            title: Text(
+                              'Items Delivered',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+
+                            trailing: Text(
+                              order.type == OrderType.internal
+                                  ? 'Internal'
+                                  : 'External',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ),
+                    Row(children: [SizedBox(width: 8)]),
+                    SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: order.items
+                          .map(
+                            (item) => Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: item.status == ItemStatus.notAvailable
+                                    ? Colors.red.withOpacity(0.1)
+                                    : Colors.green.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: item.status == ItemStatus.notAvailable
+                                      ? Colors.red.withOpacity(0.3)
+                                      : Colors.green.withOpacity(0.3),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SvgPicture.asset(
+                                    item.status == ItemStatus.notAvailable
+                                        ? Assets.imagesSvgsCancell
+                                        : Assets.imagesSvgsComplete,
+                                    height: 14,
+                                    color:
+                                        item.status == ItemStatus.notAvailable
+                                        ? Colors.red[600]
+                                        : Colors.green[600],
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    item.name,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color:
+                                          item.status == ItemStatus.notAvailable
+                                          ? Colors.red[700]
+                                          : Colors.green[700],
+                                      fontWeight: FontWeight.w500,
+                                      decoration:
+                                          item.status == ItemStatus.notAvailable
+                                          ? TextDecoration.lineThrough
+                                          : null,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: 16),
+
+              // Office boy info
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.delivery_dining_rounded,
+                      color: Colors.grey[600],
+                      size: 18,
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      'Delivered by: ',
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                    ),
+                    Expanded(
+                      child: Text(
+                        order.officeBoyName,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey[800],
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildCompactOrderCard(EmployeeOrder order) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 8),
-      padding: EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: order.status == OrderStatus.needsResponse
-            ? Border.all(color: organization!.secondaryColorValue, width: 1)
-            : null,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 12,
-            offset: Offset(0, 4),
-          ),
-        ],
-        image: DecorationImage(
-          image: AssetImage(AppImages.pattern),
-          fit: BoxFit.fill,
-          colorFilter: ColorFilter.mode(
-            organization!.secondaryColorValue.withOpacity(.4),
-            BlendMode.modulate,
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(8),
+  Widget _buildImprovedHistoryHeader(
+    List<EmployeeOrder> completedOrders,
+    List<EmployeeOrder> otherOrders,
+  ) {
+    final completedCount = historyOrders
+        .where((o) => o.status == OrderStatus.completed)
+        .length;
+    final cancelledCount = historyOrders
+        .where((o) => o.status == OrderStatus.cancelled)
+        .length;
+    final totalSpent = historyOrders
+        .where((o) => o.status == OrderStatus.completed && o.finalPrice != null)
+        .fold(0.0, (sum, order) => sum + order.finalPrice!);
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 800),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) => FadeTransition(
+        opacity: AlwaysStoppedAnimation(value.clamp(0.0, 1.0)),
+        child: Transform.translate(
+          offset: Offset(0, -30 * (1 - value)),
+          child: Container(
+            padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: _getStatusColor(order.status).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+              image: DecorationImage(
+                image: AssetImage(AppImages.homePattern),
+                fit: BoxFit.fill,
+                colorFilter: ColorFilter.mode(
+                  organization!.primaryColorValue.withOpacity(.3),
+                  BlendMode.modulate,
+                ),
+              ),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: Offset(0, 8),
+                ),
+              ],
             ),
-            child: SvgPicture.asset(
-              _getStatusIcon(order.status),
-              color: _getStatusColor(order.status),
-            ),
-          ),
-          SizedBox(width: 12),
-          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  order.items.length == 1
-                      ? order.items.first.name
-                      : '${order.items.length} items',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                ),
                 Row(
                   children: [
-                    SvgPicture.asset(
-                      Assets.imagesSvgsClock,
-                      color: organization!.primaryColorValue,
-                      height: 12,
-                      width: 12,
-                    ),
-                    SizedBox(width: 4),
-                    Text(
-                      _formatTime(order.createdAt),
-                      style: TextStyle(
-                        color: AppColors.onSurfaceVariant,
-                        fontSize: 12,
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: organization!.primaryColorValue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: SvgPicture.asset(
+                        Assets.imagesSvgsClock,
+                        color: organization!.primaryColorValue,
+                        height: 20,
+                        width: 20,
                       ),
                     ),
+                    SizedBox(width: 12),
+                    Text(
+                      'Order History',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildHistoryStatCard(
+                        'Completed',
+                        completedCount.toString(),
+                        AppColors.success,
+                        Assets.imagesSvgsComplete,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: _buildHistoryStatCard(
+                        'Cancelled',
+                        cancelledCount.toString(),
+                        AppColors.error,
+                        Assets.imagesSvgsCancell,
+                      ),
+                    ),
+                    if (totalSpent > 0) ...[
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: _buildHistoryStatCard(
+                          'Total Spent',
+                          'EGP ${totalSpent.toStringAsFixed(0)}',
+                          organization!.primaryColorValue,
+                          Assets.imagesSvgsMoney,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ],
             ),
           ),
-          _buildStatusChip(order.status),
-          if (order.status == OrderStatus.pending) ...[
-            SizedBox(width: 8),
-            GestureDetector(
-              onTap: () => _showEditOrderBottomSheet(order),
-              child: SvgPicture.asset(
-                Assets.imagesSvgsEdit,
-                color: organization?.primaryColorValue,
-                height: 16,
-                width: 16,
-              ),
-            ),
-          ],
-          if (order.status == OrderStatus.needsResponse) ...[
-            SizedBox(width: 8),
-            GestureDetector(
-              onTap: () => _showResponseBottomSheet(order),
-              child: Icon(Icons.reply_rounded, size: 16, color: Colors.purple),
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }
 
-  String _getStatusIcon(OrderStatus status) {
-    switch (status) {
-      case OrderStatus.pending:
-        return Assets.imagesSvgsCalendar;
-      case OrderStatus.inProgress:
-        return Assets.imagesSvgsClock;
-      case OrderStatus.completed:
-        return Assets.imagesSvgsComplete;
-      case OrderStatus.cancelled:
-        return Assets.imagesSvgsCancell;
-      case OrderStatus.needsResponse:
-        return Assets.imagesSvgsEdit;
+  Widget _buildSectionHeader(String title, int count, String icon) {
+    return Row(
+      children: [
+        Container(
+          padding: EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: organization!.primaryColorValue.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: SvgPicture.asset(
+            icon,
+            color: organization!.primaryColorValue,
+            height: 18,
+          ),
+        ),
+        SizedBox(width: 12),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey[700],
+          ),
+        ),
+        SizedBox(width: 8),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            count.toString(),
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[600],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHistoryStatCard(
+    String title,
+    String value,
+    Color color,
+    String icon,
+  ) {
+    return AnimatedBuilder(
+      animation: _pulseController,
+      builder: (context, child) => Container(
+        padding: EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.2), width: 1),
+        ),
+        child: Column(
+          children: [
+            Transform.scale(
+              scale: _pulseAnimation.value,
+              child: SvgPicture.asset(icon, color: color, height: 18),
+            ),
+            SizedBox(height: 6),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            Text(
+              title,
+              style: TextStyle(fontSize: 10, color: AppColors.onSurfaceVariant),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatHistoryDate(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inDays == 0) {
+      return 'Today ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+    } else if (difference.inDays == 1) {
+      return 'Yesterday ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays} days ago';
+    } else {
+      return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
     }
   }
 
-  Color _getStatusColor(OrderStatus status) {
-    switch (status) {
-      case OrderStatus.pending:
-        return Colors.orange;
-      case OrderStatus.inProgress:
-        return Colors.blue;
-      case OrderStatus.completed:
-        return Colors.green;
-      case OrderStatus.cancelled:
-        return Colors.red;
-      case OrderStatus.needsResponse:
-        return Colors.red;
-    }
+  Color _getOrderTypeColor(OrderType type) {
+    return type == OrderType.internal
+        ? organization!.secondaryColorValue
+        : organization!.primaryColorValue;
   }
 
-  Widget _buildAnimatedTodaysOrders() {
+  void _showImprovedReorderDialog(EmployeeOrder originalOrder) {
+    final TextEditingController budgetController = TextEditingController();
+    final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+    bool isLoading = false;
+
+    // Create a list to track selected items (initially all available items are selected)
+    List<OrderItem> availableItems = originalOrder.items
+        .where((item) => item.status != ItemStatus.notAvailable)
+        .toList();
+
+    // State to track which items are selected for reorder
+    List<bool> selectedItems = List.filled(availableItems.length, true);
+
+    if (originalOrder.type == OrderType.external &&
+        originalOrder.price != null) {
+      // budgetController.text = originalOrder.price!.toInt().toString();
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: EdgeInsets.symmetric(horizontal: 20),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.0, end: 1.0),
+              duration: Duration(milliseconds: 800),
+              curve: Curves.elasticOut,
+              builder: (context, animationValue, child) => Transform.scale(
+                scale: 0.8 + (animationValue * 0.2),
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.9,
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.8,
+                  ),
+                  child: Stack(
+                    children: [
+                      // Animated background with particles
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                organization!.primaryColorValue.withOpacity(
+                                  0.1,
+                                ),
+                                organization!.secondaryColorValue.withOpacity(
+                                  0.1,
+                                ),
+                                organization!.primaryColorValue.withOpacity(
+                                  0.05,
+                                ),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: CustomPaint(
+                            painter: ParticlesPainter(
+                              animationValue,
+                              organization!.primaryColorValue,
+                              organization!.secondaryColorValue,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // Glass morphism container
+                      Positioned.fill(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(24),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Colors.white.withOpacity(0.25),
+                                    Colors.white.withOpacity(0.1),
+                                    Colors.white.withOpacity(0.05),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(24),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.2),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Form(
+                                key: formKey,
+                                child: SingleChildScrollView(
+                                  padding: EdgeInsets.all(24),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      // Animated Header
+                                      TweenAnimationBuilder<double>(
+                                        tween: Tween(begin: 0.0, end: 1.0),
+                                        duration: Duration(milliseconds: 600),
+                                        curve: Curves.easeOutBack,
+                                        builder: (context, value, child) =>
+                                            Transform.translate(
+                                              offset: Offset(
+                                                0,
+                                                -30 * (1 - value),
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  // Animated icon container
+                                                  Container(
+                                                    padding: EdgeInsets.all(12),
+                                                    decoration: BoxDecoration(
+                                                      gradient: RadialGradient(
+                                                        colors: [
+                                                          organization!
+                                                              .primaryColorValue
+                                                              .withOpacity(0.3),
+                                                          organization!
+                                                              .primaryColorValue
+                                                              .withOpacity(0.1),
+                                                        ],
+                                                      ),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            16,
+                                                          ),
+                                                      border: Border.all(
+                                                        color: Colors.white
+                                                            .withOpacity(0.3),
+                                                        width: 1,
+                                                      ),
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                          color: organization!
+                                                              .primaryColorValue
+                                                              .withOpacity(0.2),
+                                                          blurRadius: 10,
+                                                          offset: Offset(0, 4),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    child: Icon(
+                                                      Icons.refresh_rounded,
+                                                      color: Colors.white,
+                                                      size: 24,
+                                                    ),
+                                                  ),
+                                                  SizedBox(width: 16),
+
+                                                  // Title and subtitle
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(
+                                                          'Reorder Items',
+                                                          style: TextStyle(
+                                                            fontSize: 20,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            color: Colors.white,
+                                                            letterSpacing: 0.5,
+                                                          ),
+                                                        ),
+                                                        SizedBox(height: 4),
+                                                        Text(
+                                                          'Select items to include in new order',
+                                                          style: TextStyle(
+                                                            fontSize: 14,
+                                                            color: Colors.white
+                                                                .withOpacity(
+                                                                  0.7,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                      ),
+
+                                      SizedBox(height: 24),
+
+                                      // Animated Items Selection Card
+                                      TweenAnimationBuilder<double>(
+                                        tween: Tween(begin: 0.0, end: 1.0),
+                                        duration: Duration(milliseconds: 800),
+                                        curve: Curves.easeOutBack,
+                                        builder: (context, value, child) => Transform.scale(
+                                          scale: 0.9 + (value * 0.1),
+                                          child: Container(
+                                            padding: EdgeInsets.all(20),
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                colors: [
+                                                  Colors.white.withOpacity(
+                                                    0.15,
+                                                  ),
+                                                  Colors.white.withOpacity(
+                                                    0.05,
+                                                  ),
+                                                ],
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                              border: Border.all(
+                                                color: Colors.white.withOpacity(
+                                                  0.2,
+                                                ),
+                                                width: 1,
+                                              ),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black
+                                                      .withOpacity(0.1),
+                                                  blurRadius: 15,
+                                                  offset: Offset(0, 5),
+                                                ),
+                                              ],
+                                            ),
+                                            child: ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                              child: BackdropFilter(
+                                                filter: ImageFilter.blur(
+                                                  sigmaX: 10,
+                                                  sigmaY: 10,
+                                                ),
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Row(
+                                                      children: [
+                                                        Container(
+                                                          padding:
+                                                              EdgeInsets.all(8),
+                                                          decoration: BoxDecoration(
+                                                            gradient: RadialGradient(
+                                                              colors: [
+                                                                Colors.white
+                                                                    .withOpacity(
+                                                                      0.2,
+                                                                    ),
+                                                                Colors.white
+                                                                    .withOpacity(
+                                                                      0.1,
+                                                                    ),
+                                                              ],
+                                                            ),
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  10,
+                                                                ),
+                                                          ),
+                                                          child: SvgPicture.asset(
+                                                            Assets
+                                                                .imagesSvgsOrder,
+                                                            color: Colors.white
+                                                                .withOpacity(
+                                                                  0.9,
+                                                                ),
+                                                            height: 20,
+                                                          ),
+                                                        ),
+                                                        SizedBox(width: 12),
+                                                        Expanded(
+                                                          child: Text(
+                                                            'Select items to reorder:',
+                                                            style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                              color: Colors
+                                                                  .white
+                                                                  .withOpacity(
+                                                                    0.7,
+                                                                  ),
+                                                              fontSize: 16,
+                                                              letterSpacing:
+                                                                  0.3,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        // Select/Deselect all button
+                                                        Material(
+                                                          color: Colors
+                                                              .transparent,
+                                                          child: InkWell(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  8,
+                                                                ),
+                                                            onTap: () {
+                                                              setState(() {
+                                                                bool
+                                                                allSelected =
+                                                                    selectedItems.every(
+                                                                      (
+                                                                        selected,
+                                                                      ) =>
+                                                                          selected,
+                                                                    );
+                                                                for (
+                                                                  int i = 0;
+                                                                  i <
+                                                                      selectedItems
+                                                                          .length;
+                                                                  i++
+                                                                ) {
+                                                                  selectedItems[i] =
+                                                                      !allSelected;
+                                                                }
+                                                              });
+                                                            },
+                                                            child: Container(
+                                                              padding:
+                                                                  EdgeInsets.symmetric(
+                                                                    horizontal:
+                                                                        8,
+                                                                    vertical: 4,
+                                                                  ),
+                                                              child: Text(
+                                                                selectedItems.every(
+                                                                      (
+                                                                        selected,
+                                                                      ) =>
+                                                                          selected,
+                                                                    )
+                                                                    ? 'Deselect All'
+                                                                    : 'Select All',
+                                                                style: TextStyle(
+                                                                  fontSize: 12,
+                                                                  color: Colors
+                                                                      .white,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w600,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    SizedBox(height: 16),
+
+                                                    // Items chips with remove functionality
+                                                    Wrap(
+                                                      spacing: 8,
+                                                      runSpacing: 8,
+                                                      children: availableItems.asMap().entries.map((
+                                                        entry,
+                                                      ) {
+                                                        final index = entry.key;
+                                                        final item =
+                                                            entry.value;
+                                                        final isSelected =
+                                                            selectedItems[index];
+
+                                                        return TweenAnimationBuilder<
+                                                          double
+                                                        >(
+                                                          tween: Tween(
+                                                            begin: 0.0,
+                                                            end: 1.0,
+                                                          ),
+                                                          duration: Duration(
+                                                            milliseconds:
+                                                                600 +
+                                                                (index * 100),
+                                                          ),
+                                                          curve:
+                                                              Curves.elasticOut,
+                                                          builder:
+                                                              (
+                                                                context,
+                                                                chipValue,
+                                                                child,
+                                                              ) => Transform.scale(
+                                                                scale:
+                                                                    chipValue,
+                                                                child: Material(
+                                                                  color: Colors
+                                                                      .transparent,
+                                                                  child: InkWell(
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                          20,
+                                                                        ),
+                                                                    onTap: () {
+                                                                      setState(() {
+                                                                        selectedItems[index] =
+                                                                            !selectedItems[index];
+                                                                      });
+                                                                    },
+                                                                    child: AnimatedContainer(
+                                                                      duration: Duration(
+                                                                        milliseconds:
+                                                                            300,
+                                                                      ),
+                                                                      padding: EdgeInsets.symmetric(
+                                                                        horizontal:
+                                                                            12,
+                                                                        vertical:
+                                                                            8,
+                                                                      ),
+                                                                      decoration: BoxDecoration(
+                                                                        gradient: LinearGradient(
+                                                                          colors:
+                                                                              isSelected
+                                                                              ? [
+                                                                                  organization!.primaryColorValue.withOpacity(
+                                                                                    0.3,
+                                                                                  ),
+                                                                                  organization!.secondaryColorValue.withOpacity(
+                                                                                    0.2,
+                                                                                  ),
+                                                                                ]
+                                                                              : [
+                                                                                  Colors.grey.withOpacity(
+                                                                                    0.2,
+                                                                                  ),
+                                                                                  Colors.grey.withOpacity(
+                                                                                    0.1,
+                                                                                  ),
+                                                                                ],
+                                                                        ),
+                                                                        borderRadius:
+                                                                            BorderRadius.circular(
+                                                                              20,
+                                                                            ),
+                                                                        border: Border.all(
+                                                                          color:
+                                                                              isSelected
+                                                                              ? Colors.white.withOpacity(
+                                                                                  0.4,
+                                                                                )
+                                                                              : Colors.grey.withOpacity(0.3),
+                                                                          width:
+                                                                              1,
+                                                                        ),
+                                                                        boxShadow:
+                                                                            isSelected
+                                                                            ? [
+                                                                                BoxShadow(
+                                                                                  color: organization!.primaryColorValue.withOpacity(
+                                                                                    0.2,
+                                                                                  ),
+                                                                                  blurRadius: 5,
+                                                                                  offset: Offset(
+                                                                                    0,
+                                                                                    2,
+                                                                                  ),
+                                                                                ),
+                                                                              ]
+                                                                            : null,
+                                                                      ),
+                                                                      child: Row(
+                                                                        mainAxisSize:
+                                                                            MainAxisSize.min,
+                                                                        children: [
+                                                                          // Selection indicator
+                                                                          AnimatedContainer(
+                                                                            duration: Duration(
+                                                                              milliseconds: 200,
+                                                                            ),
+                                                                            width:
+                                                                                16,
+                                                                            height:
+                                                                                16,
+                                                                            margin: EdgeInsets.only(
+                                                                              right: 6,
+                                                                            ),
+                                                                            decoration: BoxDecoration(
+                                                                              shape: BoxShape.circle,
+                                                                              color: isSelected
+                                                                                  ? Colors.white
+                                                                                  : Colors.transparent,
+                                                                              border: Border.all(
+                                                                                color: isSelected
+                                                                                    ? Colors.transparent
+                                                                                    : Colors.white.withOpacity(
+                                                                                        0.5,
+                                                                                      ),
+                                                                                width: 1,
+                                                                              ),
+                                                                            ),
+                                                                            child:
+                                                                                isSelected
+                                                                                ? Icon(
+                                                                                    Icons.check,
+                                                                                    size: 12,
+                                                                                    color: organization!.primaryColorValue,
+                                                                                  )
+                                                                                : null,
+                                                                          ),
+                                                                          // Item name
+                                                                          Text(
+                                                                            item.name,
+                                                                            style: TextStyle(
+                                                                              fontSize: 13,
+                                                                              color: isSelected
+                                                                                  ? Colors.white
+                                                                                  : Colors.white.withOpacity(
+                                                                                      0.6,
+                                                                                    ),
+                                                                              fontWeight: FontWeight.w600,
+                                                                              decoration: isSelected
+                                                                                  ? TextDecoration.none
+                                                                                  : TextDecoration.lineThrough,
+                                                                            ),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                        );
+                                                      }).toList(),
+                                                    ),
+
+                                                    SizedBox(height: 12),
+
+                                                    // Selected items count
+                                                    Padding(
+                                                      padding:
+                                                          const EdgeInsets.symmetric(
+                                                            horizontal: 8.0,
+                                                          ),
+                                                      child: Text(
+                                                        '${selectedItems.where((selected) => selected).length} of ${availableItems.length} items selected',
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          color: Colors.white
+                                                              .withOpacity(0.7),
+                                                          fontStyle:
+                                                              FontStyle.italic,
+                                                        ),
+                                                      ),
+                                                    ),
+
+                                                    // Description if exists
+                                                    if (originalOrder
+                                                        .description
+                                                        .isNotEmpty) ...[
+                                                      SizedBox(height: 16),
+                                                      Container(
+                                                        padding: EdgeInsets.all(
+                                                          12,
+                                                        ),
+                                                        decoration: BoxDecoration(
+                                                          gradient: LinearGradient(
+                                                            colors: [
+                                                              Colors.white
+                                                                  .withOpacity(
+                                                                    0.1,
+                                                                  ),
+                                                              Colors.white
+                                                                  .withOpacity(
+                                                                    0.05,
+                                                                  ),
+                                                            ],
+                                                          ),
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                10,
+                                                              ),
+                                                        ),
+                                                        child: Text(
+                                                          'Original Description: ${originalOrder.description}',
+                                                          style: TextStyle(
+                                                            fontSize: 13,
+                                                            color: Colors.white
+                                                                .withOpacity(
+                                                                  0.8,
+                                                                ),
+                                                            fontStyle: FontStyle
+                                                                .italic,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+
+                                      // Budget input for external orders
+                                      if (originalOrder.type ==
+                                          OrderType.external) ...[
+                                        SizedBox(height: 24),
+
+                                        // Animated budget section
+                                        TweenAnimationBuilder<double>(
+                                          tween: Tween(begin: 0.0, end: 1.0),
+                                          duration: Duration(
+                                            milliseconds: 1000,
+                                          ),
+                                          curve: Curves.easeOutBack,
+                                          builder: (context, value, child) => Transform.translate(
+                                            offset: Offset(50 * (1 - value), 0),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Set Your Budget',
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.white,
+                                                    letterSpacing: 0.5,
+                                                  ),
+                                                ),
+                                                SizedBox(height: 12),
+
+                                                // Glass text field
+                                                Container(
+                                                  decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          16,
+                                                        ),
+                                                    gradient: LinearGradient(
+                                                      colors: [
+                                                        Colors.white
+                                                            .withOpacity(0.15),
+                                                        Colors.white
+                                                            .withOpacity(0.05),
+                                                      ],
+                                                    ),
+                                                    border: Border.all(
+                                                      color: Colors.white
+                                                          .withOpacity(0.2),
+                                                      width: 1,
+                                                    ),
+                                                    boxShadow: [
+                                                      BoxShadow(
+                                                        color: Colors.black
+                                                            .withOpacity(0.1),
+                                                        blurRadius: 15,
+                                                        offset: Offset(0, 5),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  child: ClipRRect(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          16,
+                                                        ),
+                                                    child: BackdropFilter(
+                                                      filter: ImageFilter.blur(
+                                                        sigmaX: 10,
+                                                        sigmaY: 10,
+                                                      ),
+                                                      child: TextFormField(
+                                                        controller:
+                                                            budgetController,
+                                                        keyboardType:
+                                                            TextInputType
+                                                                .number,
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontSize: 16,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                        ),
+                                                        decoration: InputDecoration(
+                                                          hintText:
+                                                              'Enter budget amount',
+                                                          hintStyle: TextStyle(
+                                                            color: Colors.white
+                                                                .withOpacity(
+                                                                  0.6,
+                                                                ),
+                                                            fontSize: 14,
+                                                          ),
+                                                          // prefixText: 'EGP ',
+                                                          // prefixStyle: TextStyle(
+                                                          //   color: organization!
+                                                          //       .primaryColorValue,
+                                                          //   fontWeight:
+                                                          //       FontWeight.bold,
+                                                          //   fontSize: 16,
+                                                          // ),
+                                                          prefixIcon:
+                                                              SvgPicture.asset(
+                                                                Assets
+                                                                    .imagesSvgsMoney,
+                                                                color: Colors
+                                                                    .white,
+                                                                fit: BoxFit
+                                                                    .scaleDown,
+                                                              ),
+                                                          border:
+                                                              InputBorder.none,
+                                                          contentPadding:
+                                                              EdgeInsets.symmetric(
+                                                                horizontal: 20,
+                                                                vertical: 16,
+                                                              ),
+                                                        ),
+                                                        validator: (value) {
+                                                          if (value == null ||
+                                                              value.isEmpty) {
+                                                            return 'Please enter a budget amount';
+                                                          }
+                                                          final budget =
+                                                              double.tryParse(
+                                                                value,
+                                                              );
+                                                          if (budget == null ||
+                                                              budget <= 0) {
+                                                            return 'Please enter a valid amount';
+                                                          }
+                                                          return null;
+                                                        },
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                SizedBox(height: 8),
+                                                Text(
+                                                  'Previous budget: EGP ${originalOrder.price?.toInt() ?? 0}',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.white
+                                                        .withOpacity(0.6),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+
+                                      SizedBox(height: 32),
+
+                                      // Animated Action buttons
+                                      TweenAnimationBuilder<double>(
+                                        tween: Tween(begin: 0.0, end: 1.0),
+                                        duration: Duration(milliseconds: 1200),
+                                        curve: Curves.elasticOut,
+                                        builder: (context, value, child) => Transform.translate(
+                                          offset: Offset(0, 50 * (1 - value)),
+                                          child: Row(
+                                            children: [
+                                              // Cancel button
+                                              Expanded(
+                                                child: Container(
+                                                  height: 50,
+                                                  decoration: BoxDecoration(
+                                                    gradient: LinearGradient(
+                                                      colors: [
+                                                        Colors.white
+                                                            .withOpacity(0.15),
+                                                        Colors.white
+                                                            .withOpacity(0.05),
+                                                      ],
+                                                    ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          16,
+                                                        ),
+                                                    border: Border.all(
+                                                      color: Colors.white
+                                                          .withOpacity(0.3),
+                                                      width: 1,
+                                                    ),
+                                                  ),
+                                                  child: Material(
+                                                    color: Colors.transparent,
+                                                    child: InkWell(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            16,
+                                                          ),
+                                                      onTap: isLoading
+                                                          ? null
+                                                          : () => Navigator.of(
+                                                              context,
+                                                            ).pop(),
+                                                      child: Center(
+                                                        child: Text(
+                                                          'Cancel',
+                                                          style: TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize: 16,
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                              SizedBox(width: 16),
+
+                                              // Reorder button with glow effect
+                                              Expanded(
+                                                flex: 2,
+                                                child: TweenAnimationBuilder<double>(
+                                                  tween: Tween(
+                                                    begin: 0.0,
+                                                    end: 1.0,
+                                                  ),
+                                                  duration: Duration(
+                                                    seconds: 2,
+                                                  ),
+                                                  builder: (context, glowValue, child) {
+                                                    int selectedCount =
+                                                        selectedItems
+                                                            .where(
+                                                              (selected) =>
+                                                                  selected,
+                                                            )
+                                                            .length;
+                                                    bool hasSelectedItems =
+                                                        selectedCount > 0;
+
+                                                    return Container(
+                                                      height: 50,
+                                                      decoration: BoxDecoration(
+                                                        gradient: LinearGradient(
+                                                          colors:
+                                                              hasSelectedItems
+                                                              ? [
+                                                                  organization!
+                                                                      .primaryColorValue,
+                                                                  organization!
+                                                                      .secondaryColorValue,
+                                                                ]
+                                                              : [
+                                                                  Colors.grey
+                                                                      .withOpacity(
+                                                                        0.3,
+                                                                      ),
+                                                                  Colors.grey
+                                                                      .withOpacity(
+                                                                        0.2,
+                                                                      ),
+                                                                ],
+                                                        ),
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              16,
+                                                            ),
+                                                        boxShadow:
+                                                            hasSelectedItems
+                                                            ? [
+                                                                BoxShadow(
+                                                                  color: organization!
+                                                                      .primaryColorValue
+                                                                      .withOpacity(
+                                                                        0.4 +
+                                                                            (glowValue *
+                                                                                0.3),
+                                                                      ),
+                                                                  blurRadius:
+                                                                      15 +
+                                                                      (glowValue *
+                                                                          10),
+                                                                  spreadRadius:
+                                                                      1,
+                                                                  offset:
+                                                                      Offset(
+                                                                        0,
+                                                                        5,
+                                                                      ),
+                                                                ),
+                                                              ]
+                                                            : null,
+                                                      ),
+                                                      child: Material(
+                                                        color:
+                                                            Colors.transparent,
+                                                        child: InkWell(
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                16,
+                                                              ),
+                                                          onTap:
+                                                              (isLoading ||
+                                                                  !hasSelectedItems)
+                                                              ? null
+                                                              : () async {
+                                                                  if (formKey
+                                                                      .currentState!
+                                                                      .validate()) {
+                                                                    setState(
+                                                                      () => isLoading =
+                                                                          true,
+                                                                    );
+
+                                                                    try {
+                                                                      // Create new order with only selected items
+                                                                      List<
+                                                                        OrderItem
+                                                                      >
+                                                                      selectedOrderItems =
+                                                                          [];
+                                                                      for (
+                                                                        int i =
+                                                                            0;
+                                                                        i <
+                                                                            availableItems.length;
+                                                                        i++
+                                                                      ) {
+                                                                        if (selectedItems[i]) {
+                                                                          selectedOrderItems.add(
+                                                                            availableItems[i],
+                                                                          );
+                                                                        }
+                                                                      }
+
+                                                                      await _processReorder(
+                                                                        originalOrder,
+                                                                        selectedOrderItems,
+                                                                        budgetController
+                                                                            .text,
+                                                                      );
+                                                                      Navigator.of(
+                                                                        context,
+                                                                      ).pop();
+                                                                      showSuccessToast(
+                                                                        context,
+                                                                        '$selectedCount items have been reordered successfully!',
+                                                                      );
+
+                                                                      // Switch to today's orders tab
+                                                                      this.setState(
+                                                                        () => _selectedIndex =
+                                                                            0,
+                                                                      );
+                                                                    } catch (
+                                                                      e
+                                                                    ) {
+                                                                      showErrorToast(
+                                                                        context,
+                                                                        'Failed to create reorder: $e',
+                                                                      );
+                                                                    } finally {
+                                                                      setState(
+                                                                        () => isLoading =
+                                                                            false,
+                                                                      );
+                                                                    }
+                                                                  }
+                                                                },
+                                                          child: Container(
+                                                            alignment: Alignment
+                                                                .center,
+                                                            child: isLoading
+                                                                ? Row(
+                                                                    mainAxisAlignment:
+                                                                        MainAxisAlignment
+                                                                            .center,
+                                                                    children: [
+                                                                      SizedBox(
+                                                                        width:
+                                                                            18,
+                                                                        height:
+                                                                            18,
+                                                                        child: CircularProgressIndicator(
+                                                                          color:
+                                                                              Colors.white,
+                                                                          strokeWidth:
+                                                                              2,
+                                                                        ),
+                                                                      ),
+                                                                      SizedBox(
+                                                                        width:
+                                                                            12,
+                                                                      ),
+                                                                      Text(
+                                                                        'Creating Order...',
+                                                                        style: TextStyle(
+                                                                          color:
+                                                                              Colors.white,
+                                                                          fontSize:
+                                                                              16,
+                                                                          fontWeight:
+                                                                              FontWeight.bold,
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                  )
+                                                                : Row(
+                                                                    mainAxisAlignment:
+                                                                        MainAxisAlignment
+                                                                            .center,
+                                                                    children: [
+                                                                      Icon(
+                                                                        Icons
+                                                                            .refresh_rounded,
+                                                                        color:
+                                                                            hasSelectedItems
+                                                                            ? Colors.white
+                                                                            : Colors.white.withOpacity(
+                                                                                0.5,
+                                                                              ),
+                                                                        size:
+                                                                            20,
+                                                                      ),
+                                                                      SizedBox(
+                                                                        width:
+                                                                            8,
+                                                                      ),
+                                                                      Text(
+                                                                        hasSelectedItems
+                                                                            ? 'Reorder $selectedCount Item${selectedCount > 1 ? 's' : ''}'
+                                                                            : 'Select Items First',
+                                                                        style: TextStyle(
+                                                                          color:
+                                                                              hasSelectedItems
+                                                                              ? Colors.white
+                                                                              : Colors.white.withOpacity(0.5),
+                                                                          fontSize:
+                                                                              16,
+                                                                          fontWeight:
+                                                                              FontWeight.bold,
+                                                                          letterSpacing:
+                                                                              0.5,
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _processReorder(
+    EmployeeOrder originalOrder,
+    List<OrderItem> selectedItems,
+    String budgetText,
+  ) async {
+    // Find available office boys
+    final availableOfficeBoys = officeBoys.where((ob) => ob.isActive).toList();
+
+    if (availableOfficeBoys.isEmpty) {
+      throw Exception('No available office boys for reorder');
+    }
+
+    // Create new order items (only available items, reset status to pending)
+    final availableItems = originalOrder.items
+        .where((item) => item.status != ItemStatus.notAvailable)
+        .map((item) => OrderItem(name: item.name, status: ItemStatus.pending))
+        .toList();
+
+    if (availableItems.isEmpty) {
+      throw Exception('No available items to reorder');
+    }
+
+    // Parse budget for external orders
+    double? budget;
+    if (originalOrder.type == OrderType.external) {
+      budget = double.tryParse(budgetText);
+      if (budget == null || budget <= 0) {
+        throw Exception('Invalid budget amount');
+      }
+    }
+
+    // Create the reorder
+    final reorder = EmployeeOrder(
+      id: '', // Will be generated by Firestore
+      employeeId: currentUser!.id,
+      employeeName: currentUser!.name,
+      officeBoyId: availableOfficeBoys.first.id,
+      officeBoyName: availableOfficeBoys.first.name,
+      items: availableItems,
+      description: originalOrder.description,
+      type: originalOrder.type,
+      status: OrderStatus.pending,
+      createdAt: DateTime.now(),
+      price: budget,
+      organizationId: currentUser!.organizationId,
+      notes: 'Reordered from #${originalOrder.id.substring(0, 8)}',
+    );
+
+    // Add to Firestore
+    await _firebaseService.addDocument('orders', reorder.toFirestore());
+  }
+
+  Widget _buildAnimatedTodaysOrders() { 
     return Column(
       children: [
         SizedBox(height: 16),
@@ -1826,4 +3388,88 @@ class ShimmerLoading extends StatelessWidget {
       ],
     );
   }
+}
+
+class ParticlesPainter extends CustomPainter {
+  final double animationValue;
+  final Color primaryColor;
+  final Color secondaryColor;
+
+  ParticlesPainter(this.animationValue, this.primaryColor, this.secondaryColor);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..style = PaintingStyle.fill;
+
+    // Draw floating particles
+    for (int i = 0; i < 20; i++) {
+      final progress = (animationValue + i * 0.1) % 1.0;
+      final x =
+          (i % 4) * size.width / 4 +
+          math.sin(animationValue * 2 * math.pi + i) * 30;
+      final y = size.height * progress;
+      final opacity = math.sin(progress * math.pi) * 0.3;
+
+      paint.color = (i % 2 == 0 ? primaryColor : secondaryColor).withOpacity(
+        opacity,
+      );
+
+      final radius = 2 + math.sin(animationValue * 4 * math.pi + i) * 1;
+      canvas.drawCircle(Offset(x, y), radius, paint);
+    }
+
+    // Draw flowing waves
+    final wavePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+
+    for (int i = 0; i < 3; i++) {
+      final path = Path();
+      final waveHeight = 20 + i * 10;
+      final waveLength = size.width / 4;
+      final waveOffset = animationValue * 2 * math.pi;
+
+      wavePaint.color = (i % 2 == 0 ? primaryColor : secondaryColor)
+          .withOpacity(0.1);
+
+      path.moveTo(0, size.height * 0.3 + i * size.height * 0.2);
+
+      for (double x = 0; x <= size.width; x += 5) {
+        final y =
+            size.height * 0.3 +
+            i * size.height * 0.2 +
+            math.sin((x / waveLength + waveOffset + i) * 2 * math.pi) *
+                waveHeight;
+        path.lineTo(x, y);
+      }
+
+      canvas.drawPath(path, wavePaint);
+    }
+
+    // Draw gradient orbs
+    for (int i = 0; i < 5; i++) {
+      final centerX = (i + 0.5) * size.width / 5;
+      final centerY =
+          size.height * 0.5 +
+          math.sin(animationValue * 2 * math.pi + i * 1.2) * 100;
+      final radius = 40 + math.sin(animationValue * 3 * math.pi + i) * 20;
+
+      final gradient = RadialGradient(
+        colors: [
+          (i % 2 == 0 ? primaryColor : secondaryColor).withOpacity(0.1),
+          Colors.transparent,
+        ],
+      );
+
+      final rect = Rect.fromCircle(
+        center: Offset(centerX, centerY),
+        radius: radius,
+      );
+      paint.shader = gradient.createShader(rect);
+      canvas.drawCircle(Offset(centerX, centerY), radius, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

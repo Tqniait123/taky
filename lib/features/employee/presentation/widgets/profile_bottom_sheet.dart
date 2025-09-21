@@ -50,7 +50,7 @@ class _ProfileBottomSheetState extends State<ProfileBottomSheet>
   late Animation<double> _scaleAnimation;
   late Animation<double> _glowAnimation;
   late Animation<double> _particleAnimation;
-  late Animation<double> _shimmerAnimation;
+  // late Animation<double> _shimmerAnimation;
 
   @override
   void initState() {
@@ -114,9 +114,9 @@ class _ProfileBottomSheetState extends State<ProfileBottomSheet>
       vsync: this,
       duration: const Duration(seconds: 3),
     );
-    _shimmerAnimation = Tween<double>(begin: -1.0, end: 2.0).animate(
-      CurvedAnimation(parent: _shimmerController, curve: Curves.easeInOut),
-    );
+    // _shimmerAnimation = Tween<double>(begin: -1.0, end: 2.0).animate(
+    //   CurvedAnimation(parent: _shimmerController, curve: Curves.easeInOut),
+    // );
   }
 
   void _startAnimations() {
@@ -570,10 +570,10 @@ class _ProfileBottomSheetState extends State<ProfileBottomSheet>
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        widget.organization.primaryColorValue.withOpacity(
+                        Colors.white.withOpacity(
                           0.3 + (_glowAnimation.value * 0.4),
                         ),
-                        widget.organization.secondaryColorValue.withOpacity(
+                        Colors.white.withOpacity(
                           0.3 + (_glowAnimation.value * 0.4),
                         ),
                       ],
@@ -597,34 +597,13 @@ class _ProfileBottomSheetState extends State<ProfileBottomSheet>
                   Expanded(
                     child: AnimatedBuilder(
                       animation: _shimmerController,
-                      builder: (context, child) => ShaderMask(
-                        shaderCallback: (bounds) {
-                          return LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Colors.white.withOpacity(0.8),
-                              widget.organization.primaryColorValue.withOpacity(
-                                0.8,
-                              ),
-                              widget.organization.secondaryColorValue
-                                  .withOpacity(0.8),
-                            ],
-                            stops: [
-                              (_shimmerAnimation.value - 1).clamp(0.0, 1.0),
-                              _shimmerAnimation.value.clamp(0.0, 1.0),
-                              (_shimmerAnimation.value + 1).clamp(0.0, 1.0),
-                            ],
-                          ).createShader(bounds);
-                        },
-                        child: Text(
-                          'Profile',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            letterSpacing: 0.5,
-                          ),
+                      builder: (context, child) => Text(
+                        'Profile',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ),
@@ -947,7 +926,7 @@ class _ProfileBottomSheetState extends State<ProfileBottomSheet>
                         padding: const EdgeInsets.all(8.0),
                         child: SvgPicture.asset(
                           icon,
-                          color: widget.organization.primaryColorValue,
+                          color: Colors.white,
                           fit: BoxFit.scaleDown,
                         ),
                       ),
@@ -1070,17 +1049,18 @@ class _ProfileBottomSheetState extends State<ProfileBottomSheet>
                     width: double.infinity,
                     height: 56,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.white.withOpacity(0.15),
-                          Colors.white.withOpacity(0.05),
-                        ],
-                      ),
+                      // gradient: LinearGradient(
+                      //   colors: [
+                      //     Colors.white.withOpacity(0.15),
+                      //     Colors.white.withOpacity(0.05),
+                      //   ],
+                      // ),
+                      color: Colors.red,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: AppColors.error.withOpacity(0.3),
-                        width: 1,
-                      ),
+                      // border: Border.all(
+                      //   color: AppColors.error.withOpacity(0.3),
+                      //   width: 1,
+                      // ),
                     ),
                     child: Material(
                       color: Colors.transparent,
@@ -1097,7 +1077,7 @@ class _ProfileBottomSheetState extends State<ProfileBottomSheet>
                           child: Text(
                             'Logout',
                             style: TextStyle(
-                              color: AppColors.error,
+                              color: Colors.white,
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 0.5,
