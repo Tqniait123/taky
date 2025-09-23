@@ -1591,7 +1591,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                             child: _buildHistoryStatCard(
                               'Total Spent',
                               'EGP ${totalSpent.toStringAsFixed(0)}',
-                              organization!.secondaryColorValue,
+                              Colors.orange,
                               Assets.imagesSvgsMoney,
                               HistoryFilter.none,
                             ),
