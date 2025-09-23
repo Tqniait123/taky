@@ -23,6 +23,10 @@ import 'package:taqy/features/employee/presentation/widgets/new_order_bottom_she
 import 'package:taqy/features/employee/presentation/widgets/profile_bottom_sheet.dart';
 import 'package:taqy/features/employee/presentation/widgets/response_bottom_sheet.dart';
 
+enum HistoryFilter { all, completed, cancelled, none }
+
+HistoryFilter _currentHistoryFilter = HistoryFilter.all;
+
 class EmployeeLayout extends StatefulWidget {
   const EmployeeLayout({super.key});
 
@@ -1198,11 +1202,14 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
       builder: (context, value, child) => Center(
         child: Column(
           children: [
+            Text(message, style: TextStyle(fontSize: 16, color: Colors.grey)),
             Lottie.asset(
               'assets/images/lottie/Package Delivery.json',
               fit: BoxFit.contain,
               repeat: true,
               animate: true,
+              height: icon == Icons.history ? value * 200 : value * 400,
+              width: icon == Icons.history ? value * 200 : value * 400,
             ),
           ],
         ),
@@ -1438,18 +1445,15 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
   }
 
   Widget _buildAnimatedHistoryOrders() {
-    // Separate orders by status
-    final completedOrders = historyOrders
+    // Filter orders based on current filter
+    List<EmployeeOrder> filteredOrders = _getFilteredHistoryOrders();
+
+    final completedOrders = filteredOrders
         .where((order) => order.status == OrderStatus.completed)
         .toList();
 
-    final otherOrders = historyOrders
-        .where(
-          (order) =>
-              order.status == OrderStatus.cancelled ||
-              order.status == OrderStatus.pending ||
-              order.status == OrderStatus.inProgress,
-        )
+    final cancelledOrders = filteredOrders
+        .where((order) => order.status == OrderStatus.cancelled)
         .toList();
 
     return Padding(
@@ -1457,382 +1461,56 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildImprovedHistoryHeader(completedOrders, otherOrders),
+          _buildEnhancedHistoryHeader(completedOrders, cancelledOrders),
           SizedBox(height: 20),
 
-          if (historyOrders.isEmpty)
-            _buildAnimatedEmptyState('No order history', Icons.history)
+          if (filteredOrders.isEmpty)
+            _buildAnimatedEmptyState(_getEmptyStateMessage(), Icons.history)
           else ...[
-            // Show other orders (compact view) first if any
-
-            // Show completed orders (detailed view)
-            if (completedOrders.isNotEmpty) ...[
-              _buildSectionHeader(
-                'Completed Orders',
-                completedOrders.length,
-                Assets.imagesSvgsComplete,
-              ),
-              SizedBox(height: 12),
-              ...completedOrders.asMap().entries.map(
-                (entry) => _buildDetailedHistoryCard(entry.value, entry.key),
-              ),
+            // Show filtered orders
+            if (_currentHistoryFilter == HistoryFilter.all ||
+                _currentHistoryFilter == HistoryFilter.completed) ...[
+              if (completedOrders.isNotEmpty) ...[
+                _buildSectionHeader(
+                  'Completed Orders',
+                  completedOrders.length,
+                  Assets.imagesSvgsComplete,
+                ),
+                SizedBox(height: 12),
+                ...completedOrders.asMap().entries.map(
+                  (entry) =>
+                      _buildDetailedHistoryCard(entry.value, entry.key, false),
+                ),
+                if (cancelledOrders.isNotEmpty &&
+                    _currentHistoryFilter == HistoryFilter.all)
+                  SizedBox(height: 24),
+              ],
             ],
-            // if (otherOrders.isNotEmpty) ...[
-            //   _buildSectionHeader(
-            //     'Previous Orders',
-            //     otherOrders.length,
-            //     Assets.imagesSvgsPending,
-            //   ),
-            //   SizedBox(height: 12),
-            //   ...otherOrders.asMap().entries.map(
-            //     (entry) => _buildCompactOrderCard(entry.value),
-            //   ),
-            //   if (completedOrders.isNotEmpty) SizedBox(height: 24),
-            // ],
+
+            if (_currentHistoryFilter == HistoryFilter.all ||
+                _currentHistoryFilter == HistoryFilter.cancelled) ...[
+              if (cancelledOrders.isNotEmpty) ...[
+                _buildSectionHeader(
+                  'Cancelled Orders',
+                  cancelledOrders.length,
+                  Assets.imagesSvgsCancell,
+                ),
+                SizedBox(height: 12),
+                ...cancelledOrders.asMap().entries.map(
+                  (entry) =>
+                      _buildDetailedHistoryCard(entry.value, entry.key, true),
+                ),
+              ],
+            ],
           ],
         ],
       ),
     );
   }
 
-  Widget _buildDetailedHistoryCard(EmployeeOrder order, int index) {
-    final displayPrice = order.finalPrice ?? order.price;
-    // final hasPriceChange =
-    //     order.finalPrice != null &&
-    //     order.price != null &&
-    //     order.finalPrice != order.price;
-
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 400 + (index * 50)),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, child) => Transform.translate(
-        offset: Offset(50 * (1 - value), 0),
-        child: Container(
-          margin: EdgeInsets.only(bottom: 16),
-          padding: EdgeInsets.all(20),
-
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: organization!.secondaryColorValue.withOpacity(0.2),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: organization!.secondaryColorValue.withOpacity(0.08),
-                blurRadius: 15,
-                offset: Offset(0, 6),
-              ),
-            ],
-            image: DecorationImage(
-              image: AssetImage(AppImages.homePattern),
-              fit: BoxFit.fill,
-              colorFilter: ColorFilter.mode(
-                organization!.secondaryColorValue.withOpacity(.5),
-                BlendMode.modulate,
-              ),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header with reorder button
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 5,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.success.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                'COMPLETED',
-                                style: TextStyle(
-                                  color: AppColors.success,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.access_time,
-                              size: 14,
-                              color: Colors.grey[500],
-                            ),
-
-                            if (order.completedAt != null) ...[
-                              SizedBox(width: 6),
-                              Text(
-                                _formatHistoryDate(order.completedAt!),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[500],
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Reorder button
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          organization!.primaryColorValue,
-                          organization!.secondaryColorValue,
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: organization!.primaryColorValue.withOpacity(
-                            0.3,
-                          ),
-                          blurRadius: 8,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
-                        onTap: () => _showImprovedReorderDialog(order),
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 10,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.refresh,
-                                color: Colors.white,
-                                size: 18,
-                              ),
-                              SizedBox(width: 6),
-                              Text(
-                                'Reorder',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              SizedBox(height: 16),
-              Container(
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: _getOrderTypeColor(order.type).withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: _getOrderTypeColor(order.type).withOpacity(0.2),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    (displayPrice != null)
-                        ? ListTile(
-                            contentPadding: EdgeInsets.all(0),
-                            horizontalTitleGap: 0,
-                            leading: SvgPicture.asset(
-                              Assets.imagesSvgsOrder,
-                              color: organization!.primaryColorValue,
-                              height: 18,
-                            ),
-                            title: Text(
-                              'Items Delivered',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey[700],
-                              ),
-                            ),
-                            subtitle: Text(
-                              'Spent: EGP ${displayPrice.toInt()}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-
-                            trailing: Text(
-                              order.type == OrderType.internal
-                                  ? 'Internal'
-                                  : 'External',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          )
-                        : ListTile(
-                            contentPadding: EdgeInsets.all(0),
-                            horizontalTitleGap: 0,
-                            leading: SvgPicture.asset(
-                              Assets.imagesSvgsOrder,
-                              color: organization!.primaryColorValue,
-                              height: 18,
-                            ),
-                            title: Text(
-                              'Items Delivered',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey[700],
-                              ),
-                            ),
-
-                            trailing: Text(
-                              order.type == OrderType.internal
-                                  ? 'Internal'
-                                  : 'External',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ),
-                    Row(children: [SizedBox(width: 8)]),
-                    SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: order.items
-                          .map(
-                            (item) => Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: item.status == ItemStatus.notAvailable
-                                    ? Colors.red.withOpacity(0.1)
-                                    : Colors.green.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: item.status == ItemStatus.notAvailable
-                                      ? Colors.red.withOpacity(0.3)
-                                      : Colors.green.withOpacity(0.3),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  SvgPicture.asset(
-                                    item.status == ItemStatus.notAvailable
-                                        ? Assets.imagesSvgsCancell
-                                        : Assets.imagesSvgsComplete,
-                                    height: 14,
-                                    color:
-                                        item.status == ItemStatus.notAvailable
-                                        ? Colors.red[600]
-                                        : Colors.green[600],
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    item.name,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color:
-                                          item.status == ItemStatus.notAvailable
-                                          ? Colors.red[700]
-                                          : Colors.green[700],
-                                      fontWeight: FontWeight.w500,
-                                      decoration:
-                                          item.status == ItemStatus.notAvailable
-                                          ? TextDecoration.lineThrough
-                                          : null,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                          .toList(),
-                    ),
-                  ],
-                ),
-              ),
-
-              SizedBox(height: 16),
-
-              // Office boy info
-              Container(
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.grey[300]!),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.delivery_dining_rounded,
-                      color: Colors.grey[600],
-                      size: 18,
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      'Delivered by: ',
-                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                    ),
-                    Expanded(
-                      child: Text(
-                        order.officeBoyName,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[800],
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildImprovedHistoryHeader(
+  Widget _buildEnhancedHistoryHeader(
     List<EmployeeOrder> completedOrders,
-    List<EmployeeOrder> otherOrders,
+    List<EmployeeOrder> cancelledOrders,
   ) {
     final completedCount = historyOrders
         .where((o) => o.status == OrderStatus.completed)
@@ -1840,9 +1518,10 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
     final cancelledCount = historyOrders
         .where((o) => o.status == OrderStatus.cancelled)
         .length;
+    final totalOrders = completedCount + cancelledCount;
     final totalSpent = historyOrders
         .where((o) => o.status == OrderStatus.completed && o.finalPrice != null)
-        .fold(0.0, (sum, order) => sum + order.finalPrice!);
+        .fold(0.0, (summ, order) => summ + order.finalPrice!);
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -1903,40 +1582,478 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                   ],
                 ),
                 SizedBox(height: 16),
+                if (totalSpent > 0) ...[
+                  Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildHistoryStatCard(
+                              'Total Spent',
+                              'EGP ${totalSpent.toStringAsFixed(0)}',
+                              organization!.secondaryColorValue,
+                              Assets.imagesSvgsMoney,
+                              HistoryFilter.none,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 16),
+                    ],
+                  ),
+                ],
                 Row(
                   children: [
                     Expanded(
-                      child: _buildHistoryStatCard(
-                        'Completed',
-                        completedCount.toString(),
-                        AppColors.success,
-                        Assets.imagesSvgsComplete,
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _currentHistoryFilter = HistoryFilter.all;
+                          });
+                        },
+                        child: _buildHistoryStatCard(
+                          'All',
+                          totalOrders.toString(),
+                          organization!.primaryColorValue,
+                          Assets.imagesSvgsOverview,
+                          HistoryFilter.all,
+                        ),
                       ),
                     ),
                     SizedBox(width: 12),
                     Expanded(
-                      child: _buildHistoryStatCard(
-                        'Cancelled',
-                        cancelledCount.toString(),
-                        AppColors.error,
-                        Assets.imagesSvgsCancell,
-                      ),
-                    ),
-                    if (totalSpent > 0) ...[
-                      SizedBox(width: 12),
-                      Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _currentHistoryFilter = HistoryFilter.completed;
+                          });
+                        },
                         child: _buildHistoryStatCard(
-                          'Total Spent',
-                          'EGP ${totalSpent.toStringAsFixed(0)}',
-                          organization!.primaryColorValue,
-                          Assets.imagesSvgsMoney,
+                          'Completed',
+                          completedCount.toString(),
+                          AppColors.success,
+                          Assets.imagesSvgsComplete,
+                          HistoryFilter.completed,
                         ),
                       ),
-                    ],
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _currentHistoryFilter = HistoryFilter.cancelled;
+                          });
+                        },
+                        child: _buildHistoryStatCard(
+                          'Cancelled',
+                          cancelledCount.toString(),
+                          AppColors.error,
+                          Assets.imagesSvgsCancell,
+                          HistoryFilter.cancelled,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<EmployeeOrder> _getFilteredHistoryOrders() {
+    switch (_currentHistoryFilter) {
+      case HistoryFilter.completed:
+        return historyOrders
+            .where((order) => order.status == OrderStatus.completed)
+            .toList();
+      case HistoryFilter.cancelled:
+        return historyOrders
+            .where((order) => order.status == OrderStatus.cancelled)
+            .toList();
+      case HistoryFilter.all:
+        return historyOrders;
+      default:
+        return historyOrders;
+    }
+  }
+
+  // Add this method for empty state messages
+  String _getEmptyStateMessage() {
+    switch (_currentHistoryFilter) {
+      case HistoryFilter.completed:
+        return 'No completed orders yet';
+      case HistoryFilter.cancelled:
+        return 'No cancelled orders';
+      case HistoryFilter.all:
+        return 'No order history';
+      default:
+        return 'No order history';
+    }
+  }
+
+  Widget _buildDetailedHistoryCard(
+    EmployeeOrder order,
+    int index,
+    bool isCancelled,
+  ) {
+    final displayPrice = order.finalPrice ?? order.price;
+    // final isCompleted = order.status == OrderStatus.completed;
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 400 + (index * 50)),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) => Transform.translate(
+        offset: Offset(50 * (1 - value), 0),
+        child: Container(
+          margin: EdgeInsets.only(bottom: 16),
+          padding: EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isCancelled
+                  ? Colors.red.withOpacity(0.2)
+                  : organization!.secondaryColorValue.withOpacity(0.2),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: isCancelled
+                    ? Colors.red.withOpacity(0.08)
+                    : organization!.secondaryColorValue.withOpacity(0.08),
+                blurRadius: 15,
+                offset: Offset(0, 6),
+              ),
+            ],
+            image: DecorationImage(
+              image: AssetImage(AppImages.homePattern),
+              fit: BoxFit.fill,
+              colorFilter: ColorFilter.mode(
+                (isCancelled ? Colors.red : organization!.secondaryColorValue)
+                    .withOpacity(.5),
+                BlendMode.modulate,
+              ),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with status and action button
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isCancelled
+                                    ? Colors.red.withOpacity(0.1)
+                                    : AppColors.success.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                isCancelled ? 'CANCELLED' : 'COMPLETED',
+                                style: TextStyle(
+                                  color: isCancelled
+                                      ? Colors.red
+                                      : AppColors.success,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.access_time,
+                              size: 14,
+                              color: Colors.grey[500],
+                            ),
+                            SizedBox(width: 6),
+                            Text(
+                              _formatHistoryDate(
+                                isCancelled
+                                    ? order.createdAt
+                                    : order.completedAt ?? order.createdAt,
+                              ),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[500],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Action button - Reorder for both completed and cancelled orders
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: isCancelled
+                            ? [Colors.orange, Colors.deepOrange]
+                            : [
+                                organization!.primaryColorValue,
+                                organization!.secondaryColorValue,
+                              ],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color:
+                              (isCancelled
+                                      ? Colors.orange
+                                      : organization!.primaryColorValue)
+                                  .withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () => _showImprovedReorderDialog(order),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.refresh,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                              SizedBox(width: 6),
+                              Text(
+                                isCancelled ? 'Retry Order' : 'Reorder',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              SizedBox(height: 16),
+              Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: _getOrderTypeColor(order.type).withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: _getOrderTypeColor(order.type).withOpacity(0.2),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ListTile(
+                      contentPadding: EdgeInsets.all(0),
+                      horizontalTitleGap: 0,
+                      leading: SvgPicture.asset(
+                        Assets.imagesSvgsOrder,
+                        color: organization!.primaryColorValue,
+                        height: 18,
+                      ),
+                      title: Text(
+                        isCancelled ? 'Order Cancelled' : 'Items Delivered',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                      subtitle: isCancelled && order.employeeResponse != null
+                          ? Text(
+                              'Reason: ${order.employeeResponse}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.red[600],
+                                fontStyle: FontStyle.italic,
+                              ),
+                            )
+                          : displayPrice != null
+                          ? Text(
+                              'Spent: EGP ${displayPrice.toInt()}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            )
+                          : null,
+                      trailing: Text(
+                        order.type == OrderType.internal
+                            ? 'Internal'
+                            : 'External',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+
+                    // Items display with different styling for cancelled orders
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: order.items
+                          .map(
+                            (item) => Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: item.status == ItemStatus.notAvailable
+                                    ? Colors.red.withOpacity(0.1)
+                                    : Colors.green.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: item.status == ItemStatus.notAvailable
+                                      ? Colors.red.withOpacity(0.3)
+                                      : Colors.green.withOpacity(0.3),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SvgPicture.asset(
+                                    item.status == ItemStatus.notAvailable
+                                        ? Assets.imagesSvgsCancell
+                                        : Assets.imagesSvgsComplete,
+                                    height: 14,
+                                    color:
+                                        item.status == ItemStatus.notAvailable
+                                        ? Colors.red[600]
+                                        : Colors.green[600],
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    item.name,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color:
+                                          item.status == ItemStatus.notAvailable
+                                          ? Colors.red[700]
+                                          : Colors.green[700],
+                                      fontWeight: FontWeight.w500,
+                                      decoration:
+                                          (item.status ==
+                                              ItemStatus.notAvailable)
+                                          ? TextDecoration.lineThrough
+                                          : null,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: 16),
+
+              // Office boy info and additional details
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.delivery_dining_rounded,
+                          color: Colors.grey[600],
+                          size: 18,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          isCancelled ? 'Assigned to: ' : 'Delivered by: ',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            order.officeBoyName,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[800],
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (order.description.isNotEmpty) ...[
+                      SizedBox(height: 8),
+                      Divider(height: 1, color: Colors.grey[300]),
+                      SizedBox(height: 8),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SvgPicture.asset(
+                            Assets.imagesSvgsNote,
+                            color: Colors.grey[600],
+                            height: 16,
+                          ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              order.description,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -1992,13 +2109,15 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
     String value,
     Color color,
     String icon,
+    HistoryFilter filter,
   ) {
+    final isSelected = _currentHistoryFilter == filter;
     return AnimatedBuilder(
       animation: _pulseController,
       builder: (context, child) => Container(
         padding: EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: isSelected ? color : color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: color.withOpacity(0.2), width: 1),
         ),
@@ -2006,7 +2125,11 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
           children: [
             Transform.scale(
               scale: _pulseAnimation.value,
-              child: SvgPicture.asset(icon, color: color, height: 18),
+              child: SvgPicture.asset(
+                icon,
+                color: isSelected ? Colors.white : color,
+                height: 18,
+              ),
             ),
             SizedBox(height: 6),
             Text(
@@ -2014,13 +2137,16 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
-                color: color,
+                color: isSelected ? Colors.white : color,
               ),
               textAlign: TextAlign.center,
             ),
             Text(
               title,
-              style: TextStyle(fontSize: 10, color: AppColors.onSurfaceVariant),
+              style: TextStyle(
+                fontSize: 10,
+                color: isSelected ? Colors.white : AppColors.onSurfaceVariant,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -2054,18 +2180,46 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
     final TextEditingController budgetController = TextEditingController();
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     bool isLoading = false;
+    final bool isCancelled = originalOrder.status == OrderStatus.cancelled;
 
-    // Create a list to track selected items (initially all available items are selected)
-    List<OrderItem> availableItems = originalOrder.items
-        .where((item) => item.status != ItemStatus.notAvailable)
-        .toList();
+    // For cancelled orders, include all items and allow retrying them
+    // For completed orders, only show available items
+    List<OrderItem> itemsToShow;
+    bool allItemsUnavailable = false;
+    bool hasUnavailableItems = false;
 
-    // State to track which items are selected for reorder
-    List<bool> selectedItems = List.filled(availableItems.length, true);
+    if (isCancelled) {
+      // For cancelled orders, show ALL items and allow retrying them
+      itemsToShow = originalOrder.items
+          .map((item) => OrderItem(name: item.name, status: ItemStatus.pending))
+          .toList();
+      // For cancelled orders, we don't consider items as "unavailable" since we're retrying
+      allItemsUnavailable = false;
+      hasUnavailableItems = false;
+    } else {
+      // For completed orders, filter by availability as before
+      List<OrderItem> availableItems = originalOrder.items
+          .where((item) => item.status != ItemStatus.notAvailable)
+          .map((item) => OrderItem(name: item.name, status: ItemStatus.pending))
+          .toList();
+
+      List<OrderItem> allItems = originalOrder.items
+          .map((item) => OrderItem(name: item.name, status: ItemStatus.pending))
+          .toList();
+
+      allItemsUnavailable = availableItems.isEmpty;
+      hasUnavailableItems = originalOrder.items.any(
+        (item) => item.status == ItemStatus.notAvailable,
+      );
+
+      itemsToShow = allItemsUnavailable ? allItems : availableItems;
+    }
+
+    List<bool> selectedItems = List.filled(itemsToShow.length, true);
 
     if (originalOrder.type == OrderType.external &&
         originalOrder.price != null) {
-      // budgetController.text = originalOrder.price!.toInt().toString();
+      budgetController.text = originalOrder.price!.toInt().toString();
     }
 
     showDialog(
@@ -2158,92 +2312,297 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                         tween: Tween(begin: 0.0, end: 1.0),
                                         duration: Duration(milliseconds: 600),
                                         curve: Curves.easeOutBack,
-                                        builder: (context, value, child) =>
-                                            Transform.translate(
-                                              offset: Offset(
-                                                0,
-                                                -30 * (1 - value),
-                                              ),
-                                              child: Row(
-                                                children: [
-                                                  // Animated icon container
-                                                  Container(
-                                                    padding: EdgeInsets.all(12),
-                                                    decoration: BoxDecoration(
-                                                      gradient: RadialGradient(
-                                                        colors: [
-                                                          organization!
-                                                              .primaryColorValue
-                                                              .withOpacity(0.3),
-                                                          organization!
-                                                              .primaryColorValue
-                                                              .withOpacity(0.1),
-                                                        ],
-                                                      ),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            16,
-                                                          ),
-                                                      border: Border.all(
-                                                        color: Colors.white
-                                                            .withOpacity(0.3),
-                                                        width: 1,
-                                                      ),
-                                                      boxShadow: [
-                                                        BoxShadow(
-                                                          color: organization!
-                                                              .primaryColorValue
+                                        builder: (context, value, child) => Transform.translate(
+                                          offset: Offset(0, -30 * (1 - value)),
+                                          child: Row(
+                                            children: [
+                                              // Animated icon container
+                                              Container(
+                                                padding: EdgeInsets.all(12),
+                                                decoration: BoxDecoration(
+                                                  gradient: RadialGradient(
+                                                    colors: [
+                                                      organization!
+                                                          .primaryColorValue
+                                                          .withOpacity(0.3),
+                                                      organization!
+                                                          .primaryColorValue
+                                                          .withOpacity(0.1),
+                                                    ],
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(16),
+                                                  border: Border.all(
+                                                    color: Colors.white
+                                                        .withOpacity(0.3),
+                                                    width: 1,
+                                                  ),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color:
+                                                          (organization!
+                                                                  .primaryColorValue)
                                                               .withOpacity(0.2),
-                                                          blurRadius: 10,
-                                                          offset: Offset(0, 4),
-                                                        ),
-                                                      ],
+                                                      blurRadius: 10,
+                                                      offset: Offset(0, 4),
                                                     ),
-                                                    child: Icon(
-                                                      Icons.refresh_rounded,
-                                                      color: Colors.white,
-                                                      size: 24,
-                                                    ),
-                                                  ),
-                                                  SizedBox(width: 16),
-
-                                                  // Title and subtitle
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Text(
-                                                          'Reorder Items',
-                                                          style: TextStyle(
-                                                            fontSize: 20,
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                            color: Colors.white,
-                                                            letterSpacing: 0.5,
-                                                          ),
-                                                        ),
-                                                        SizedBox(height: 4),
-                                                        Text(
-                                                          'Select items to include in new order',
-                                                          style: TextStyle(
-                                                            fontSize: 14,
-                                                            color: Colors.white
-                                                                .withOpacity(
-                                                                  0.7,
-                                                                ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ],
+                                                  ],
+                                                ),
+                                                child: Icon(
+                                                  Icons.refresh_rounded,
+                                                  color: Colors.white,
+                                                  size: 24,
+                                                ),
                                               ),
-                                            ),
+                                              SizedBox(width: 16),
+
+                                              // Title and subtitle
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      isCancelled
+                                                          ? 'Retry Order'
+                                                          : 'Reorder Items',
+                                                      style: TextStyle(
+                                                        fontSize: 20,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: Colors.white,
+                                                        letterSpacing: 0.5,
+                                                      ),
+                                                    ),
+                                                    SizedBox(height: 4),
+                                                    Text(
+                                                      isCancelled
+                                                          ? 'Create a new order with items from cancelled order'
+                                                          : allItemsUnavailable
+                                                          ? 'All items are currently unavailable, but you can retry them'
+                                                          : 'Select available items to include in new order',
+                                                      style: TextStyle(
+                                                        fontSize: 14,
+                                                        color: Colors.white
+                                                            .withOpacity(0.7),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       ),
 
                                       SizedBox(height: 24),
+
+                                      // Show cancellation reason if available
+                                      if (isCancelled &&
+                                          originalOrder.employeeResponse !=
+                                              null) ...[
+                                        TweenAnimationBuilder<double>(
+                                          tween: Tween(begin: 0.0, end: 1.0),
+                                          duration: Duration(milliseconds: 700),
+                                          curve: Curves.easeOutBack,
+                                          builder: (context, value, child) =>
+                                              Transform.translate(
+                                                offset: Offset(
+                                                  -30 * (1 - value),
+                                                  0,
+                                                ),
+                                                child: Container(
+                                                  padding: EdgeInsets.all(16),
+                                                  decoration: BoxDecoration(
+                                                    gradient: LinearGradient(
+                                                      colors: [
+                                                        Colors.white
+                                                            .withOpacity(0.2),
+                                                        Colors.white
+                                                            .withOpacity(0.1),
+                                                      ],
+                                                    ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          16,
+                                                        ),
+                                                    border: Border.all(
+                                                      color: Colors.white
+                                                          .withOpacity(0.3),
+                                                      width: 1,
+                                                    ),
+                                                  ),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Row(
+                                                        children: [
+                                                          SvgPicture.asset(
+                                                            Assets
+                                                                .imagesSvgsInfo,
+                                                            color: Colors.white,
+                                                            height: 20,
+                                                          ),
+                                                          SizedBox(width: 8),
+                                                          Text(
+                                                            'Previous Cancellation Reason',
+                                                            style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                              color: Colors
+                                                                  .white
+                                                                  .withOpacity(
+                                                                    0.7,
+                                                                  ),
+                                                              fontSize: 14,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      SizedBox(height: 8),
+                                                      Text(
+                                                        originalOrder
+                                                            .employeeResponse!,
+                                                        style: TextStyle(
+                                                          color: Colors.white
+                                                              .withOpacity(0.8),
+                                                          fontSize: 13,
+                                                          fontStyle:
+                                                              FontStyle.italic,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                        ),
+                                        SizedBox(height: 20),
+                                      ],
+
+                                      // Show info notices only for non-cancelled orders
+                                      if (!isCancelled) ...[
+                                        if (allItemsUnavailable) ...[
+                                          Container(
+                                            padding: EdgeInsets.all(16),
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                colors: [
+                                                  Colors.red.withOpacity(0.2),
+                                                  Colors.red.withOpacity(0.1),
+                                                ],
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                              border: Border.all(
+                                                color: Colors.red.withOpacity(
+                                                  0.3,
+                                                ),
+                                                width: 1,
+                                              ),
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    SvgPicture.asset(
+                                                      Assets.imagesSvgsInfo,
+                                                      color:
+                                                          Colors.red.shade300,
+                                                      height: 20,
+                                                    ),
+                                                    SizedBox(width: 8),
+                                                    Text(
+                                                      'All Items Currently Unavailable',
+                                                      style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        color: Colors.white
+                                                            .withOpacity(0.9),
+                                                        fontSize: 14,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                SizedBox(height: 8),
+                                                Text(
+                                                  'All items from this order are currently marked as unavailable, but you can retry them in case their availability has changed.',
+                                                  style: TextStyle(
+                                                    color: Colors.white
+                                                        .withOpacity(0.8),
+                                                    fontSize: 13,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          SizedBox(height: 20),
+                                        ] else if (hasUnavailableItems) ...[
+                                          Container(
+                                            padding: EdgeInsets.all(16),
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                colors: [
+                                                  Colors.orange.withOpacity(
+                                                    0.2,
+                                                  ),
+                                                  Colors.orange.withOpacity(
+                                                    0.1,
+                                                  ),
+                                                ],
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                              border: Border.all(
+                                                color: Colors.orange
+                                                    .withOpacity(0.3),
+                                                width: 1,
+                                              ),
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons
+                                                          .warning_amber_rounded,
+                                                      color: Colors.orange,
+                                                      size: 20,
+                                                    ),
+                                                    SizedBox(width: 8),
+                                                    Text(
+                                                      'Some Items Not Available',
+                                                      style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        color: Colors.white
+                                                            .withOpacity(0.9),
+                                                        fontSize: 14,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                SizedBox(height: 8),
+                                                Text(
+                                                  'The following items are currently not available: ${originalOrder.items.where((item) => item.status == ItemStatus.notAvailable).map((item) => item.name).join(", ")}',
+                                                  style: TextStyle(
+                                                    color: Colors.white
+                                                        .withOpacity(0.8),
+                                                    fontSize: 13,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          SizedBox(height: 20),
+                                        ],
+                                      ],
 
                                       // Animated Items Selection Card
                                       TweenAnimationBuilder<double>(
@@ -2330,7 +2689,11 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                         SizedBox(width: 12),
                                                         Expanded(
                                                           child: Text(
-                                                            'Select items to reorder:',
+                                                            isCancelled
+                                                                ? 'Items to retry:'
+                                                                : allItemsUnavailable
+                                                                ? 'Items to retry:'
+                                                                : 'Available items to reorder:',
                                                             style: TextStyle(
                                                               fontWeight:
                                                                   FontWeight
@@ -2396,7 +2759,8 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                                 style: TextStyle(
                                                                   fontSize: 12,
                                                                   color: Colors
-                                                                      .white,
+                                                                      .red
+                                                                      .shade900,
                                                                   fontWeight:
                                                                       FontWeight
                                                                           .w600,
@@ -2409,11 +2773,11 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                     ),
                                                     SizedBox(height: 16),
 
-                                                    // Items chips with remove functionality
+                                                    // Items chips with selection functionality
                                                     Wrap(
                                                       spacing: 8,
                                                       runSpacing: 8,
-                                                      children: availableItems.asMap().entries.map((
+                                                      children: itemsToShow.asMap().entries.map((
                                                         entry,
                                                       ) {
                                                         final index = entry.key;
@@ -2594,7 +2958,11 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                             horizontal: 8.0,
                                                           ),
                                                       child: Text(
-                                                        '${selectedItems.where((selected) => selected).length} of ${availableItems.length} items selected',
+                                                        isCancelled
+                                                            ? '${selectedItems.where((selected) => selected).length} of ${itemsToShow.length} items selected for retry'
+                                                            : allItemsUnavailable
+                                                            ? '${selectedItems.where((selected) => selected).length} of ${itemsToShow.length} unavailable items selected for retry'
+                                                            : '${selectedItems.where((selected) => selected).length} of ${itemsToShow.length} available items selected',
                                                         style: TextStyle(
                                                           fontSize: 12,
                                                           color: Colors.white
@@ -2658,8 +3026,6 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                       if (originalOrder.type ==
                                           OrderType.external) ...[
                                         SizedBox(height: 24),
-
-                                        // Animated budget section
                                         TweenAnimationBuilder<double>(
                                           tween: Tween(begin: 0.0, end: 1.0),
                                           duration: Duration(
@@ -2682,8 +3048,6 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                   ),
                                                 ),
                                                 SizedBox(height: 12),
-
-                                                // Glass text field
                                                 Container(
                                                   decoration: BoxDecoration(
                                                     borderRadius:
@@ -2744,14 +3108,6 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                                 ),
                                                             fontSize: 14,
                                                           ),
-                                                          // prefixText: 'EGP ',
-                                                          // prefixStyle: TextStyle(
-                                                          //   color: organization!
-                                                          //       .primaryColorValue,
-                                                          //   fontWeight:
-                                                          //       FontWeight.bold,
-                                                          //   fontSize: 16,
-                                                          // ),
                                                           prefixIcon:
                                                               SvgPicture.asset(
                                                                 Assets
@@ -2805,7 +3161,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
 
                                       SizedBox(height: 32),
 
-                                      // Animated Action buttons
+                                      // Action buttons
                                       TweenAnimationBuilder<double>(
                                         tween: Tween(begin: 0.0, end: 1.0),
                                         duration: Duration(milliseconds: 1200),
@@ -2866,7 +3222,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                               ),
                                               SizedBox(width: 16),
 
-                                              // Reorder button with glow effect
+                                              // Action button with glow effect
                                               Expanded(
                                                 flex: 2,
                                                 child: TweenAnimationBuilder<double>(
@@ -2919,8 +3275,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                             hasSelectedItems
                                                             ? [
                                                                 BoxShadow(
-                                                                  color: organization!
-                                                                      .primaryColorValue
+                                                                  color: (organization!.primaryColorValue)
                                                                       .withOpacity(
                                                                         0.4 +
                                                                             (glowValue *
@@ -2961,9 +3316,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                                       () => isLoading =
                                                                           true,
                                                                     );
-
                                                                     try {
-                                                                      // Create new order with only selected items
                                                                       List<
                                                                         OrderItem
                                                                       >
@@ -2973,12 +3326,12 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                                         int i =
                                                                             0;
                                                                         i <
-                                                                            availableItems.length;
+                                                                            itemsToShow.length;
                                                                         i++
                                                                       ) {
                                                                         if (selectedItems[i]) {
                                                                           selectedOrderItems.add(
-                                                                            availableItems[i],
+                                                                            itemsToShow[i],
                                                                           );
                                                                         }
                                                                       }
@@ -2992,9 +3345,18 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                                       Navigator.of(
                                                                         context,
                                                                       ).pop();
+
+                                                                      String
+                                                                      successMessage =
+                                                                          isCancelled
+                                                                          ? '$selectedCount items have been retried successfully!'
+                                                                          : allItemsUnavailable
+                                                                          ? '$selectedCount unavailable items have been retried successfully!'
+                                                                          : '$selectedCount available items have been reordered successfully!';
+
                                                                       showSuccessToast(
                                                                         context,
-                                                                        '$selectedCount items have been reordered successfully!',
+                                                                        successMessage,
                                                                       );
 
                                                                       // Switch to today's orders tab
@@ -3007,7 +3369,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                                     ) {
                                                                       showErrorToast(
                                                                         context,
-                                                                        'Failed to create reorder: $e',
+                                                                        'Failed to create ${isCancelled || allItemsUnavailable ? 'retry' : 'reorder'}: $e',
                                                                       );
                                                                     } finally {
                                                                       setState(
@@ -3078,7 +3440,11 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                                       ),
                                                                       Text(
                                                                         hasSelectedItems
-                                                                            ? 'Reorder $selectedCount Item${selectedCount > 1 ? 's' : ''}'
+                                                                            ? isCancelled
+                                                                                  ? 'Retry $selectedCount Item${selectedCount > 1 ? 's' : ''}'
+                                                                                  : allItemsUnavailable
+                                                                                  ? 'Retry $selectedCount Item${selectedCount > 1 ? 's' : ''}'
+                                                                                  : 'Reorder $selectedCount Item${selectedCount > 1 ? 's' : ''}'
                                                                             : 'Select Items First',
                                                                         style: TextStyle(
                                                                           color:
@@ -3137,14 +3503,24 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
       throw Exception('No available office boys for reorder');
     }
 
-    // Create new order items (only available items, reset status to pending)
-    final availableItems = originalOrder.items
-        .where((item) => item.status != ItemStatus.notAvailable)
-        .map((item) => OrderItem(name: item.name, status: ItemStatus.pending))
-        .toList();
+    final bool isCancelled = originalOrder.status == OrderStatus.cancelled;
 
-    if (availableItems.isEmpty) {
-      throw Exception('No available items to reorder');
+    List<OrderItem> itemsToProcess;
+
+    if (isCancelled) {
+      itemsToProcess = selectedItems
+          .map((item) => OrderItem(name: item.name, status: ItemStatus.pending))
+          .toList();
+    } else {
+      itemsToProcess = selectedItems
+          .map((item) => OrderItem(name: item.name, status: ItemStatus.pending))
+          .toList();
+    }
+
+    if (itemsToProcess.isEmpty) {
+      throw Exception(
+        'No items selected for ${isCancelled ? 'retry' : 'reorder'}',
+      );
     }
 
     // Parse budget for external orders
@@ -3156,28 +3532,30 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
       }
     }
 
-    // Create the reorder
-    final reorder = EmployeeOrder(
-      id: '', // Will be generated by Firestore
+    // Create the reorder/retry
+    final newOrder = EmployeeOrder(
+      id: '',
       employeeId: currentUser!.id,
       employeeName: currentUser!.name,
       officeBoyId: availableOfficeBoys.first.id,
       officeBoyName: availableOfficeBoys.first.name,
-      items: availableItems,
+      items: itemsToProcess,
       description: originalOrder.description,
       type: originalOrder.type,
       status: OrderStatus.pending,
       createdAt: DateTime.now(),
       price: budget,
       organizationId: currentUser!.organizationId,
-      notes: 'Reordered from #${originalOrder.id.substring(0, 8)}',
+      notes: isCancelled
+          ? 'Retried from cancelled order #${originalOrder.id.substring(0, 8)}'
+          : 'Reordered from #${originalOrder.id.substring(0, 8)}',
     );
 
     // Add to Firestore
-    await _firebaseService.addDocument('orders', reorder.toFirestore());
+    await _firebaseService.addDocument('orders', newOrder.toFirestore());
   }
 
-  Widget _buildAnimatedTodaysOrders() { 
+  Widget _buildAnimatedTodaysOrders() {
     return Column(
       children: [
         SizedBox(height: 16),
