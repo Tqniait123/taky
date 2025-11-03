@@ -287,6 +287,7 @@ class _AdminLayoutState extends State<AdminLayout>
           onError: (error) {
             setState(() {
               errorMessage = error.toString();
+               isLoading = false;
             });
           },
         );
