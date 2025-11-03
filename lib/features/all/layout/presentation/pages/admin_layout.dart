@@ -2167,11 +2167,10 @@ class _AdminLayoutState extends State<AdminLayout>
               opacity: value,
               child: Row(
                 children: [
-                  SvgPicture.asset(
-                    Assets.imagesSvgsClock,
+                  Icon(
+                    Icons.access_time_rounded,
                     color: Colors.grey[600],
-                    height: 16,
-                    width: 16,
+                    size: 16,
                   ),
                   SizedBox(width: 8),
                   Text(
