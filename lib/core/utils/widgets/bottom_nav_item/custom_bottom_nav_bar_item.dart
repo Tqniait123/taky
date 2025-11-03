@@ -41,7 +41,7 @@ class CustomBottomNavigationBarItem extends StatelessWidget {
             isSelected ? iconFilledPath : iconPath,
             colorFilter: !isSelected
                 ? const ColorFilter.mode(AppColors.outline, BlendMode.srcIn)
-                : const ColorFilter.mode(AppColors.secondary, BlendMode.srcIn),
+                :  ColorFilter.mode(AppColors.secondary, BlendMode.srcIn),
             height: 27.h,
           ),
           const SizedBox(height: 5),

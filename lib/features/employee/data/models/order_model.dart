@@ -58,6 +58,7 @@ class EmployeeOrder {
   final String organizationId;
   final String? notes;
   final String? employeeResponse; // Employee's response to unavailable items
+  final String targetOfficeBoyId;
 
   EmployeeOrder({
     required this.id,
@@ -76,6 +77,7 @@ class EmployeeOrder {
     required this.organizationId,
     this.notes,
     this.employeeResponse,
+    this.targetOfficeBoyId = '',
   });
 
   // Compatibility getter for single item (for existing code)
@@ -117,6 +119,7 @@ class EmployeeOrder {
       organizationId: data['organizationId'] ?? '',
       notes: data['notes'],
       employeeResponse: data['employeeResponse'],
+      targetOfficeBoyId: data['targetOfficeBoyId'] ?? '',
     );
   }
 
@@ -140,6 +143,7 @@ class EmployeeOrder {
       'organizationId': organizationId,
       'notes': notes,
       'employeeResponse': employeeResponse,
+      'targetOfficeBoyId': targetOfficeBoyId,
     };
   }
 
@@ -160,6 +164,7 @@ class EmployeeOrder {
     String? organizationId,
     String? notes,
     String? employeeResponse,
+    String? targetOfficeBoyId,
   }) {
     return EmployeeOrder(
       id: id ?? this.id,
@@ -178,6 +183,7 @@ class EmployeeOrder {
       organizationId: organizationId ?? this.organizationId,
       notes: notes ?? this.notes,
       employeeResponse: employeeResponse ?? this.employeeResponse,
+      targetOfficeBoyId: targetOfficeBoyId ?? this.targetOfficeBoyId,
     );
   }
 }

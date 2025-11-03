@@ -67,6 +67,7 @@ class OfficeOrder {
   final String organizationId;
   final String? notes;
   final String? employeeResponse; // Employee's response to unavailable items
+  final String targetOfficeBoyId;
 
   OfficeOrder({
     required this.id,
@@ -85,6 +86,7 @@ class OfficeOrder {
     required this.organizationId,
     this.notes,
     this.employeeResponse,
+    this.targetOfficeBoyId = '',
   });
 
   // Compatibility getter for single item (for existing code)
@@ -124,6 +126,7 @@ class OfficeOrder {
       organizationId: data['organizationId'] ?? '',
       notes: data['notes'],
       employeeResponse: data['employeeResponse'],
+      targetOfficeBoyId: data['targetOfficeBoyId'] ?? '',
     );
   }
 
@@ -145,6 +148,7 @@ class OfficeOrder {
       'organizationId': organizationId,
       'notes': notes,
       'employeeResponse': employeeResponse,
+      'targetOfficeBoyId': targetOfficeBoyId,
     };
   }
 
@@ -165,6 +169,7 @@ class OfficeOrder {
     String? organizationId,
     String? notes,
     String? employeeResponse,
+    String? targetOfficeBoyId,
   }) {
     return OfficeOrder(
       id: id ?? this.id,
@@ -183,6 +188,7 @@ class OfficeOrder {
       organizationId: organizationId ?? this.organizationId,
       notes: notes ?? this.notes,
       employeeResponse: employeeResponse ?? this.employeeResponse,
+      targetOfficeBoyId: targetOfficeBoyId ?? this.targetOfficeBoyId,
     );
   }
 }

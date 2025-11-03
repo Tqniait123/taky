@@ -339,7 +339,7 @@ class _LoginScreenState extends State<LoginScreen>
                                     },
                                     child: Text(
                                       LocaleKeys.signUp.tr(),
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         color: AppColors.primary,
                                         fontWeight: FontWeight.w600,
                                         fontSize: 16,

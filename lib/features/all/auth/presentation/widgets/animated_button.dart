@@ -16,7 +16,7 @@ class AnimatedButton extends StatefulWidget {
     required this.text,
     this.onPressed,
     this.isLoading = false,
-    this.backgroundColor = AppColors.primary,
+    this.backgroundColor =const Color(0xFFe72d2d),
     this.foregroundColor = Colors.white,
     this.height = 60,
     this.width,

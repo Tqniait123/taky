@@ -649,7 +649,7 @@ class _RegisterScreenState extends State<RegisterScreen>
             onPressed: () => context.go(Routes.login),
             child: Text(
               LocaleKeys.signIn.tr(),
-              style: const TextStyle(
+              style:  TextStyle(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w600,
                 fontSize: 16,

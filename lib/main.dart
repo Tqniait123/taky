@@ -12,6 +12,7 @@ import 'package:taqy/config/supabase_config.dart';
 import 'package:taqy/core/observers/bloc_observer.dart';
 import 'package:taqy/core/services/di.dart';
 import 'package:taqy/core/static/locales.dart';
+import 'package:taqy/core/theme/colors.dart';
 import 'package:taqy/core/translations/codegen_loader.g.dart';
 import 'package:taqy/firebase_options.dart';
 
@@ -66,6 +67,7 @@ Future<void> main() async {
   // FcmService fcmService = FcmService(preferences: sl());
   // await fcmService.initNotifications();
   // FirebaseMessaging.onBackgroundMessage(fcmBackgroundHandler);
+  await ColorManager().initialize();
 
   Bloc.observer = MyBlocObserver();
 

@@ -24,7 +24,7 @@ class ProfileItemWidget extends StatelessWidget {
           18.gap,
           Expanded(child: Text(title, style: context.titleMedium.regular.s14.copyWith())),
           trailing ?? // arrow
-              const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: AppColors.primary),
+               Icon(Icons.arrow_forward_ios_rounded, size: 16, color: AppColors.primary),
         ],
       ),
     ).withPressEffect(onTap: onPressed);

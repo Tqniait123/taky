@@ -102,7 +102,7 @@ class _PaginationWidgetState<T> extends State<PaginationWidget<T>> {
       itemBuilder: (context, index) {
         if (index == widget.items.length) {
           return widget.loadingIndicator ??
-              const Padding(
+               Padding(
                 padding: EdgeInsets.all(8.0),
                 child: SpinKitRotatingCircle(size: 15, color: AppColors.primary),
               );
@@ -126,7 +126,7 @@ class _PaginationWidgetState<T> extends State<PaginationWidget<T>> {
       itemBuilder: (context, index) {
         if (index == widget.items.length) {
           return widget.loadingIndicator ??
-              const Padding(
+               Padding(
                 padding: EdgeInsets.all(8.0),
                 child: SpinKitRotatingCircle(size: 15, color: AppColors.primary),
               );

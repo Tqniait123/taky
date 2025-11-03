@@ -116,8 +116,8 @@ class _AuthTextFieldState extends State<AuthTextField> {
                   ? IconButton(
                       icon: SvgPicture.asset(
                         widget.isPasswordVisible
-                            ? Assets.imagesSvgsEyeDash
-                            : Assets.imagesSvgsEye,
+                            ? Assets.imagesSvgsEye
+                            : Assets.imagesSvgsEyeDash,
                         color: _isFocused
                             ? widget.focusColor
                             : Colors.grey[400],

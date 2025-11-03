@@ -1074,7 +1074,8 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
                       value: _selectedOfficeBoy,
                       isExpanded: true,
                       underline: SizedBox(),
-                      dropdownColor: Colors.transparent,
+                      dropdownColor: Colors.grey,
+                      borderRadius: BorderRadius.circular(16),
                       icon: Icon(
                         Icons.arrow_drop_down_rounded,
                         color: Colors.white.withOpacity(0.8),
@@ -1285,7 +1286,12 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
                     child: InkWell(
                       borderRadius: BorderRadius.circular(16),
                       onTap: (_isSubmitting || _selectedItems.isEmpty)
-                          ? null
+                          ? () {
+                              showErrorToast(
+                                context,
+                                'Please select at least one item',
+                              );
+                            }
                           : _submitOrder,
                       child: Container(
                         alignment: Alignment.center,

@@ -15,7 +15,7 @@ ThemeData lightTheme(BuildContext context) {
     // useMaterial3: false,
     scaffoldBackgroundColor: AppColors.background,
     fontFamily: context.locale.languageCode == "en" ? Constants.fontFamilyEN : Constants.fontFamilyAR,
-    colorScheme: const ColorScheme.light(primary: AppColors.primary),
+    colorScheme:  ColorScheme.light(primary: AppColors.primary),
 
     dividerColor: AppColors.outline,
     dividerTheme: const DividerThemeData(color: AppColors.outline, thickness: 0.1),
@@ -34,7 +34,7 @@ ThemeData lightTheme(BuildContext context) {
     ),
 
     //! Bottom Navigation Bar Theme
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+    bottomNavigationBarTheme:  BottomNavigationBarThemeData(
       elevation: 4.0,
       showSelectedLabels: true,
       showUnselectedLabels: true,

@@ -9,6 +9,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 import 'package:taqy/config/routes/routes.dart';
+import 'package:taqy/core/helpers/cache_helper.dart';
 import 'package:taqy/core/services/firebase_service.dart';
 import 'package:taqy/core/static/app_assets.dart';
 import 'package:taqy/core/theme/colors.dart';
@@ -76,6 +77,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
     _scrollController.addListener(_onScroll);
     _initializeAnimations();
     _loadData();
+    _loadSavedColors();
   }
 
   void _initializeAnimations() {
@@ -207,6 +209,11 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
         setState(() {
           organization = EmployeeOrganization.fromFirestore(orgDoc);
         });
+
+        ColorManager().updateColors(
+          organization!.primaryColorValue,
+          organization!.secondaryColorValue,
+        );
       }
 
       // Load office boys from the same organization
@@ -310,6 +317,17 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
             }
           },
         );
+  }
+
+  Future<void> _loadSavedColors() async {
+    final savedPrimaryColor =
+        await SharedPreferencesService.getOrganizationPrimaryColor();
+    final savedSecondaryColor =
+        await SharedPreferencesService.getOrganizationSecondaryColor();
+
+    if (savedPrimaryColor != null && savedSecondaryColor != null && mounted) {
+      setState(() {});
+    }
   }
 
   void _showNewOrderBottomSheet() {
@@ -524,72 +542,106 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                 ),
               ),
             ),
-
-            Positioned(
-              top: 20,
-              left: 20,
-              child: TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0.0, end: 1.0),
-                duration: Duration(milliseconds: 800),
-                curve: Curves.elasticOut,
-                builder: (context, value, child) => Transform.scale(
-                  scale: value,
-                  child: AnimatedContainer(
-                    duration: Duration(milliseconds: 300),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: IconButton(
-                      icon: AnimatedBuilder(
-                        animation: _pulseController,
-                        builder: (context, child) => Transform.scale(
-                          scale: _pulseAnimation.value,
-                          child: SvgPicture.asset(
-                            Assets.imagesSvgsNotification,
-                            color: Colors.white,
+            if (currentUser?.role == UserRole.employee)
+              Positioned(
+                top: 20,
+                left: 20,
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: Duration(milliseconds: 800),
+                  curve: Curves.elasticOut,
+                  builder: (context, value, child) => Transform.scale(
+                    scale: value,
+                    child: AnimatedContainer(
+                      duration: Duration(milliseconds: 300),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: IconButton(
+                        icon: AnimatedBuilder(
+                          animation: _pulseController,
+                          builder: (context, child) => Transform.scale(
+                            scale: _pulseAnimation.value,
+                            child: SvgPicture.asset(
+                              Assets.imagesSvgsNotification,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
+                        onPressed: _loadData,
                       ),
-                      onPressed: _loadData,
                     ),
                   ),
                 ),
               ),
-            ),
+            if (currentUser?.role == UserRole.admin)
+              Positioned(
+                top: 20,
+                right: 20,
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: Duration(milliseconds: 800),
+                  curve: Curves.elasticOut,
+                  builder: (context, value, child) => Transform.scale(
+                    scale: value,
+                    child: AnimatedContainer(
+                      duration: Duration(milliseconds: 300),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: IconButton(
+                        icon: AnimatedBuilder(
+                          animation: _pulseController,
+                          builder: (context, child) => Transform.scale(
+                            scale: _pulseAnimation.value,
+                            child: SvgPicture.asset(
+                              Assets.imagesSvgsNotification,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        onPressed: _loadData,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             // Animated top icons
-            Positioned(
-              top: 20,
-              right: 20,
-              child: TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0.0, end: 1.0),
-                duration: Duration(milliseconds: 300),
-                curve: Curves.elasticOut,
-                builder: (context, value, child) => Transform.scale(
-                  scale: value,
-                  child: AnimatedContainer(
-                    duration: Duration(milliseconds: 300),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: IconButton(
-                      icon: AnimatedBuilder(
-                        animation: _rotationController,
-                        builder: (context, child) => Transform.rotate(
-                          angle: _rotationAnimation.value * 0.1,
-                          child: SvgPicture.asset(
-                            Assets.imagesSvgsSetting,
-                            color: Colors.white,
+            if (currentUser?.role == UserRole.employee)
+              Positioned(
+                top: 20,
+                right: 20,
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: Duration(milliseconds: 300),
+                  curve: Curves.elasticOut,
+                  builder: (context, value, child) => Transform.scale(
+                    scale: value,
+                    child: AnimatedContainer(
+                      duration: Duration(milliseconds: 300),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: IconButton(
+                        icon: AnimatedBuilder(
+                          animation: _rotationController,
+                          builder: (context, child) => Transform.rotate(
+                            angle: _rotationAnimation.value * 0.1,
+                            child: SvgPicture.asset(
+                              Assets.imagesSvgsSetting,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
+                        onPressed: _showProfileBottomSheet,
                       ),
-                      onPressed: _showProfileBottomSheet,
                     ),
                   ),
                 ),
               ),
-            ),
 
             // Animated center content
             Center(
@@ -663,7 +715,9 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                         builder: (context, value, child) => Transform.translate(
                           offset: Offset(0, value),
                           child: Text(
-                            'Welcome, ${currentUser?.name ?? ''}',
+                            currentUser?.role == UserRole.admin
+                                ? 'Welcome, Boss!'
+                                : 'Welcome, ${currentUser?.name ?? ''}',
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.8),
                               fontSize: 16,
@@ -1219,7 +1273,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
 
   String _formatTime(DateTime dateTime) {
     final now = DateTime.now();
-    final difference = now.difference(dateTime);
+    final difference = now.difference(dateTime).abs();
 
     if (difference.inMinutes < 60) {
       return '${difference.inMinutes}m ago';

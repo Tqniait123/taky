@@ -1098,7 +1098,8 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                       value: _selectedOfficeBoy,
                       isExpanded: true,
                       underline: SizedBox(),
-                      dropdownColor: Colors.transparent,
+                       dropdownColor: Colors.grey,
+                      borderRadius: BorderRadius.circular(16),
                       icon: Icon(
                         Icons.arrow_drop_down_rounded,
                         color: Colors.white.withOpacity(0.8),

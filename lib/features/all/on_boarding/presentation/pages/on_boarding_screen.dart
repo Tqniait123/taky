@@ -94,7 +94,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
                 AnimatedSmoothIndicator(
                   activeIndex: _currentPage,
                   count: 3,
-                  effect: const ExpandingDotsEffect(
+                  effect:  ExpandingDotsEffect(
                     activeDotColor: AppColors.primary,
                     dotColor: AppColors.outline,
                     dotHeight: 10,

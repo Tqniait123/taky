@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:lottie/lottie.dart';
+import 'package:taqy/core/helpers/cache_helper.dart';
 import 'package:taqy/core/services/firebase_service.dart';
 import 'package:taqy/core/static/app_assets.dart';
 import 'package:taqy/core/theme/colors.dart';
@@ -13,6 +14,8 @@ import 'package:taqy/features/admin/data/models/app_user.dart';
 import 'package:taqy/features/admin/data/models/order.dart';
 import 'package:taqy/features/admin/data/models/organization.dart';
 import 'package:taqy/features/admin/presentation/widgets/admin_settings_bottom_sheet.dart';
+import 'package:taqy/features/admin/presentation/widgets/user_details_bottom_sheet.dart';
+import 'package:taqy/features/all/layout/presentation/pages/employee_layout.dart';
 
 class AdminLayout extends StatefulWidget {
   const AdminLayout({super.key});
@@ -55,6 +58,8 @@ class _AdminLayoutState extends State<AdminLayout>
   late Animation<double> _shimmerAnimation;
   // late Animation<double> _glowAnimation;
 
+  bool isEmployeeView = false;
+
   int _selectedIndex = 0;
   double _scrollOffset = 0.0;
   bool _isHeaderCollapsed = false;
@@ -68,6 +73,7 @@ class _AdminLayoutState extends State<AdminLayout>
 
     _initializeAnimations();
     _loadData();
+    _loadSavedColors();
   }
 
   void _initializeAnimations() {
@@ -131,9 +137,6 @@ class _AdminLayoutState extends State<AdminLayout>
       vsync: this,
       duration: const Duration(seconds: 2),
     );
-    // _glowAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-    //   CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
-    // );
 
     // Shimmer effect
     _shimmerController = AnimationController(
@@ -173,6 +176,20 @@ class _AdminLayoutState extends State<AdminLayout>
     super.dispose();
   }
 
+  Future<void> _loadSavedColors() async {
+    final savedPrimaryColor =
+        await SharedPreferencesService.getOrganizationPrimaryColor();
+    final savedSecondaryColor =
+        await SharedPreferencesService.getOrganizationSecondaryColor();
+
+    if (savedPrimaryColor != null && savedSecondaryColor != null && mounted) {
+      setState(() {
+        // You might want to create a temporary organization with saved colors
+        // or handle this differently based on your app structure
+      });
+    }
+  }
+
   Future<void> _loadData() async {
     try {
       setState(() {
@@ -206,6 +223,11 @@ class _AdminLayoutState extends State<AdminLayout>
         setState(() {
           organization = AdminOrganization.fromFirestore(orgDoc);
         });
+
+        ColorManager().updateColors(
+          organization!.primaryColorValue,
+          organization!.secondaryColorValue,
+        );
       }
 
       _loadOrders(organizationId);
@@ -270,14 +292,6 @@ class _AdminLayoutState extends State<AdminLayout>
         );
   }
 
-  // void _handleLogout(BuildContext context) async {
-  //   await context.read<AuthCubit>().signOut();
-  //   if (context.mounted) {
-  //     Navigator.pop(context);
-  //     context.go(Routes.login);
-  //   }
-  // }
-
   void _showSettingsBottomSheet(BuildContext context) {
     if (organization == null) return;
 
@@ -298,6 +312,11 @@ class _AdminLayoutState extends State<AdminLayout>
                 setState(() {
                   organization = updatedOrg;
                 });
+
+                ColorManager().updateColors(
+                  organization!.primaryColorValue,
+                  organization!.secondaryColorValue,
+                );
 
                 showSuccessToast(context, 'Settings updated successfully!');
               } catch (e) {
@@ -341,6 +360,73 @@ class _AdminLayoutState extends State<AdminLayout>
               ),
 
               // Animated bottom sheet
+              SlideTransition(
+                position: animation.drive(tween),
+                child: FadeTransition(
+                  opacity: fadeAnimation,
+                  child: ScaleTransition(
+                    scale: scaleAnimation,
+                    alignment: Alignment.bottomCenter,
+                    child: child,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+        opaque: false,
+        barrierDismissible: true,
+        barrierColor: Colors.transparent,
+      ),
+    );
+  }
+
+  void _showUserDetailsBottomSheet(BuildContext context, AdminAppUser user) {
+    final userOrders = orders
+        .where(
+          (order) =>
+              order.employeeId == user.id || order.officeBoyId == user.id,
+        )
+        .toList();
+
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return UserDetailsBottomSheet(
+            user: user,
+            orders: userOrders,
+            organization: organization!,
+            animation: animation,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 600),
+        reverseTransitionDuration: const Duration(milliseconds: 400),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(0.0, 1.0);
+          const end = Offset.zero;
+          const curve = Curves.easeOutCubic;
+
+          var tween = Tween(
+            begin: begin,
+            end: end,
+          ).chain(CurveTween(curve: curve));
+
+          var scaleAnimation = Tween<double>(
+            begin: 0.9,
+            end: 1.0,
+          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut));
+
+          var fadeAnimation = Tween<double>(
+            begin: 0.0,
+            end: 1.0,
+          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut));
+
+          return Stack(
+            children: [
+              FadeTransition(
+                opacity: fadeAnimation,
+                child: Container(color: Colors.black.withOpacity(0.5)),
+              ),
               SlideTransition(
                 position: animation.drive(tween),
                 child: FadeTransition(
@@ -458,6 +544,124 @@ class _AdminLayoutState extends State<AdminLayout>
     );
   }
 
+  void _toggleView() {
+    setState(() {
+      isEmployeeView = !isEmployeeView;
+      _selectedIndex = 0;
+    });
+
+    _slideController.reset();
+    _fadeController.reset();
+    _slideController.forward();
+    _fadeController.forward();
+
+    showSuccessToast(
+      context,
+      isEmployeeView ? 'Switched to Employee View' : 'Switched to Admin View',
+    );
+  }
+
+  Widget _buildViewSwitchButton() {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 600),
+      curve: Curves.elasticOut,
+      builder: (context, value, child) => Transform.scale(
+        scale: value,
+        child: GestureDetector(
+          onTap: _toggleView,
+          child: AnimatedContainer(
+            duration: Duration(milliseconds: 400),
+            curve: Curves.easeInOutCubic,
+            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.glass,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.glassStroke, width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 15,
+                  offset: Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.white.withOpacity(.2),
+                        Colors.white.withOpacity(.3),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isEmployeeView
+                            ? Icons.person
+                            : Icons.admin_panel_settings,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                      SizedBox(width: 2),
+                      Icon(
+                        Icons.check_circle,
+                        color: Colors.greenAccent,
+                        size: 14,
+                      ),
+                    ],
+                  ),
+                ),
+
+                SizedBox(width: 8),
+
+                // Arrow indicator
+                AnimatedBuilder(
+                  animation: _pulseController,
+                  builder: (context, child) => Transform.scale(
+                    scale: _pulseAnimation.value,
+                    child: Icon(
+                      Icons.arrow_forward_rounded,
+                      color: Colors.white.withOpacity(0.8),
+                      size: 16,
+                    ),
+                  ),
+                ),
+
+                SizedBox(width: 8),
+
+                // Target view indicator
+                Container(
+                  padding: EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Icon(
+                    isEmployeeView ? Icons.admin_panel_settings : Icons.person,
+                    color: Colors.white.withOpacity(0.9),
+                    size: 18,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
@@ -524,10 +728,20 @@ class _AdminLayoutState extends State<AdminLayout>
       );
     }
 
-    if (organization == null) {
+    if (isEmployeeView) {
       return Scaffold(
-        backgroundColor: AppColors.background,
-        body: Center(child: Text('Organization not found')),
+        body: Stack(
+          children: [
+            EmployeeLayout(),
+            isEmployeeView
+                ? Positioned(top: 65, left: 20, child: _buildViewSwitchButton())
+                : Positioned(
+                    top: 40,
+                    left: 20,
+                    child: _buildViewSwitchButton(),
+                  ),
+          ],
+        ),
       );
     }
 
@@ -756,7 +970,7 @@ class _AdminLayoutState extends State<AdminLayout>
             // Animated top icons
             Positioned(
               top: 20,
-              left: 20,
+              right: 65,
               child: TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0.0, end: 1.0),
                 duration: Duration(milliseconds: 800),
@@ -786,6 +1000,7 @@ class _AdminLayoutState extends State<AdminLayout>
                 ),
               ),
             ),
+            Positioned(top: 20, left: 20, child: _buildViewSwitchButton()),
             Positioned(
               top: 20,
               right: 20,
@@ -1416,282 +1631,285 @@ class _AdminLayoutState extends State<AdminLayout>
         )
         .length;
 
-    return AnimatedContainer(
-      duration: Duration(milliseconds: 400),
-      curve: Curves.easeOutCubic,
-      margin: EdgeInsets.only(bottom: 16),
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage(AppImages.homePattern),
-          fit: BoxFit.fill,
-          colorFilter: ColorFilter.mode(
-            organization!.secondaryColorValue.withOpacity(.7),
-            BlendMode.modulate,
-          ),
-        ),
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 12,
-            offset: Offset(0, 4),
-          ),
-        ],
-        border: !user.isActive
-            ? Border.all(color: AppColors.error.withOpacity(0.3))
-            : null,
-      ),
-      child: Row(
-        children: [
-          // Animated avatar
-          AnimatedBuilder(
-            animation: _pulseController,
-            builder: (context, child) => Transform.scale(
-              scale: user.isActive ? _pulseAnimation.value : 1.0,
-              child: Container(
-                height: 60,
-                width: 60,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(30),
-                  gradient: LinearGradient(
-                    colors: user.role == UserRole.employee
-                        ? [
-                            organization!.primaryColorValue,
-                            organization!.secondaryColorValue,
-                          ]
-                        : [
-                            organization!.secondaryColorValue,
-                            organization!.primaryColorValue,
-                          ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color:
-                          (user.role == UserRole.employee
-                                  ? organization!.primaryColorValue
-                                  : organization!.secondaryColorValue)
-                              .withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: user.profilePictureUrl != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(30),
-                        child: Image.network(
-                          user.profilePictureUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Icon(
-                            user.role == UserRole.employee
-                                ? Icons.person
-                                : Icons.delivery_dining,
-                            color: Colors.white,
-                            size: 30,
-                          ),
-                        ),
-                      )
-                    : Icon(
-                        user.role == UserRole.employee
-                            ? Icons.person
-                            : Icons.delivery_dining,
-                        color: Colors.white,
-                        size: 30,
-                      ),
-              ),
+    return GestureDetector(
+      onTap: () => _showUserDetailsBottomSheet(context, user),
+      child: AnimatedContainer(
+        duration: Duration(milliseconds: 400),
+        curve: Curves.easeOutCubic,
+        margin: EdgeInsets.only(bottom: 16),
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage(AppImages.homePattern),
+            fit: BoxFit.fill,
+            colorFilter: ColorFilter.mode(
+              organization!.secondaryColorValue.withOpacity(.7),
+              BlendMode.modulate,
             ),
           ),
-          SizedBox(width: 16),
-
-          // User info with staggered animations
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TweenAnimationBuilder<double>(
-                  tween: Tween(begin: -20.0, end: 0.0),
-                  duration: Duration(milliseconds: 600 + (index * 50)),
-                  curve: Curves.easeOutBack,
-                  builder: (context, value, child) => Transform.translate(
-                    offset: Offset(value, 0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            user.name,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: !user.isActive
-                                  ? AppColors.onSurfaceVariant
-                                  : AppColors.onSurface,
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 12,
+              offset: Offset(0, 4),
+            ),
+          ],
+          border: !user.isActive
+              ? Border.all(color: AppColors.error.withOpacity(0.3))
+              : null,
+        ),
+        child: Row(
+          children: [
+            // Animated avatar
+            AnimatedBuilder(
+              animation: _pulseController,
+              builder: (context, child) => Transform.scale(
+                scale: user.isActive ? _pulseAnimation.value : 1.0,
+                child: Container(
+                  height: 60,
+                  width: 60,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(30),
+                    gradient: LinearGradient(
+                      colors: user.role == UserRole.employee
+                          ? [
+                              organization!.primaryColorValue,
+                              organization!.secondaryColorValue,
+                            ]
+                          : [
+                              organization!.secondaryColorValue,
+                              organization!.primaryColorValue,
+                            ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color:
+                            (user.role == UserRole.employee
+                                    ? organization!.primaryColorValue
+                                    : organization!.secondaryColorValue)
+                                .withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: user.profilePictureUrl != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(30),
+                          child: Image.network(
+                            user.profilePictureUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Icon(
+                              user.role == UserRole.employee
+                                  ? Icons.person
+                                  : Icons.delivery_dining,
+                              color: Colors.white,
+                              size: 30,
                             ),
                           ),
+                        )
+                      : Icon(
+                          user.role == UserRole.employee
+                              ? Icons.person
+                              : Icons.delivery_dining,
+                          color: Colors.white,
+                          size: 30,
                         ),
-                        if (!user.isActive)
-                          AnimatedContainer(
-                            duration: Duration(milliseconds: 300),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.error.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                ),
+              ),
+            ),
+            SizedBox(width: 16),
+
+            // User info with staggered animations
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TweenAnimationBuilder<double>(
+                    tween: Tween(begin: -20.0, end: 0.0),
+                    duration: Duration(milliseconds: 600 + (index * 50)),
+                    curve: Curves.easeOutBack,
+                    builder: (context, value, child) => Transform.translate(
+                      offset: Offset(value, 0),
+                      child: Row(
+                        children: [
+                          Expanded(
                             child: Text(
-                              'Inactive',
+                              user.name,
                               style: TextStyle(
-                                color: AppColors.error,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: !user.isActive
+                                    ? AppColors.onSurfaceVariant
+                                    : AppColors.onSurface,
                               ),
                             ),
                           ),
-                      ],
+                          if (!user.isActive)
+                            AnimatedContainer(
+                              duration: Duration(milliseconds: 300),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.error.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                'Inactive',
+                                style: TextStyle(
+                                  color: AppColors.error,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                SizedBox(height: 4),
+                  SizedBox(height: 4),
 
-                // Contact info with delayed animations
-                ...List.generate(3, (infoIndex) {
-                  Widget info;
-                  switch (infoIndex) {
-                    case 0:
-                      info = Row(
-                        children: [
-                          SvgPicture.asset(
-                            Assets.imagesSvgsMail,
-                            height: 16,
-                            width: 16,
-                            color: organization!.primaryColorValue,
-                          ),
-                          SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              user.email,
+                  // Contact info with delayed animations
+                  ...List.generate(3, (infoIndex) {
+                    Widget info;
+                    switch (infoIndex) {
+                      case 0:
+                        info = Row(
+                          children: [
+                            SvgPicture.asset(
+                              Assets.imagesSvgsMail,
+                              height: 16,
+                              width: 16,
+                              color: Colors.grey[600],
+                            ),
+                            SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                user.email,
+                                style: TextStyle(
+                                  color: AppColors.onSurfaceVariant,
+                                  fontSize: 12,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        );
+                        break;
+                      case 1:
+                        info = Row(
+                          children: [
+                            SvgPicture.asset(
+                              Assets.imagesSvgsPhone,
+                              height: 16,
+                              width: 16,
+                              color: Colors.grey[600],
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              user.phone,
                               style: TextStyle(
                                 color: AppColors.onSurfaceVariant,
                                 fontSize: 12,
                               ),
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                        ],
-                      );
-                      break;
-                    case 1:
-                      info = Row(
-                        children: [
-                          SvgPicture.asset(
-                            Assets.imagesSvgsPhone,
-                            height: 16,
-                            width: 16,
-                            color: organization!.primaryColorValue,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            user.phone,
-                            style: TextStyle(
-                              color: AppColors.onSurfaceVariant,
-                              fontSize: 12,
+                          ],
+                        );
+                        break;
+                      case 2:
+                        if (user.department == null) return Container();
+                        info = Row(
+                          children: [
+                            SvgPicture.asset(
+                              Assets.imagesSvgsCompany,
+                              height: 16,
+                              width: 16,
+                              color: organization!.primaryColorValue,
                             ),
-                          ),
-                        ],
-                      );
-                      break;
-                    case 2:
-                      if (user.department == null) return Container();
-                      info = Row(
-                        children: [
-                          SvgPicture.asset(
-                            Assets.imagesSvgsCompany,
-                            height: 16,
-                            width: 16,
-                            color: organization!.primaryColorValue,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            user.department!,
-                            style: TextStyle(
-                              color: AppColors.onSurfaceVariant,
-                              fontSize: 12,
+                            SizedBox(width: 4),
+                            Text(
+                              user.department!,
+                              style: TextStyle(
+                                color: AppColors.onSurfaceVariant,
+                                fontSize: 12,
+                              ),
                             ),
-                          ),
-                        ],
-                      );
-                      break;
-                    default:
-                      return Container();
-                  }
+                          ],
+                        );
+                        break;
+                      default:
+                        return Container();
+                    }
 
-                  return TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 30.0, end: 0.0),
-                    duration: Duration(milliseconds: 800 + (infoIndex * 100)),
-                    curve: Curves.easeOutBack,
-                    builder: (context, value, child) => Transform.translate(
-                      offset: Offset(value, 0),
-                      child: Padding(
-                        padding: EdgeInsets.only(top: 2),
-                        child: info,
-                      ),
-                    ),
-                  );
-                }),
-              ],
-            ),
-          ),
-
-          // Statistics with bounce animation
-          TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.0, end: 1.0),
-            duration: Duration(milliseconds: 1000 + (index * 50)),
-            curve: Curves.elasticOut,
-            builder: (context, value, child) => Transform.scale(
-              scale: value,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  AnimatedBuilder(
-                    animation: _pulseController,
-                    builder: (context, child) => Transform.scale(
-                      scale: _pulseAnimation.value,
-                      child: Text(
-                        '$userOrders',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          color: organization!.secondaryColorValue,
+                    return TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 30.0, end: 0.0),
+                      duration: Duration(milliseconds: 800 + (infoIndex * 100)),
+                      curve: Curves.easeOutBack,
+                      builder: (context, value, child) => Transform.translate(
+                        offset: Offset(value, 0),
+                        child: Padding(
+                          padding: EdgeInsets.only(top: 2),
+                          child: info,
                         ),
                       ),
-                    ),
-                  ),
-                  Text(
-                    user.role == UserRole.employee ? 'Orders' : 'Deliveries',
-                    style: TextStyle(
-                      color: AppColors.onSurfaceVariant,
-                      fontSize: 12,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    '$completedOrders completed',
-                    style: TextStyle(
-                      color: AppColors.success,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                    );
+                  }),
                 ],
               ),
             ),
-          ),
-        ],
+
+            // Statistics with bounce animation
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.0, end: 1.0),
+              duration: Duration(milliseconds: 1000 + (index * 50)),
+              curve: Curves.elasticOut,
+              builder: (context, value, child) => Transform.scale(
+                scale: value,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    AnimatedBuilder(
+                      animation: _pulseController,
+                      builder: (context, child) => Transform.scale(
+                        scale: _pulseAnimation.value,
+                        child: Text(
+                          '$userOrders',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: organization!.secondaryColorValue,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Text(
+                      user.role == UserRole.employee ? 'Orders' : 'Deliveries',
+                      style: TextStyle(
+                        color: AppColors.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      '$completedOrders completed',
+                      style: TextStyle(
+                        color: AppColors.success,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1777,7 +1995,7 @@ class _AdminLayoutState extends State<AdminLayout>
                             order.type == OrderType.internal
                                 ? Assets.imagesSvgsCompany
                                 : Assets.imagesSvgsShoppingCart,
-                            color: _getOrderTypeColor(order.type),
+                            color: Colors.grey[600],
                             height: 20,
                             width: 20,
                           ),
@@ -1901,7 +2119,7 @@ class _AdminLayoutState extends State<AdminLayout>
                       children: [
                         SvgPicture.asset(
                           Assets.imagesSvgsUser,
-                          color: organization!.primaryColorValue,
+                          color: Colors.grey[600],
                           height: 16,
                           width: 16,
                         ),
@@ -1920,7 +2138,7 @@ class _AdminLayoutState extends State<AdminLayout>
                       children: [
                         Icon(
                           Icons.delivery_dining_rounded,
-                          color: organization!.primaryColorValue,
+                          color: Colors.grey[600],
                           size: 20,
                         ),
                         SizedBox(width: 8),
@@ -1951,7 +2169,7 @@ class _AdminLayoutState extends State<AdminLayout>
                 children: [
                   SvgPicture.asset(
                     Assets.imagesSvgsClock,
-                    color: organization!.primaryColorValue,
+                    color: Colors.grey[600],
                     height: 16,
                     width: 16,
                   ),
@@ -1967,7 +2185,7 @@ class _AdminLayoutState extends State<AdminLayout>
                     SizedBox(width: 16),
                     SvgPicture.asset(
                       Assets.imagesSvgsOrder,
-                      color: organization!.primaryColorValue,
+                      color: Colors.grey[600],
                       height: 16,
                       width: 16,
                     ),
@@ -2002,10 +2220,10 @@ class _AdminLayoutState extends State<AdminLayout>
                   margin: EdgeInsets.only(top: 8),
                   padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: Colors.grey.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: Colors.blue.withOpacity(0.3),
+                      color: Colors.grey.withOpacity(0.3),
                       width: 1,
                     ),
                   ),
@@ -2017,7 +2235,7 @@ class _AdminLayoutState extends State<AdminLayout>
                           scale: _pulseAnimation.value,
                           child: Icon(
                             Icons.chat_bubble_outline,
-                            color: Colors.blue,
+                            color: Colors.grey[600],
                             size: 16,
                           ),
                         ),
@@ -2027,7 +2245,7 @@ class _AdminLayoutState extends State<AdminLayout>
                         child: Text(
                           'Employee Response: ${order.employeeResponse}',
                           style: TextStyle(
-                            color: Colors.blue.shade700,
+                            color: Colors.grey[600],
                             fontSize: 12,
                           ),
                         ),
@@ -2055,7 +2273,7 @@ class _AdminLayoutState extends State<AdminLayout>
 
   String _formatTime(DateTime dateTime) {
     final now = DateTime.now();
-    final difference = now.difference(dateTime);
+    final difference = now.difference(dateTime).abs();
 
     if (difference.inMinutes < 60) {
       return '${difference.inMinutes}m ago';
@@ -2187,11 +2405,11 @@ class _AdminLayoutState extends State<AdminLayout>
   }
 
   // Fix _getOrderTypeColor method to use organization parameter
-  Color _getOrderTypeColor(OrderType type) {
-    return type == OrderType.internal
-        ? organization!.secondaryColorValue
-        : organization!.primaryColorValue;
-  }
+  // Color _getOrderTypeColor(OrderType type) {
+  //   return type == OrderType.internal
+  //       ? organization!.secondaryColorValue
+  //       : organization!.primaryColorValue;
+  // }
 }
 
 class AnimatedStatCard extends StatelessWidget {

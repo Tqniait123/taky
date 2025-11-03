@@ -157,7 +157,7 @@ class DashedBorder extends StatelessWidget {
     this.dashLength = 5,
     this.dashGap = 3,
     this.strokeWidth = 1,
-    this.dashColor = AppColors.primary,
+    this.dashColor =const Color(0xFFe72d2d),
     this.borderRadius = BorderRadius.zero,
   });
 

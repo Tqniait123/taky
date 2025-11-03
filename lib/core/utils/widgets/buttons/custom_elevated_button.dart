@@ -47,7 +47,7 @@ class CustomElevatedButton extends StatefulWidget {
     this.icon,
     this.iconColor = AppColors.background,
     this.textColor = AppColors.background,
-    this.backgroundColor = AppColors.primary,
+    this.backgroundColor ,
     this.loading = false,
     this.reverse = false,
     this.isDisabled = false,

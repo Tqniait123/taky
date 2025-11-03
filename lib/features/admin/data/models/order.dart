@@ -66,6 +66,7 @@ class AdminOrder {
   final String organizationId;
   final String? notes;
   final String? employeeResponse; // Employee's response to unavailable items
+  final String targetOfficeBoyId;
 
   AdminOrder({
     required this.id,
@@ -84,6 +85,7 @@ class AdminOrder {
     required this.organizationId,
     this.notes,
     this.employeeResponse,
+    this.targetOfficeBoyId = '',
   });
 
   // Compatibility getter for single item (for existing code)
@@ -123,6 +125,7 @@ class AdminOrder {
       organizationId: data['organizationId'] ?? '',
       notes: data['notes'],
       employeeResponse: data['employeeResponse'],
+      targetOfficeBoyId: data['targetOfficeBoyId'] ?? '',
     );
   }
 
@@ -144,6 +147,7 @@ class AdminOrder {
       'organizationId': organizationId,
       'notes': notes,
       'employeeResponse': employeeResponse,
+      'targetOfficeBoyId': targetOfficeBoyId,
     };
   }
 
@@ -164,6 +168,7 @@ class AdminOrder {
     String? organizationId,
     String? notes,
     String? employeeResponse,
+    String? targetOfficeBoyId,
   }) {
     return AdminOrder(
       id: id ?? this.id,
@@ -182,6 +187,7 @@ class AdminOrder {
       organizationId: organizationId ?? this.organizationId,
       notes: notes ?? this.notes,
       employeeResponse: employeeResponse ?? this.employeeResponse,
+      targetOfficeBoyId: targetOfficeBoyId ?? this.targetOfficeBoyId,
     );
   }
 }

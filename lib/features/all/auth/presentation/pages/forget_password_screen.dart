@@ -314,7 +314,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen>
                                         },
                                         child: Text(
                                           LocaleKeys.backToLogin.tr(),
-                                          style: const TextStyle(
+                                          style:  TextStyle(
                                             color: AppColors.primary,
                                             fontWeight: FontWeight.w600,
                                             fontSize: 16,

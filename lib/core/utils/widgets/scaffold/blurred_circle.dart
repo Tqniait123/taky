@@ -2,14 +2,18 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:taqy/core/extensions/context_extensions.dart';
-import 'package:taqy/core/theme/colors.dart';
 
 class BlurredBackgroundCircle extends StatelessWidget {
-  const BlurredBackgroundCircle({super.key, this.top = -90, this.start = -140, this.color = AppColors.secondary});
+  const BlurredBackgroundCircle({
+    super.key,
+    this.top = -90,
+    this.start = -140,
+    this.color,
+  });
 
   final double top;
   final double start;
-  final Color color;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +26,10 @@ class BlurredBackgroundCircle extends StatelessWidget {
           child: Container(
             width: 378,
             height: 378,
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(378 / 2), color: color),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(378 / 2),
+              color: color,
+            ),
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
               child: Container(color: Colors.transparent),
