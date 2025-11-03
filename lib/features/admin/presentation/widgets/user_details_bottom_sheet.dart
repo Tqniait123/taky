@@ -725,17 +725,6 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
                 : Colors.white.withOpacity(0.2),
             width: 1.5,
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: widget.organization.primaryColorValue.withOpacity(
-                      0.4,
-                    ),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : [],
         ),
         child: Text(
           label,
