@@ -287,7 +287,7 @@ class _AdminLayoutState extends State<AdminLayout>
           onError: (error) {
             setState(() {
               errorMessage = error.toString();
-               isLoading = false;
+              isLoading = false;
             });
           },
         );
@@ -622,7 +622,7 @@ class _AdminLayoutState extends State<AdminLayout>
                   ),
                 ),
 
-                SizedBox(width: 8),
+                SizedBox(width: 4),
 
                 // Arrow indicator
                 AnimatedBuilder(
@@ -637,7 +637,7 @@ class _AdminLayoutState extends State<AdminLayout>
                   ),
                 ),
 
-                SizedBox(width: 8),
+                SizedBox(width: 4),
 
                 // Target view indicator
                 Container(
@@ -735,13 +735,7 @@ class _AdminLayoutState extends State<AdminLayout>
         body: Stack(
           children: [
             EmployeeLayout(),
-            isEmployeeView
-                ? Positioned(top: 65, left: 20, child: _buildViewSwitchButton())
-                : Positioned(
-                    top: 40,
-                    left: 20,
-                    child: _buildViewSwitchButton(),
-                  ),
+            Positioned(top: 65, left: 20, child: _buildViewSwitchButton()),
           ],
         ),
       );
@@ -1002,7 +996,7 @@ class _AdminLayoutState extends State<AdminLayout>
                 ),
               ),
             ),
-            Positioned(top: 20, left: 20, child: _buildViewSwitchButton()),
+            Positioned(top: 15, left: 20, child: _buildViewSwitchButton()),
             Positioned(
               top: 20,
               right: 20,
