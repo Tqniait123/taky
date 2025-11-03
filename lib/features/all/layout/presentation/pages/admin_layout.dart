@@ -611,10 +611,11 @@ class _AdminLayoutState extends State<AdminLayout>
                         size: 18,
                       ),
                       SizedBox(width: 2),
-                      Icon(
-                        Icons.check_circle,
+                      SvgPicture.asset(
+                        Assets.imagesSvgsComplete,
                         color: Colors.greenAccent,
-                        size: 14,
+                        height: 14,
+                        width: 14,
                       ),
                     ],
                   ),
