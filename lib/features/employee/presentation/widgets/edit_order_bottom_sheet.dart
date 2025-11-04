@@ -1098,7 +1098,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                       value: _selectedOfficeBoy,
                       isExpanded: true,
                       underline: SizedBox(),
-                       dropdownColor: Colors.grey,
+                      dropdownColor: Colors.grey,
                       borderRadius: BorderRadius.circular(16),
                       icon: Icon(
                         Icons.arrow_drop_down_rounded,
@@ -1465,6 +1465,10 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
           .map((itemName) => OrderItem(name: itemName))
           .toList();
 
+      // Determine if this is an edit from a "needs response" order
+      final bool isResponseEdit =
+          widget.order.status == OrderStatus.needsResponse;
+
       final updatedOrder = widget.order.copyWith(
         items: items,
         description: _descriptionController.text.trim(),
@@ -1477,9 +1481,20 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
         notes: _notesController.text.trim().isNotEmpty
             ? _notesController.text.trim()
             : null,
+        status: isResponseEdit ? OrderStatus.pending : widget.order.status,
+        employeeResponse: isResponseEdit ? null : widget.order.employeeResponse,
+        isSpecificallyAssigned: true,
+        specificallyAssignedOfficeBoyId: _selectedOfficeBoy!.id,
       );
 
       widget.onOrderUpdated(updatedOrder);
+
+      if (isResponseEdit) {
+        showSuccessToast(context, 'Order updated and sent for processing!');
+      } else {
+        showSuccessToast(context, 'Order updated successfully!');
+      }
+
       Navigator.pop(context);
     } catch (e) {
       showErrorToast(context, 'Failed to update order: $e');

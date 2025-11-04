@@ -58,7 +58,8 @@ class EmployeeOrder {
   final String organizationId;
   final String? notes;
   final String? employeeResponse; // Employee's response to unavailable items
-  final String targetOfficeBoyId;
+  final bool isSpecificallyAssigned;
+  final String? specificallyAssignedOfficeBoyId;
 
   EmployeeOrder({
     required this.id,
@@ -77,7 +78,8 @@ class EmployeeOrder {
     required this.organizationId,
     this.notes,
     this.employeeResponse,
-    this.targetOfficeBoyId = '',
+    this.isSpecificallyAssigned = false,
+    this.specificallyAssignedOfficeBoyId,
   });
 
   // Compatibility getter for single item (for existing code)
@@ -119,8 +121,8 @@ class EmployeeOrder {
       organizationId: data['organizationId'] ?? '',
       notes: data['notes'],
       employeeResponse: data['employeeResponse'],
-      targetOfficeBoyId: data['targetOfficeBoyId'] ?? '',
-    );
+      isSpecificallyAssigned: data['isSpecificallyAssigned'] ?? false,
+      specificallyAssignedOfficeBoyId: data['specificallyAssignedOfficeBoyId'],    );
   }
 
   Map<String, dynamic> toFirestore() {
@@ -143,8 +145,8 @@ class EmployeeOrder {
       'organizationId': organizationId,
       'notes': notes,
       'employeeResponse': employeeResponse,
-      'targetOfficeBoyId': targetOfficeBoyId,
-    };
+   'isSpecificallyAssigned': isSpecificallyAssigned,
+      'specificallyAssignedOfficeBoyId': specificallyAssignedOfficeBoyId,    };
   }
 
   EmployeeOrder copyWith({
@@ -164,7 +166,8 @@ class EmployeeOrder {
     String? organizationId,
     String? notes,
     String? employeeResponse,
-    String? targetOfficeBoyId,
+  bool? isSpecificallyAssigned,
+    String? specificallyAssignedOfficeBoyId,
   }) {
     return EmployeeOrder(
       id: id ?? this.id,
@@ -183,7 +186,10 @@ class EmployeeOrder {
       organizationId: organizationId ?? this.organizationId,
       notes: notes ?? this.notes,
       employeeResponse: employeeResponse ?? this.employeeResponse,
-      targetOfficeBoyId: targetOfficeBoyId ?? this.targetOfficeBoyId,
-    );
+  isSpecificallyAssigned:
+          isSpecificallyAssigned ?? this.isSpecificallyAssigned,
+      specificallyAssignedOfficeBoyId:
+          specificallyAssignedOfficeBoyId ??
+          this.specificallyAssignedOfficeBoyId,    );
   }
 }

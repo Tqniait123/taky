@@ -1,4 +1,3 @@
-// ORDER DETAILS BOTTOM SHEET - UPDATED
 import 'package:flutter/material.dart';
 import 'package:taqy/features/office_boy/data/models/office_order.dart';
 import 'package:taqy/features/office_boy/data/models/office_organization.dart';
@@ -10,6 +9,7 @@ class OrderDetailsBottomSheet extends StatefulWidget {
   final Function(OfficeOrder, OrderStatus, {double? finalPrice, String? notes})
   onStatusUpdate;
   final Function(OfficeOrder, int, ItemStatus, String?)? onItemStatusUpdate;
+  final VoidCallback? onTransferRequest; // NEW: Added transfer callback
 
   const OrderDetailsBottomSheet({
     super.key,
@@ -18,6 +18,7 @@ class OrderDetailsBottomSheet extends StatefulWidget {
     required this.isOfficeBoy,
     required this.onStatusUpdate,
     this.onItemStatusUpdate,
+    this.onTransferRequest, // NEW: Added transfer callback
   });
 
   @override
@@ -65,15 +66,6 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet> {
         return Colors.purple;
     }
   }
-
-  // Color _getOrderTypeColor(OrderType type) {
-  //   switch (type) {
-  //     case OrderType.internal:
-  //       return Colors.blue;
-  //     case OrderType.external:
-  //       return Colors.orange;
-  //   }
-  // }
 
   Color _getItemStatusColor(ItemStatus status) {
     switch (status) {
@@ -152,6 +144,14 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet> {
     );
   }
 
+  // NEW: Check if order can be transferred
+  bool get _canTransfer {
+    return widget.isOfficeBoy &&
+        widget.order.status == OrderStatus.pending &&
+        widget.order.isSpecificallyAssigned &&
+        widget.onTransferRequest != null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -186,26 +186,57 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet> {
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 Spacer(),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: _getOrderStatusColor(
-                      widget.order.status,
-                    ).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    widget.order.status
-                        .toString()
-                        .split('.')
-                        .last
-                        .toUpperCase(),
-                    style: TextStyle(
-                      color: _getOrderStatusColor(widget.order.status),
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: _getOrderStatusColor(
+                          widget.order.status,
+                        ).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        widget.order.status
+                            .toString()
+                            .split('.')
+                            .last
+                            .toUpperCase(),
+                        style: TextStyle(
+                          color: _getOrderStatusColor(widget.order.status),
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                  ),
+                    // NEW: Assignment status badge
+                    if (widget.order.isSpecificallyAssigned) ...[
+                      SizedBox(height: 4),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.star, size: 10, color: Colors.orange),
+                            SizedBox(width: 4),
+                            Text(
+                              'Specifically Assigned',
+                              style: TextStyle(
+                                color: Colors.orange,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),
@@ -418,16 +449,6 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet> {
                               ),
                             ],
                           ),
-                          // if (item.description != null && item.description!.isNotEmpty) ...[
-                          //   SizedBox(height: 8),
-                          //   Text(
-                          //     item.description!,
-                          //     style: TextStyle(
-                          //       color: Colors.grey[600],
-                          //       fontSize: 14,
-                          //     ),
-                          //   ),
-                          // ],
                           if (item.notes != null && item.notes!.isNotEmpty) ...[
                             SizedBox(height: 8),
                             Container(
@@ -497,6 +518,14 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet> {
                       'Completed',
                       _formatDateTime(widget.order.completedAt!),
                       Icons.check_circle,
+                    ),
+
+                  // NEW: Assignment Information
+                  if (widget.order.isSpecificallyAssigned)
+                    _buildDetailRow(
+                      'Assignment',
+                      'Specifically Assigned',
+                      Icons.star,
                     ),
 
                   SizedBox(height: 16),
@@ -717,6 +746,30 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet> {
 
                   SizedBox(height: 32),
 
+                  // NEW: Transfer Button for Specifically Assigned Orders
+                  if (_canTransfer) ...[
+                    Container(
+                      width: double.infinity,
+                      margin: EdgeInsets.only(bottom: 16),
+                      child: ElevatedButton.icon(
+                        onPressed: widget.onTransferRequest,
+                        icon: Icon(Icons.swap_horiz, size: 20),
+                        label: Text(
+                          'Transfer to Another Office Boy',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+
                   // Action Buttons
                   if (widget.isOfficeBoy &&
                       widget.order.status == OrderStatus.inProgress) ...[
@@ -764,6 +817,65 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet> {
                                   )
                                 : Text(
                                     'Mark as Completed',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+
+                  // NEW: Accept/Reject Buttons for Specifically Assigned Pending Orders
+                  if (widget.isOfficeBoy &&
+                      widget.order.status == OrderStatus.pending &&
+                      widget.order.isSpecificallyAssigned) ...[
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: _isLoading
+                                ? null
+                                : () => _updateStatus(OrderStatus.cancelled),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.red,
+                              side: BorderSide(color: Colors.red),
+                              padding: EdgeInsets.all(16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(
+                              'Reject Assignment',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: ElevatedButton(
+                            onPressed: _isLoading
+                                ? null
+                                : () => _updateStatus(OrderStatus.inProgress),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              padding: EdgeInsets.all(16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: _isLoading
+                                ? CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  )
+                                : Text(
+                                    'Accept Assignment',
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,

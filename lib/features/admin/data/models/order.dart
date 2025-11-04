@@ -11,11 +11,7 @@ class OrderItem {
   final ItemStatus status;
   final String? notes; // Office boy can add notes like "out of stock"
 
-  OrderItem({
-    required this.name,
-    this.status = ItemStatus.pending,
-    this.notes,
-  });
+  OrderItem({required this.name, this.status = ItemStatus.pending, this.notes});
 
   factory OrderItem.fromMap(Map<String, dynamic> map) {
     return OrderItem(
@@ -36,11 +32,7 @@ class OrderItem {
     };
   }
 
-  OrderItem copyWith({
-    String? name,
-    ItemStatus? status,
-    String? notes,
-  }) {
+  OrderItem copyWith({String? name, ItemStatus? status, String? notes}) {
     return OrderItem(
       name: name ?? this.name,
       status: status ?? this.status,
@@ -66,8 +58,8 @@ class AdminOrder {
   final String organizationId;
   final String? notes;
   final String? employeeResponse; // Employee's response to unavailable items
-  final String targetOfficeBoyId;
-
+  final bool isSpecificallyAssigned;
+  final String? specificallyAssignedOfficeBoyId;
   AdminOrder({
     required this.id,
     required this.employeeId,
@@ -85,7 +77,8 @@ class AdminOrder {
     required this.organizationId,
     this.notes,
     this.employeeResponse,
-    this.targetOfficeBoyId = '',
+    this.isSpecificallyAssigned = false,
+    this.specificallyAssignedOfficeBoyId,
   });
 
   // Compatibility getter for single item (for existing code)
@@ -93,10 +86,12 @@ class AdminOrder {
 
   factory AdminOrder.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
-    
+
     List<OrderItem> itemsList = [];
     if (data['items'] != null) {
-      itemsList = (data['items'] as List).map((item) => OrderItem.fromMap(item)).toList();
+      itemsList = (data['items'] as List)
+          .map((item) => OrderItem.fromMap(item))
+          .toList();
     } else if (data['item'] != null) {
       // Backward compatibility for single item
       itemsList = [OrderItem(name: data['item'])];
@@ -125,7 +120,8 @@ class AdminOrder {
       organizationId: data['organizationId'] ?? '',
       notes: data['notes'],
       employeeResponse: data['employeeResponse'],
-      targetOfficeBoyId: data['targetOfficeBoyId'] ?? '',
+      isSpecificallyAssigned: data['isSpecificallyAssigned'] ?? false,
+      specificallyAssignedOfficeBoyId: data['specificallyAssignedOfficeBoyId'],
     );
   }
 
@@ -141,13 +137,16 @@ class AdminOrder {
       'type': type.toString().split('.').last,
       'status': status.toString().split('.').last,
       'createdAt': Timestamp.fromDate(createdAt),
-      'completedAt': completedAt != null ? Timestamp.fromDate(completedAt!) : null,
+      'completedAt': completedAt != null
+          ? Timestamp.fromDate(completedAt!)
+          : null,
       'price': price,
       'final_price': finalPrice,
       'organizationId': organizationId,
       'notes': notes,
       'employeeResponse': employeeResponse,
-      'targetOfficeBoyId': targetOfficeBoyId,
+      'isSpecificallyAssigned': isSpecificallyAssigned,
+      'specificallyAssignedOfficeBoyId': specificallyAssignedOfficeBoyId,
     };
   }
 
@@ -168,7 +167,8 @@ class AdminOrder {
     String? organizationId,
     String? notes,
     String? employeeResponse,
-    String? targetOfficeBoyId,
+    bool? isSpecificallyAssigned,
+    String? specificallyAssignedOfficeBoyId,
   }) {
     return AdminOrder(
       id: id ?? this.id,
@@ -187,7 +187,11 @@ class AdminOrder {
       organizationId: organizationId ?? this.organizationId,
       notes: notes ?? this.notes,
       employeeResponse: employeeResponse ?? this.employeeResponse,
-      targetOfficeBoyId: targetOfficeBoyId ?? this.targetOfficeBoyId,
+      isSpecificallyAssigned:
+          isSpecificallyAssigned ?? this.isSpecificallyAssigned,
+      specificallyAssignedOfficeBoyId:
+          specificallyAssignedOfficeBoyId ??
+          this.specificallyAssignedOfficeBoyId,
     );
   }
 }

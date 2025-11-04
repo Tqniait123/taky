@@ -1381,6 +1381,8 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
         notes: _notesController.text.trim().isNotEmpty
             ? _notesController.text.trim()
             : null,
+             isSpecificallyAssigned: true, // Employee specifically chose this office boy
+      specificallyAssignedOfficeBoyId: _selectedOfficeBoy!.id,
       );
 
       widget.onOrderCreated(order);

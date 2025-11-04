@@ -28,6 +28,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
   OfficeOrganization? organization;
   List<OfficeOrder> myOrders = [];
   List<OfficeOrder> availableOrders = [];
+  List<OfficeUserModel> otherOfficeBoys = [];
   bool isLoading = true;
   String? errorMessage;
 
@@ -77,6 +78,9 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         });
       }
 
+      // Load other office boys
+      await _loadOtherOfficeBoys();
+
       // Load orders
       _loadOrders();
     } catch (e) {
@@ -84,6 +88,67 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         errorMessage = e.toString();
         isLoading = false;
       });
+    }
+  }
+
+  Future<void> _loadOtherOfficeBoys() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('organizationId', isEqualTo: currentUser!.organizationId)
+          .where('role', isEqualTo: 'officeBoy')
+          .where(
+            FieldPath.documentId,
+            isNotEqualTo: currentUser!.id,
+          ) // Use document ID instead of 'id' field
+          .get();
+
+      setState(() {
+        otherOfficeBoys = snapshot.docs
+            .map((doc) => OfficeUserModel.fromFirestore(doc))
+            .toList();
+      });
+
+      print('Loaded ${otherOfficeBoys.length} other office boys');
+    } catch (e) {
+      print('Error loading other office boys: $e');
+
+      // Fallback to manual filtering if index error persists
+      if (e.toString().contains('index')) {
+        await _loadOtherOfficeBoysFallback();
+      } else {
+        _showErrorToast('Failed to load other office boys: $e');
+      }
+    }
+  }
+
+  Future<void> _loadOtherOfficeBoysFallback() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('organizationId', isEqualTo: currentUser!.organizationId)
+          .get();
+
+      final filteredOfficeBoys = snapshot.docs
+          .where((doc) {
+            final data = doc.data();
+            final isOfficeBoy = data['role'] == 'officeBoy';
+            final isNotCurrentUser = doc.id != currentUser!.id;
+            return isOfficeBoy && isNotCurrentUser;
+          })
+          .map((doc) => OfficeUserModel.fromFirestore(doc))
+          .toList();
+
+      setState(() {
+        otherOfficeBoys = filteredOfficeBoys;
+      });
+
+      print(
+        'Loaded ${otherOfficeBoys.length} other office boys (fallback method)',
+      );
+    } catch (e) {
+      print('Error in fallback method: $e');
+      _showErrorToast('Failed to load other office boys');
     }
   }
 
@@ -100,23 +165,34 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                     .map((doc) => OfficeOrder.fromFirestore(doc))
                     .toList();
 
-                // My orders (assigned to me)
+                // My orders (assigned to me or specifically assigned to me)
                 myOrders =
-                    allOrders
-                        .where((order) => order.officeBoyId == currentUser!.id)
-                        .toList()
-                      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-                // Available orders (pending and not assigned to me)
-                availableOrders =
                     allOrders
                         .where(
                           (order) =>
-                              order.status == OrderStatus.pending &&
-                              order.officeBoyId != currentUser!.id,
+                              order.officeBoyId == currentUser!.id ||
+                              (order.isSpecificallyAssigned &&
+                                  order.specificallyAssignedOfficeBoyId ==
+                                      currentUser!.id),
                         )
                         .toList()
                       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+                // Available orders logic
+                availableOrders = allOrders.where((order) {
+                  // Order must be pending
+                  if (order.status != OrderStatus.pending) return false;
+
+                  // If order is specifically assigned, only show to that office boy
+                  if (order.isSpecificallyAssigned) {
+                    return order.specificallyAssignedOfficeBoyId ==
+                            currentUser!.id &&
+                        order.officeBoyId != currentUser!.id;
+                  }
+
+                  // If not specifically assigned, show to all office boys
+                  return order.officeBoyId != currentUser!.id;
+                }).toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
                 isLoading = false;
               });
@@ -135,6 +211,15 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
 
   Future<void> _acceptOrder(OfficeOrder order) async {
     try {
+      // Check if this order was specifically assigned to someone else
+      if (order.isSpecificallyAssigned &&
+          order.specificallyAssignedOfficeBoyId != currentUser!.id) {
+        _showErrorToast(
+          'This order is specifically assigned to another office boy',
+        );
+        return;
+      }
+
       final updatedOrder = order.copyWith(
         status: OrderStatus.inProgress,
         officeBoyId: currentUser!.id,
@@ -150,6 +235,163 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
       _showSuccessToast('Order accepted successfully!');
     } catch (e) {
       _showErrorToast('Failed to accept order: $e');
+    }
+  }
+
+  Future<void> _rejectSpecificallyAssignedOrder(OfficeOrder order) async {
+    try {
+      final updatedOrder = order.copyWith(
+        isSpecificallyAssigned: false,
+        specificallyAssignedOfficeBoyId: null,
+      );
+
+      await _firebaseService.updateDocument(
+        'orders',
+        order.id,
+        updatedOrder.toFirestore(),
+      );
+
+      _showSuccessToast('Order rejected and made available for others');
+    } catch (e) {
+      _showErrorToast('Failed to reject order: $e');
+    }
+  }
+
+  // NEW: Transfer order to another specific office boy
+  Future<void> _transferOrder(
+    OfficeOrder order,
+    String newOfficeBoyId,
+    String newOfficeBoyName,
+  ) async {
+    try {
+      final updatedOrder = order.copyWith(
+        isSpecificallyAssigned: true,
+        specificallyAssignedOfficeBoyId: newOfficeBoyId,
+        officeBoyId: '',
+        officeBoyName: '',
+      );
+
+      await _firebaseService.updateDocument(
+        'orders',
+        order.id,
+        updatedOrder.toFirestore(),
+      );
+
+      _showSuccessToast('Order transferred to $newOfficeBoyName');
+    } catch (e) {
+      _showErrorToast('Failed to transfer order: $e');
+    }
+  }
+
+  // NEW: Simplified transfer dialog
+  void _showTransferDialog(OfficeOrder order) {
+    if (otherOfficeBoys.isEmpty) {
+      _showErrorToast('No other office boys available for transfer');
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Transfer Order'),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 300,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: otherOfficeBoys.length,
+            itemBuilder: (context, index) {
+              final officeBoy = otherOfficeBoys[index];
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundColor:
+                      organization?.primaryColorValue ?? Colors.blue,
+                  child: Text(
+                    officeBoy.name[0].toUpperCase(),
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+                title: Text(officeBoy.name),
+                subtitle: Text(officeBoy.email ?? ''),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showTransferConfirmation(order, officeBoy);
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // NEW: Confirmation for transferring to specific office boy
+  void _showTransferConfirmation(
+    OfficeOrder order,
+    OfficeUserModel newOfficeBoy,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Transfer Order?'),
+        content: Text(
+          'This order will be specifically assigned to ${newOfficeBoy.name}. They will need to accept it.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _transferOrder(order, newOfficeBoy.id, newOfficeBoy.name);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            child: Text('Transfer'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSpecificallyAssignedActions(OfficeOrder order) {
+    if (order.isSpecificallyAssigned &&
+        order.specificallyAssignedOfficeBoyId == currentUser!.id &&
+        order.status == OrderStatus.pending) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Order Assignment'),
+          content: Text(
+            'This order was specifically assigned to you. Do you want to accept or reject it?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _rejectSpecificallyAssignedOrder(order);
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: Text('Reject'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _acceptOrder(order);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+              child: Text('Accept'),
+            ),
+          ],
+        ),
+      );
     }
   }
 
@@ -511,6 +753,11 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
   }
 
   Widget _buildQuickStatusActions(OfficeOrder order) {
+    final bool canTransfer =
+        order.status == OrderStatus.pending &&
+        order.isSpecificallyAssigned &&
+        order.specificallyAssignedOfficeBoyId == currentUser!.id;
+
     if (order.status == OrderStatus.completed ||
         order.status == OrderStatus.cancelled) {
       return SizedBox.shrink();
@@ -519,72 +766,92 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
     return Container(
       margin: EdgeInsets.only(top: 12),
       padding: EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
+      child: Column(
         children: [
-          if (order.status == OrderStatus.pending) ...[
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () =>
-                    _showStatusChangeDialog(order, OrderStatus.cancelled),
-                icon: Icon(Icons.cancel, size: 18),
-                label: Text('Cancel'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red[100],
-                  foregroundColor: Colors.red[700],
-                  elevation: 0,
-                  padding: EdgeInsets.symmetric(vertical: 8),
+          if (canTransfer)
+            Container(
+              margin: EdgeInsets.only(bottom: 8),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _showTransferDialog(order),
+                  icon: Icon(Icons.swap_horiz, size: 16),
+                  label: Text('Transfer to Another Office Boy'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                  ),
                 ),
               ),
             ),
-            SizedBox(width: 8),
-            Expanded(
-              flex: 2,
-              child: ElevatedButton.icon(
-                onPressed: () =>
-                    _showStatusChangeDialog(order, OrderStatus.inProgress),
-                icon: Icon(Icons.time_to_leave, size: 18),
-                label: Text('In-Progress'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[100],
-                  foregroundColor: Colors.blue[700],
-                  elevation: 0,
-                  padding: EdgeInsets.symmetric(vertical: 8),
+          Row(
+            children: [
+              if (order.status == OrderStatus.pending) ...[
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () =>
+                        _showStatusChangeDialog(order, OrderStatus.cancelled),
+                    icon: Icon(Icons.cancel, size: 18),
+                    label: Text('Cancel'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red[100],
+                      foregroundColor: Colors.red[700],
+                      elevation: 0,
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ],
-          if (order.status == OrderStatus.inProgress) ...[
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () =>
-                    _showStatusChangeDialog(order, OrderStatus.cancelled),
-                icon: Icon(Icons.cancel, size: 18),
-                label: Text('Cancel'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red[100],
-                  foregroundColor: Colors.red[700],
-                  elevation: 0,
-                  padding: EdgeInsets.symmetric(vertical: 8),
+                SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton.icon(
+                    onPressed: () =>
+                        _showStatusChangeDialog(order, OrderStatus.inProgress),
+                    icon: Icon(Icons.time_to_leave, size: 18),
+                    label: Text('Accept & Start'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue[100],
+                      foregroundColor: Colors.blue[700],
+                      elevation: 0,
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            SizedBox(width: 8),
-
-            Expanded(
-              flex: 2,
-              child: ElevatedButton.icon(
-                onPressed: () => _showCompletionDialog(order),
-                icon: Icon(Icons.check_circle, size: 18),
-                label: Text('Complete'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green[100],
-                  foregroundColor: Colors.green[700],
-                  elevation: 0,
-                  padding: EdgeInsets.symmetric(vertical: 8),
+              ],
+              if (order.status == OrderStatus.inProgress) ...[
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () =>
+                        _showStatusChangeDialog(order, OrderStatus.cancelled),
+                    icon: Icon(Icons.cancel, size: 18),
+                    label: Text('Cancel'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red[100],
+                      foregroundColor: Colors.red[700],
+                      elevation: 0,
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ],
+                SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _showCompletionDialog(order),
+                    icon: Icon(Icons.check_circle, size: 18),
+                    label: Text('Complete'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green[100],
+                      foregroundColor: Colors.green[700],
+                      elevation: 0,
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ],
       ),
     );
@@ -609,6 +876,11 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
   }
 
   void _showOrderDetailsBottomSheet(OfficeOrder order) {
+    final bool canTransfer =
+        order.status == OrderStatus.pending &&
+        order.isSpecificallyAssigned &&
+        order.specificallyAssignedOfficeBoyId == currentUser!.id;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -618,7 +890,12 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         organization: organization!,
         isOfficeBoy: true,
         onStatusUpdate: _updateOrderWithNotes,
-        // onItemStatusUpdate: _updateItemStatus,
+        onTransferRequest: canTransfer
+            ? () {
+                Navigator.pop(context); // Close details sheet
+                _showTransferDialog(order); // Show transfer dialog
+              }
+            : null,
       ),
     );
   }
@@ -1565,6 +1842,14 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
   }
 
   Widget _buildAvailableOrderCard(OfficeOrder order) {
+    final isSpecificallyAssignedToMe =
+        order.isSpecificallyAssigned &&
+        order.specificallyAssignedOfficeBoyId == currentUser!.id;
+
+    final isSpecificallyAssignedToOther =
+        order.isSpecificallyAssigned &&
+        order.specificallyAssignedOfficeBoyId != currentUser!.id;
+
     return Container(
       margin: EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -1577,6 +1862,9 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
             offset: Offset(0, 2),
           ),
         ],
+        border: isSpecificallyAssignedToMe
+            ? Border.all(color: Colors.orange, width: 2)
+            : null,
       ),
       child: Column(
         children: [
@@ -1585,209 +1873,309 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: _getOrderTypeColor(order.type).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        order.type == OrderType.internal
-                            ? 'Internal'
-                            : 'External',
-                        style: TextStyle(
-                          color: _getOrderTypeColor(order.type),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                // Assignment status badge
+                if (isSpecificallyAssignedToMe)
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    if (order.items.length > 1) ...[
-                      SizedBox(width: 8),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.star, size: 12, color: Colors.orange),
+                        SizedBox(width: 4),
+                        Text(
+                          'Assigned to you',
+                          style: TextStyle(
+                            color: Colors.orange,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                if (isSpecificallyAssignedToOther)
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.person, size: 12, color: Colors.grey),
+                        SizedBox(width: 4),
+                        Text(
+                          'Assigned to specific office boy',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                if (isSpecificallyAssignedToMe ||
+                    !isSpecificallyAssignedToOther) ...[
+                  if (isSpecificallyAssignedToMe ||
+                      isSpecificallyAssignedToOther)
+                    SizedBox(height: 8),
+                  Row(
+                    children: [
                       Container(
                         padding: EdgeInsets.symmetric(
                           horizontal: 8,
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.grey.withOpacity(0.1),
+                          color: _getOrderTypeColor(
+                            order.type,
+                          ).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          '${order.items.length} items',
+                          order.type == OrderType.internal
+                              ? 'Internal'
+                              : 'External',
                           style: TextStyle(
-                            color: Colors.grey[700],
+                            color: _getOrderTypeColor(order.type),
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
+                      if (order.items.length > 1) ...[
+                        SizedBox(width: 8),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '${order.items.length} items',
+                            style: TextStyle(
+                              color: Colors.grey[700],
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                      Spacer(),
+                      Text(
+                        _formatTime(order.createdAt),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      ),
                     ],
-                    Spacer(),
-                    Text(
-                      _formatTime(order.createdAt),
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 12),
+                  ),
+                  SizedBox(height: 12),
 
-                Row(
-                  children: [
+                  Row(
+                    children: [
+                      Container(
+                        height: 50,
+                        width: 50,
+                        decoration: BoxDecoration(
+                          color: _getOrderTypeColor(
+                            order.type,
+                          ).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                        child: Icon(
+                          order.type == OrderType.internal
+                              ? Icons.home
+                              : Icons.store,
+                          color: _getOrderTypeColor(order.type),
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              order.items.length == 1
+                                  ? order.items.first.name
+                                  : '${order.items.first.name} + ${order.items.length - 1} more',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            if (order.description.isNotEmpty)
+                              Text(
+                                order.description,
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 14,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.person,
+                                  size: 16,
+                                  color: Colors.grey[600],
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  order.employeeName,
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                if (order.price != null) ...[
+                                  Spacer(),
+                                  Text(
+                                    'EGP ${order.price!.toStringAsFixed(0)}',
+                                    style: TextStyle(
+                                      color: Colors.green,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // Show items preview for multi-item orders
+                  if (order.items.length > 1) ...[
+                    SizedBox(height: 12),
                     Container(
-                      height: 50,
-                      width: 50,
+                      padding: EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: _getOrderTypeColor(order.type).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(25),
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Icon(
-                        order.type == OrderType.internal
-                            ? Icons.home
-                            : Icons.store,
-                        color: _getOrderTypeColor(order.type),
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            order.items.length == 1
-                                ? order.items.first.name
-                                : '${order.items.first.name} + ${order.items.length - 1} more',
+                            'Items:',
                             style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 12,
+                              color: Colors.grey[700],
                             ),
                           ),
-                          if (order.description.isNotEmpty)
-                            Text(
-                              order.description,
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 14,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.person,
-                                size: 16,
-                                color: Colors.grey[600],
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                order.employeeName,
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 12,
-                                ),
-                              ),
-                              if (order.price != null) ...[
-                                Spacer(),
-                                Text(
-                                  'EGP ${order.price!.toStringAsFixed(0)}',
-                                  style: TextStyle(
-                                    color: Colors.green,
-                                    fontWeight: FontWeight.bold,
+                          SizedBox(height: 4),
+                          ...order.items
+                              .take(3)
+                              .map(
+                                (item) => Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 1),
+                                  child: Text(
+                                    '• ${item.name}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
                                   ),
                                 ),
-                              ],
-                            ],
-                          ),
+                              ),
+                          if (order.items.length > 3)
+                            Text(
+                              '... and ${order.items.length - 3} more items',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[500],
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
                         ],
                       ),
                     ),
                   ],
-                ),
-
-                // Show items preview for multi-item orders
-                if (order.items.length > 1) ...[
-                  SizedBox(height: 12),
-                  Container(
-                    padding: EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Items:',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w500,
-                            fontSize: 12,
-                            color: Colors.grey[700],
-                          ),
+                ] else
+                  // Show limited info for orders assigned to others
+                  Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(
+                      child: Text(
+                        'This order is specifically assigned to another office boy',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontStyle: FontStyle.italic,
                         ),
-                        SizedBox(height: 4),
-                        ...order.items
-                            .take(3)
-                            .map(
-                              (item) => Padding(
-                                padding: EdgeInsets.symmetric(vertical: 1),
-                                child: Text(
-                                  '• ${item.name}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ),
-                            ),
-                        if (order.items.length > 3)
-                          Text(
-                            '... and ${order.items.length - 3} more items',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[500],
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                      ],
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   ),
-                ],
               ],
             ),
           ),
 
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => _acceptOrder(order),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: organization!.primaryColorValue,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(12),
-                    bottomRight: Radius.circular(12),
+          // Action buttons
+          if (isSpecificallyAssignedToMe || !order.isSpecificallyAssigned)
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: isSpecificallyAssignedToMe
+                    ? () => _showSpecificallyAssignedActions(order)
+                    : () => _acceptOrder(order),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: organization!.primaryColorValue,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(12),
+                      bottomRight: Radius.circular(12),
+                    ),
+                  ),
+                  padding: EdgeInsets.all(16),
+                ),
+                child: Text(
+                  isSpecificallyAssignedToMe
+                      ? 'Accept Assignment'
+                      : 'Accept Order',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                padding: EdgeInsets.all(16),
               ),
+            )
+          else if (isSpecificallyAssignedToOther)
+            Container(
+              padding: EdgeInsets.all(16),
               child: Text(
-                'Accept Order',
+                'Waiting for assigned office boy to respond',
                 style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                  fontSize: 12,
+                  fontStyle: FontStyle.italic,
                 ),
+                textAlign: TextAlign.center,
               ),
             ),
-          ),
         ],
       ),
     );
   }
 
   Widget _buildMyOrderCard(OfficeOrder order) {
+    final bool canTransfer =
+        order.status == OrderStatus.pending &&
+        order.isSpecificallyAssigned &&
+        order.specificallyAssignedOfficeBoyId == currentUser!.id;
+
     return Container(
       margin: EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -1800,182 +2188,233 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
             offset: Offset(0, 2),
           ),
         ],
+        border: canTransfer
+            ? Border.all(color: Colors.orange.withOpacity(0.5), width: 1)
+            : null,
       ),
-      child: InkWell(
-        onTap: () => _showOrderDetailsBottomSheet(order),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+      child: Column(
+        children: [
+          InkWell(
+            onTap: () => _showOrderDetailsBottomSheet(order),
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: _getOrderStatusColor(
-                        order.status,
-                      ).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      order.status.toString().split('.').last.toUpperCase(),
-                      style: TextStyle(
-                        color: _getOrderStatusColor(order.status),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: _getOrderTypeColor(order.type).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      order.type == OrderType.internal
-                          ? 'Internal'
-                          : 'External',
-                      style: TextStyle(
-                        color: _getOrderTypeColor(order.type),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  if (order.items.length > 1) ...[
-                    SizedBox(width: 8),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        '${order.items.length} items',
-                        style: TextStyle(
-                          color: Colors.grey[700],
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
+                  Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
                         ),
-                      ),
-                    ),
-                  ],
-                  Spacer(),
-                  Text(
-                    _formatTime(order.createdAt),
-                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                  ),
-                ],
-              ),
-              SizedBox(height: 12),
-
-              Row(
-                children: [
-                  Container(
-                    height: 50,
-                    width: 50,
-                    decoration: BoxDecoration(
-                      color: _getOrderStatusColor(
-                        order.status,
-                      ).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    child: Icon(
-                      order.status == OrderStatus.completed
-                          ? Icons.check_circle
-                          : order.status == OrderStatus.needsResponse
-                          ? Icons.help_outline
-                          : order.type == OrderType.internal
-                          ? Icons.home
-                          : Icons.store,
-                      color: _getOrderStatusColor(order.status),
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          order.items.length == 1
-                              ? order.items.first.name
-                              : '${order.items.first.name} + ${order.items.length - 1} more',
+                        decoration: BoxDecoration(
+                          color: _getOrderStatusColor(
+                            order.status,
+                          ).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          order.status.toString().split('.').last.toUpperCase(),
                           style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                            color: _getOrderStatusColor(order.status),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                        if (order.description.isNotEmpty)
-                          Text(
-                            order.description,
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 14,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(width: 8),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _getOrderTypeColor(
+                            order.type,
+                          ).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          order.type == OrderType.internal
+                              ? 'Internal'
+                              : 'External',
+                          style: TextStyle(
+                            color: _getOrderTypeColor(order.type),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
                           ),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.person,
-                              size: 16,
-                              color: Colors.grey[600],
+                        ),
+                      ),
+                      if (order.items.length > 1) ...[
+                        SizedBox(width: 8),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '${order.items.length} items',
+                            style: TextStyle(
+                              color: Colors.grey[700],
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
                             ),
-                            SizedBox(width: 4),
-                            Text(
-                              order.employeeName,
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 12,
-                              ),
-                            ),
-                            // Show both prices when available
-                            if (order.price != null ||
-                                order.finalPrice != null) ...[
-                              Spacer(),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  if (order.price != null)
-                                    Text(
-                                      'Budget: EGP ${order.price!.toStringAsFixed(0)}',
-                                      style: TextStyle(
-                                        color: Colors.blue,
-                                        fontSize: 11,
-                                      ),
-                                    ),
-                                  if (order.finalPrice != null)
-                                    Text(
-                                      'Spent: EGP ${order.finalPrice!.toStringAsFixed(0)}',
-                                      style: TextStyle(
-                                        color: Colors.green,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ],
-                          ],
+                          ),
                         ),
                       ],
-                    ),
+                      // Transfer badge for transferable orders
+                      if (canTransfer) ...[
+                        SizedBox(width: 8),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.swap_horiz,
+                                size: 12,
+                                color: Colors.orange,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                'Can Transfer',
+                                style: TextStyle(
+                                  color: Colors.orange,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      Spacer(),
+                      Text(
+                        _formatTime(order.createdAt),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      ),
+                    ],
                   ),
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    size: 16,
-                    color: Colors.grey[400],
+                  SizedBox(height: 12),
+
+                  Row(
+                    children: [
+                      Container(
+                        height: 50,
+                        width: 50,
+                        decoration: BoxDecoration(
+                          color: _getOrderStatusColor(
+                            order.status,
+                          ).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                        child: Icon(
+                          order.status == OrderStatus.completed
+                              ? Icons.check_circle
+                              : order.status == OrderStatus.needsResponse
+                              ? Icons.help_outline
+                              : order.type == OrderType.internal
+                              ? Icons.home
+                              : Icons.store,
+                          color: _getOrderStatusColor(order.status),
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              order.items.length == 1
+                                  ? order.items.first.name
+                                  : '${order.items.first.name} + ${order.items.length - 1} more',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            if (order.description.isNotEmpty)
+                              Text(
+                                order.description,
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 14,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.person,
+                                  size: 16,
+                                  color: Colors.grey[600],
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  order.employeeName,
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                // Show both prices when available
+                                if (order.price != null ||
+                                    order.finalPrice != null) ...[
+                                  Spacer(),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      if (order.price != null)
+                                        Text(
+                                          'Budget: EGP ${order.price!.toStringAsFixed(0)}',
+                                          style: TextStyle(
+                                            color: Colors.blue,
+                                            fontSize: 11,
+                                          ),
+                                        ),
+                                      if (order.finalPrice != null)
+                                        Text(
+                                          'Spent: EGP ${order.finalPrice!.toStringAsFixed(0)}',
+                                          style: TextStyle(
+                                            color: Colors.green,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        size: 16,
+                        color: Colors.grey[400],
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
