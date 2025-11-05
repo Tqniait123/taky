@@ -1838,19 +1838,15 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                   color: organization!.secondaryColorValue.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(
-                  Icons.checklist,
-                  color: organization!.primaryColorValue,
-                  size: 20,
-                ),
+                child: Icon(Icons.checklist, color: Colors.grey[700], size: 20),
               ),
               SizedBox(width: 12),
               Text(
                 'Item Availability Check',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: organization!.primaryColorValue,
+                  fontSize: 14,
+                  color: Colors.grey[700],
                 ),
               ),
             ],
@@ -1864,6 +1860,14 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
+                image: DecorationImage(
+                  image: AssetImage(AppImages.pattern),
+                  colorFilter: ColorFilter.mode(
+                    _getItemStatusColor(item.status).withOpacity(.5),
+                    BlendMode.modulate,
+                  ),
+                  fit: BoxFit.fill,
+                ),
                 border: Border.all(
                   color: _getItemStatusColor(item.status).withOpacity(0.3),
                   width: 1.5,
@@ -2949,6 +2953,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                                     ? Assets.imagesSvgsShoppingCart
                                     : Assets.imagesSvgsComplete,
                                 height: 18,
+                                color: Colors.white,
                               ),
                               SizedBox(width: 8),
                               Text(
