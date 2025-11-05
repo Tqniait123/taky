@@ -695,6 +695,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
                   decoration: BoxDecoration(
                     color: _getItemStatusColor(item.status),
                     shape: BoxShape.circle,
+                    border: Border.all(color: Colors.black.withOpacity(.2)),
                     boxShadow: [
                       BoxShadow(
                         color: _getItemStatusColor(
@@ -828,11 +829,17 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
             ],
           ),
           const SizedBox(height: 16),
-          _buildInfoRow(
-            Icons.person_rounded,
-            'Employee',
-            widget.order.employeeName,
-          ),
+          widget.order.isFromAdmin
+              ? _buildInfoRow(
+                  Icons.admin_panel_settings,
+                  'Owner',
+                  widget.order.employeeName,
+                )
+              : _buildInfoRow(
+                  Icons.person_rounded,
+                  'Employee',
+                  widget.order.employeeName,
+                ),
           if (widget.order.officeBoyName.isNotEmpty) ...[
             const SizedBox(height: 12),
             _buildInfoRow(
@@ -955,7 +962,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
           ),
           const SizedBox(height: 16),
           if (widget.order.price != null)
-            _buildPriceRow('Budget Price', widget.order.price!, Colors.blue),
+            _buildPriceRow('Budget Price', widget.order.price!, Colors.white),
           if (widget.order.finalPrice != null) ...[
             const SizedBox(height: 12),
             _buildPriceRow(

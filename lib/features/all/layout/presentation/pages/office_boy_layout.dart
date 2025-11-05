@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +8,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 import 'package:taqy/config/routes/routes.dart';
+import 'package:taqy/core/helpers/cache_helper.dart';
 import 'package:taqy/core/services/firebase_service.dart';
 import 'package:taqy/core/static/app_assets.dart';
 import 'package:taqy/core/theme/colors.dart';
@@ -67,6 +69,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
     _scrollController.addListener(_onScroll);
     _initializeAnimations();
     _loadData();
+    _loadSavedColors();
   }
 
   void _initializeAnimations() {
@@ -139,6 +142,17 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
       _scrollOffset = _scrollController.offset;
       _isHeaderCollapsed = _scrollOffset > 100;
     });
+  }
+
+  Future<void> _loadSavedColors() async {
+    final savedPrimaryColor =
+        await SharedPreferencesService.getOrganizationPrimaryColor();
+    final savedSecondaryColor =
+        await SharedPreferencesService.getOrganizationSecondaryColor();
+
+    if (savedPrimaryColor != null && savedSecondaryColor != null && mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -346,114 +360,202 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
     }
   }
 
-  void _showTransferDialog(OfficeOrder order) {
+  void _showTransferBottomSheet(OfficeOrder order) {
     if (otherOfficeBoys.isEmpty) {
       showErrorToast(context, 'No other office boys available for transfer');
       return;
     }
 
-    showDialog(
+    _showGlassBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Transfer Order'),
-        content: SizedBox(
-          width: double.maxFinite,
-          height: 300,
+      heightFactor: 0.7,
+      child: _buildTransferBottomSheetContent(order),
+    );
+  }
+
+  Widget _buildTransferBottomSheetContent(OfficeOrder order) {
+    return Column(
+      children: [
+        // Header
+        _buildGlassBottomSheetHeader(
+          icon: Assets.imagesSvgsEdit,
+          title: 'Transfer Order',
+          subtitle: 'Select an office boy to transfer this order',
+        ),
+
+        // Office Boys List
+        Expanded(
           child: ListView.builder(
-            shrinkWrap: true,
+            padding: EdgeInsets.all(16),
             itemCount: otherOfficeBoys.length,
             itemBuilder: (context, index) {
               final officeBoy = otherOfficeBoys[index];
-              return ListTile(
-                leading: CircleAvatar(
-                  backgroundColor:
-                      organization?.primaryColorValue ?? Colors.blue,
-                  child: Text(
-                    officeBoy.name[0].toUpperCase(),
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-                title: Text(officeBoy.name),
-                subtitle: Text(officeBoy.email),
+              return _buildGlassListItem(
                 onTap: () {
                   Navigator.pop(context);
-                  _showTransferConfirmation(order, officeBoy);
+                  _showTransferConfirmationBottomSheet(order, officeBoy);
                 },
+                leading: Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        organization!.primaryColorValue,
+                        organization!.secondaryColorValue,
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child: Text(
+                      officeBoy.name[0].toUpperCase(),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                title: officeBoy.name,
+                subtitle: officeBoy.email,
+                trailing: Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: Colors.white.withOpacity(0.6),
+                ),
               );
             },
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
-          ),
-        ],
-      ),
+      ],
     );
   }
 
-  void _showTransferConfirmation(
+  void _showTransferConfirmationBottomSheet(
     OfficeOrder order,
     OfficeUserModel newOfficeBoy,
   ) {
-    showDialog(
+    _showGlassBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Transfer Order?'),
-        content: Text(
-          'This order will be specifically assigned to ${newOfficeBoy.name}. They will need to accept it.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _transferOrder(order, newOfficeBoy.id, newOfficeBoy.name);
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-            child: Text('Transfer'),
-          ),
-        ],
-      ),
+      heightFactor: 0.35,
+      child: _buildTransferConfirmationContent(order, newOfficeBoy),
     );
   }
 
-  void _showSpecificallyAssignedActions(OfficeOrder order) {
+  Widget _buildTransferConfirmationContent(
+    OfficeOrder order,
+    OfficeUserModel newOfficeBoy,
+  ) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildGlassBottomSheetHeader(
+          icon: Assets.imagesSvgsEdit,
+          title: 'Transfer Order?',
+          subtitle:
+              'This order will be specifically assigned to ${newOfficeBoy.name}. They will need to accept it.',
+        ),
+
+        SizedBox(height: 24),
+
+        // Action buttons
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildGlassButton(
+                  text: 'Cancel',
+                  onPressed: () => Navigator.pop(context),
+                  isSecondary: true,
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                flex: 2,
+                child: _buildGlassButton(
+                  text: 'Transfer Order',
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _transferOrder(order, newOfficeBoy.id, newOfficeBoy.name);
+                  },
+                  gradient: LinearGradient(
+                    colors: [Colors.orange, Colors.orange.withOpacity(0.8)],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: 16),
+      ],
+    );
+  }
+
+  void _showSpecificallyAssignedBottomSheet(OfficeOrder order) {
     if (order.isSpecificallyAssigned &&
         order.specificallyAssignedOfficeBoyId == currentUser!.id &&
         order.status == OrderStatus.pending) {
-      showDialog(
+      _showGlassBottomSheet(
         context: context,
-        builder: (context) => AlertDialog(
-          title: Text('Order Assignment'),
-          content: Text(
-            'This order was specifically assigned to you. Do you want to accept or reject it?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _rejectSpecificallyAssignedOrder(order);
-              },
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: Text('Reject'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _acceptOrder(order);
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-              child: Text('Accept'),
-            ),
-          ],
-        ),
+        heightFactor: 0.35,
+        child: _buildSpecificallyAssignedContent(order),
       );
     }
+  }
+
+  Widget _buildSpecificallyAssignedContent(OfficeOrder order) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildGlassBottomSheetHeader(
+          icon: Assets.imagesSvgsShoppingCart,
+          title: 'Order Assignment',
+          subtitle:
+              'This order was specifically assigned to you. Do you want to accept or reject it?',
+        ),
+
+        SizedBox(height: 24),
+
+        // Action buttons
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildGlassButton(
+                  text: 'Reject',
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _rejectSpecificallyAssignedOrder(order);
+                  },
+                  isSecondary: true,
+                  backgroundColor: Colors.red.withOpacity(0.5),
+                  textColor: Colors.red,
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                flex: 2,
+                child: _buildGlassButton(
+                  text: 'Accept Order',
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _acceptOrder(order);
+                  },
+                  gradient: LinearGradient(
+                    colors: [Colors.green, Colors.green.withOpacity(0.8)],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: 16),
+      ],
+    );
   }
 
   Future<void> _updateItemStatus(
@@ -497,6 +599,208 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
     }
   }
 
+  void _showItemStatusBottomSheet(OfficeOrder order, int itemIndex) {
+    final item = order.items[itemIndex];
+    final TextEditingController notesController = TextEditingController(
+      text: item.notes ?? '',
+    );
+    ItemStatus selectedStatus = item.status;
+
+    _showGlassBottomSheet(
+      context: context,
+      heightFactor: 0.8,
+      child: StatefulBuilder(
+        builder: (context, setDialogState) => _buildItemStatusContent(
+          order,
+          itemIndex,
+          item,
+          notesController,
+          selectedStatus,
+          (newStatus) {
+            setDialogState(() {
+              selectedStatus = newStatus;
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildItemStatusContent(
+    OfficeOrder order,
+    int itemIndex,
+    OrderItem item,
+    TextEditingController notesController,
+    ItemStatus selectedStatus,
+    Function(ItemStatus) onStatusChanged,
+  ) {
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildGlassBottomSheetHeader(
+            icon: Assets.imagesSvgsEdit,
+            title: 'Update Item Status',
+            subtitle: item.name,
+          ),
+
+          SizedBox(height: 24),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Item Status',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                SizedBox(height: 12),
+
+                ...ItemStatus.values.map(
+                  (status) => Container(
+                    margin: EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: selectedStatus == status
+                            ? _getItemStatusColor(status)
+                            : Colors.white.withOpacity(0.3),
+                        width: 2,
+                      ),
+                      color: selectedStatus == status
+                          ? _getItemStatusColor(status).withOpacity(0.1)
+                          : Colors.white.withOpacity(0.05),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () {
+                          onStatusChanged(status);
+                        },
+                        child: Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: _getItemStatusColor(
+                                    status,
+                                  ).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: SvgPicture.asset(
+                                  _getItemStatusIcon(status),
+                                  color: _getItemStatusColor(status),
+                                  height: 20,
+                                ),
+                              ),
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  _getItemStatusText(status),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: selectedStatus == status
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                width: 20,
+                                height: 20,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: selectedStatus == status
+                                        ? _getItemStatusColor(status)
+                                        : Colors.white.withOpacity(0.5),
+                                    width: 2,
+                                  ),
+                                  color: selectedStatus == status
+                                      ? _getItemStatusColor(status)
+                                      : Colors.transparent,
+                                ),
+                                child: selectedStatus == status
+                                    ? Icon(
+                                        Icons.check,
+                                        size: 14,
+                                        color: Colors.white,
+                                      )
+                                    : null,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: 16),
+
+                _buildGlassTextField(
+                  controller: notesController,
+                  label: 'Notes (optional)',
+                  hint: 'Add notes about availability...',
+                  icon: Assets.imagesSvgsNote,
+                ),
+
+                SizedBox(height: 24),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildGlassButton(
+                        text: 'Cancel',
+                        onPressed: () => Navigator.pop(context),
+                        isSecondary: true,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: _buildGlassButton(
+                        text: 'Update Status',
+                        onPressed: () async {
+                          Navigator.pop(context);
+                          await _updateItemStatus(
+                            order,
+                            itemIndex,
+                            selectedStatus,
+                            notesController.text.trim(),
+                          );
+                        },
+                        gradient: LinearGradient(
+                          colors: [
+                            _getItemStatusColor(selectedStatus),
+                            _getItemStatusColor(
+                              selectedStatus,
+                            ).withOpacity(0.8),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+
   Future<void> _updateOrderWithNotes(
     OfficeOrder order,
     OrderStatus status, {
@@ -527,88 +831,523 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
     }
   }
 
-  void _showItemStatusDialog(OfficeOrder order, int itemIndex) {
-    final item = order.items[itemIndex];
-    final TextEditingController notesController = TextEditingController(
-      text: item.notes ?? '',
-    );
-    ItemStatus selectedStatus = item.status;
+  void _showStatusChangeBottomSheet(OfficeOrder order, OrderStatus newStatus) {
+    final TextEditingController notesController = TextEditingController();
+    final bool isCancellation = newStatus == OrderStatus.cancelled;
 
-    showDialog(
+    _showGlassBottomSheet(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text('Update Item Status'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+      heightFactor: 0.6,
+      child: _buildStatusChangeContent(
+        order,
+        newStatus,
+        isCancellation,
+        notesController,
+      ),
+    );
+  }
+
+  Widget _buildStatusChangeContent(
+    OfficeOrder order,
+    OrderStatus newStatus,
+    bool isCancellation,
+    TextEditingController notesController,
+  ) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildGlassBottomSheetHeader(
+          icon: isCancellation
+              ? Assets.imagesSvgsCancell
+              : Assets.imagesSvgsShoppingCart,
+          title: '${newStatus.toString().split('.').last.toUpperCase()} Order',
+          subtitle:
+              'Are you sure you want to ${newStatus.toString().split('.').last} this order?',
+        ),
+
+        SizedBox(height: 24),
+
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Column(
             children: [
-              Text(
-                'Item: ${item.name}',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 16),
-              Text('Status:'),
-              SizedBox(height: 8),
-              ...ItemStatus.values.map(
-                (status) => RadioListTile<ItemStatus>(
-                  title: Row(
-                    children: [
-                      Icon(
-                        _getItemStatusIcon(status),
-                        color: _getItemStatusColor(status),
-                        size: 20,
-                      ),
-                      SizedBox(width: 8),
-                      Text(_getItemStatusText(status)),
-                    ],
-                  ),
-                  value: status,
-                  groupValue: selectedStatus,
-                  onChanged: (value) {
-                    setDialogState(() {
-                      selectedStatus = value!;
-                    });
-                  },
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              SizedBox(height: 16),
-              TextField(
+              _buildGlassTextField(
                 controller: notesController,
-                decoration: InputDecoration(
-                  labelText: 'Notes (optional)',
-                  hintText: 'Add notes about availability...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                label: 'Add notes (optional)',
+                hint: 'Reason for ${newStatus.toString().split('.').last}...',
+                icon: Assets.imagesSvgsNote,
+              ),
+
+              SizedBox(height: 24),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildGlassButton(
+                      text: 'Cancel',
+                      onPressed: () => Navigator.pop(context),
+                      isSecondary: true,
+                    ),
                   ),
-                ),
-                maxLines: 3,
+                  SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: _buildGlassButton(
+                      text: newStatus.toString().split('.').last.toUpperCase(),
+                      onPressed: () async {
+                        Navigator.pop(context);
+                        await _updateOrderWithNotes(
+                          order,
+                          newStatus,
+                          notes: notesController.text.trim(),
+                        );
+                      },
+                      gradient: LinearGradient(
+                        colors: [
+                          isCancellation ? Colors.red : Colors.blue,
+                          isCancellation
+                              ? Colors.red.withOpacity(0.8)
+                              : Colors.blue.withOpacity(0.8),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Cancel'),
+        ),
+      ],
+    );
+  }
+
+  void _showCompletionBottomSheet(OfficeOrder order) {
+    final TextEditingController priceController = TextEditingController();
+    final TextEditingController notesController = TextEditingController();
+    final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+
+    if (order.price != null) {
+      priceController.text = order.price!.toStringAsFixed(0);
+    }
+
+    _showGlassBottomSheet(
+      context: context,
+      heightFactor: 0.7,
+      child: StatefulBuilder(
+        builder: (context, setState) => Form(
+          key: formKey,
+          child: _buildCompletionContent(
+            order,
+            priceController,
+            notesController,
+            formKey,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCompletionContent(
+    OfficeOrder order,
+    TextEditingController priceController,
+    TextEditingController notesController,
+    GlobalKey<FormState> formKey,
+  ) {
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildGlassBottomSheetHeader(
+            icon: Assets.imagesSvgsComplete,
+            title: 'Complete Order',
+            subtitle: 'Mark this order as completed?',
+          ),
+
+          SizedBox(height: 24),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Column(
+              children: [
+                if (order.type == OrderType.external) ...[
+                  _buildGlassTextField(
+                    controller: priceController,
+                    label: 'Final Price (EGP) *',
+                    hint: 'Enter the actual price',
+                    icon: Assets.imagesSvgsWallet,
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter the final price';
+                      }
+                      if (double.tryParse(value) == null) {
+                        return 'Please enter a valid number';
+                      }
+                      return null;
+                    },
+                  ),
+                  if (order.price != null) ...[
+                    SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          'Budget: EGP ${order.price!.toStringAsFixed(0)}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.white.withOpacity(0.7),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  SizedBox(height: 16),
+                ],
+
+                _buildGlassTextField(
+                  controller: notesController,
+                  label: 'Completion notes (optional)',
+                  hint: 'Any additional details...',
+                  icon: Assets.imagesSvgsNote,
+                  maxLines: 2,
+                ),
+
+                SizedBox(height: 24),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildGlassButton(
+                        text: 'Cancel',
+                        onPressed: () => Navigator.pop(context),
+                        isSecondary: true,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: _buildGlassButton(
+                        text: 'Complete Order',
+                        onPressed: () async {
+                          if (!formKey.currentState!.validate()) {
+                            return;
+                          }
+
+                          double? finalPrice;
+                          if (order.type == OrderType.external &&
+                              priceController.text.trim().isNotEmpty) {
+                            try {
+                              finalPrice = double.parse(
+                                priceController.text.trim(),
+                              );
+                            } catch (e) {
+                              showErrorToast(
+                                context,
+                                'Please enter a valid price',
+                              );
+                              return;
+                            }
+                          }
+
+                          Navigator.pop(context);
+                          await _updateOrderWithNotes(
+                            order,
+                            OrderStatus.completed,
+                            finalPrice: finalPrice,
+                            notes: notesController.text.trim(),
+                          );
+                        },
+                        gradient: LinearGradient(
+                          colors: [Colors.green, Colors.green.withOpacity(0.8)],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            ElevatedButton(
-              onPressed: () async {
-                Navigator.pop(context);
-                await _updateItemStatus(
-                  order,
-                  itemIndex,
-                  selectedStatus,
-                  notesController.text.trim(),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _getItemStatusColor(selectedStatus),
-              ),
-              child: Text('Update', style: TextStyle(color: Colors.white)),
-            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Glass Morphism Bottom Sheet Utility Methods
+  void _showGlassBottomSheet({
+    required BuildContext context,
+    required Widget child,
+    double heightFactor = 0.5,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) =>
+          GlassBottomSheet(heightFactor: heightFactor, child: child),
+    );
+  }
+
+  Widget _buildGlassBottomSheetHeader({
+    required String icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Container(
+      padding: EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.white.withOpacity(0.15),
+            Colors.white.withOpacity(0.05),
           ],
+        ),
+        border: Border(
+          bottom: BorderSide(color: Colors.white.withOpacity(0.1), width: 1),
+        ),
+      ),
+      child: Column(
+        children: [
+          // Handle bar
+          Container(
+            width: 40,
+            height: 4,
+            margin: EdgeInsets.only(bottom: 20),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    colors: [
+                      Colors.white.withOpacity(0.2),
+                      Colors.white.withOpacity(0.1),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: SvgPicture.asset(icon, color: Colors.white, height: 24),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white.withOpacity(0.8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGlassListItem({
+    required VoidCallback onTap,
+    required Widget leading,
+    required String title,
+    required String subtitle,
+    required Widget trailing,
+  }) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.white.withOpacity(0.15),
+            Colors.white.withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Row(
+              children: [
+                leading,
+                SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.white.withOpacity(0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                trailing,
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGlassTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required String icon,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+    String? Function(String?)? validator,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              colors: [
+                Colors.white.withOpacity(0.15),
+                Colors.white.withOpacity(0.05),
+              ],
+            ),
+            border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: TextFormField(
+                controller: controller,
+                keyboardType: keyboardType,
+                maxLines: maxLines,
+                validator: validator,
+                style: TextStyle(color: Colors.white, fontSize: 16),
+                decoration: InputDecoration(
+                  hintText: hint,
+                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: SvgPicture.asset(
+                      icon,
+                      color: Colors.white.withOpacity(0.8),
+                    ),
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGlassButton({
+    required String text,
+    required VoidCallback onPressed,
+    bool isSecondary = false,
+    Gradient? gradient,
+    Color? backgroundColor,
+    Color? textColor,
+  }) {
+    return Container(
+      height: 56,
+      decoration: BoxDecoration(
+        gradient: isSecondary
+            ? LinearGradient(
+                colors: [
+                  Colors.white.withOpacity(0.15),
+                  Colors.white.withOpacity(0.05),
+                ],
+              )
+            : gradient ??
+                  LinearGradient(
+                    colors: [
+                      organization!.primaryColorValue,
+                      organization!.secondaryColorValue,
+                    ],
+                  ),
+        borderRadius: BorderRadius.circular(16),
+        border: isSecondary
+            ? Border.all(color: Colors.white.withOpacity(0.3), width: 1)
+            : null,
+        boxShadow: isSecondary
+            ? null
+            : [
+                BoxShadow(
+                  color:
+                      (gradient?.colors.first ??
+                              organization!.primaryColorValue)
+                          .withOpacity(0.4),
+                  blurRadius: 10,
+                  offset: Offset(0, 4),
+                ),
+              ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onPressed,
+          child: Center(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: isSecondary ? Colors.white : textColor ?? Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -619,20 +1358,20 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
       case ItemStatus.pending:
         return Colors.orange;
       case ItemStatus.available:
-        return Colors.green;
+        return Colors.greenAccent;
       case ItemStatus.notAvailable:
         return Colors.red;
     }
   }
 
-  IconData _getItemStatusIcon(ItemStatus status) {
+  String _getItemStatusIcon(ItemStatus status) {
     switch (status) {
       case ItemStatus.pending:
-        return Icons.hourglass_empty;
+        return Assets.imagesSvgsPending;
       case ItemStatus.available:
-        return Icons.check_circle;
+        return Assets.imagesSvgsComplete;
       case ItemStatus.notAvailable:
-        return Icons.cancel;
+        return Assets.imagesSvgsCancell;
     }
   }
 
@@ -645,264 +1384,6 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
       case ItemStatus.notAvailable:
         return 'Not Available';
     }
-  }
-
-  void _showStatusChangeDialog(OfficeOrder order, OrderStatus newStatus) {
-    final TextEditingController notesController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          '${newStatus.toString().split('.').last.toUpperCase()} Order',
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Are you sure you want to ${newStatus.toString().split('.').last} this order?',
-            ),
-            SizedBox(height: 16),
-            TextField(
-              controller: notesController,
-              decoration: InputDecoration(
-                labelText: 'Add notes (optional)',
-                hintText:
-                    'Reason for ${newStatus.toString().split('.').last}...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              maxLines: 3,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await _updateOrderWithNotes(
-                order,
-                newStatus,
-                notes: notesController.text.trim(),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: newStatus == OrderStatus.cancelled
-                  ? Colors.red
-                  : Colors.green,
-            ),
-            child: Text(
-              newStatus.toString().split('.').last.toUpperCase(),
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showCompletionDialog(OfficeOrder order) {
-    final TextEditingController priceController = TextEditingController();
-    final TextEditingController notesController = TextEditingController();
-
-    if (order.price != null) {
-      priceController.text = order.price!.toStringAsFixed(0);
-    }
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text('Complete Order'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Mark this order as completed?'),
-              SizedBox(height: 16),
-              if (order.type == OrderType.external) ...[
-                TextField(
-                  controller: priceController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: 'Final Price (EGP) *',
-                    hintText: 'Enter the actual price',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    prefixIcon: Icon(Icons.attach_money),
-                  ),
-                ),
-                SizedBox(height: 12),
-              ],
-              TextField(
-                controller: notesController,
-                decoration: InputDecoration(
-                  labelText: 'Completion notes (optional)',
-                  hintText: 'Any additional details...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                maxLines: 2,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (order.type == OrderType.external &&
-                    priceController.text.trim().isEmpty) {
-                  showErrorToast(context, 'Please enter the final price');
-
-                  return;
-                }
-
-                double? finalPrice;
-                if (order.type == OrderType.external &&
-                    priceController.text.trim().isNotEmpty) {
-                  try {
-                    finalPrice = double.parse(priceController.text.trim());
-                  } catch (e) {
-                    showErrorToast(context, 'Please enter a valid price');
-
-                    return;
-                  }
-                }
-
-                Navigator.pop(context);
-                await _updateOrderWithNotes(
-                  order,
-                  OrderStatus.completed,
-                  finalPrice: finalPrice,
-                  notes: notesController.text.trim(),
-                );
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-              child: Text(
-                'Complete Order',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickStatusActions(OfficeOrder order) {
-    final bool canTransfer =
-        order.status == OrderStatus.pending &&
-        order.isSpecificallyAssigned &&
-        order.specificallyAssignedOfficeBoyId == currentUser!.id;
-
-    if (order.status == OrderStatus.completed ||
-        order.status == OrderStatus.cancelled) {
-      return SizedBox.shrink();
-    }
-
-    return Container(
-      margin: EdgeInsets.only(top: 12),
-      padding: EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        children: [
-          if (canTransfer)
-            Container(
-              margin: EdgeInsets.only(bottom: 8),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () => _showTransferDialog(order),
-                  icon: Icon(Icons.swap_horiz, size: 16),
-                  label: Text('Transfer to Another Office Boy'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              ),
-            ),
-          Row(
-            children: [
-              if (order.status == OrderStatus.pending) ...[
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () =>
-                        _showStatusChangeDialog(order, OrderStatus.cancelled),
-                    icon: Icon(Icons.cancel, size: 18),
-                    label: Text('Cancel'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red[100],
-                      foregroundColor: Colors.red[700],
-                      elevation: 0,
-                      padding: EdgeInsets.symmetric(vertical: 8),
-                    ),
-                  ),
-                ),
-                SizedBox(width: 8),
-                Expanded(
-                  flex: 2,
-                  child: ElevatedButton.icon(
-                    onPressed: () =>
-                        _showStatusChangeDialog(order, OrderStatus.inProgress),
-                    icon: Icon(Icons.time_to_leave, size: 18),
-                    label: Text('Accept & Start'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[100],
-                      foregroundColor: Colors.blue[700],
-                      elevation: 0,
-                      padding: EdgeInsets.symmetric(vertical: 8),
-                    ),
-                  ),
-                ),
-              ],
-              if (order.status == OrderStatus.inProgress) ...[
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () =>
-                        _showStatusChangeDialog(order, OrderStatus.cancelled),
-                    icon: Icon(Icons.cancel, size: 18),
-                    label: Text('Cancel'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red[100],
-                      foregroundColor: Colors.red[700],
-                      elevation: 0,
-                      padding: EdgeInsets.symmetric(vertical: 8),
-                    ),
-                  ),
-                ),
-                SizedBox(width: 8),
-                Expanded(
-                  flex: 2,
-                  child: ElevatedButton.icon(
-                    onPressed: () => _showCompletionDialog(order),
-                    icon: Icon(Icons.check_circle, size: 18),
-                    label: Text('Complete'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green[100],
-                      foregroundColor: Colors.green[700],
-                      elevation: 0,
-                      padding: EdgeInsets.symmetric(vertical: 8),
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ],
-      ),
-    );
   }
 
   void _showProfileBottomSheet() {
@@ -987,7 +1468,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         onTransferRequest: canTransfer
             ? () {
                 Navigator.pop(context);
-                _showTransferDialog(order);
+                _showTransferBottomSheet(order);
               }
             : null,
       ),
@@ -1031,11 +1512,9 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
 
   String _formatTime(DateTime dateTime) {
     final now = DateTime.now();
-    final difference = now.difference(dateTime);
+    final difference = now.difference(dateTime).abs();
 
-    if (difference.inMinutes < 1) {
-      return 'Just now';
-    } else if (difference.inMinutes < 60) {
+    if (difference.inMinutes < 60) {
       return '${difference.inMinutes}m ago';
     } else if (difference.inHours < 24) {
       return '${difference.inHours}h ago';
@@ -1342,7 +1821,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: organization?.secondaryColorValue.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: organization!.secondaryColorValue.withOpacity(0.3),
           width: 1,
@@ -1353,105 +1832,124 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         children: [
           Row(
             children: [
-              Icon(
-                Icons.checklist,
-                color: organization!.secondaryColorValue,
-                size: 20,
+              Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: organization!.secondaryColorValue.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.checklist,
+                  color: organization!.primaryColorValue,
+                  size: 20,
+                ),
               ),
-              SizedBox(width: 8),
+              SizedBox(width: 12),
               Text(
                 'Item Availability Check',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: Colors.blue[700],
+                  fontSize: 16,
+                  color: organization!.primaryColorValue,
                 ),
               ),
             ],
           ),
-          SizedBox(height: 12),
+          SizedBox(height: 16),
           ...order.items.asMap().entries.map((entry) {
             final index = entry.key;
             final item = entry.value;
             return Container(
               margin: EdgeInsets.only(bottom: 8),
-              padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: _getItemStatusColor(item.status).withOpacity(0.3),
+                  width: 1.5,
                 ),
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.name,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w500,
-                            fontSize: 14,
-                          ),
-                        ),
-                        if (item.notes != null && item.notes!.isNotEmpty) ...[
-                          SizedBox(height: 4),
-                          Text(
-                            item.notes!,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: _getItemStatusColor(item.status).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () => _showItemStatusBottomSheet(order, index),
+                  child: Padding(
+                    padding: EdgeInsets.all(12),
                     child: Row(
-                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          _getItemStatusIcon(item.status),
-                          size: 14,
-                          color: _getItemStatusColor(item.status),
-                        ),
-                        SizedBox(width: 4),
-                        Text(
-                          _getItemStatusText(item.status),
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
+                        Container(
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: _getItemStatusColor(
+                              item.status,
+                            ).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: SvgPicture.asset(
+                            _getItemStatusIcon(item.status),
+                            height: 20,
                             color: _getItemStatusColor(item.status),
                           ),
                         ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.name,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              if (item.notes != null &&
+                                  item.notes!.isNotEmpty) ...[
+                                SizedBox(height: 4),
+                                Text(
+                                  item.notes!,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ],
+                              SizedBox(height: 4),
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _getItemStatusColor(
+                                    item.status,
+                                  ).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  _getItemStatusText(item.status),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: _getItemStatusColor(item.status),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          size: 16,
+                          color: Colors.grey[400],
+                        ),
                       ],
                     ),
                   ),
-                  SizedBox(width: 8),
-                  InkWell(
-                    onTap: () => _showItemStatusDialog(order, index),
-                    child: Container(
-                      padding: EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.blue[100],
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Icon(
-                        Icons.edit,
-                        size: 16,
-                        color: Colors.blue[700],
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             );
           }),
@@ -1460,7 +1958,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
     );
   }
 
-  Widget _buildAnimatedEmptyState(String message, IconData icon) {
+  Widget _buildAnimatedEmptyState(String message, String icon) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 1000),
@@ -1685,7 +2183,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                       .where((o) => o.status != OrderStatus.completed)
                       .length
                       .toString(),
-                  Assets.imagesSvgsCoffee,
+                  Assets.imagesSvgsShoppingCart,
                   organization!.primaryColorValue,
                   organization!.secondaryColorValue,
                 ),
@@ -1694,7 +2192,10 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
           ),
           SizedBox(height: 24),
           if (availableOrders.isEmpty)
-            _buildAnimatedEmptyState('No available orders', Icons.inbox)
+            _buildAnimatedEmptyState(
+              'No available orders',
+              Assets.imagesSvgsEdit,
+            )
           else
             ...availableOrders.asMap().entries.map(
               (entry) => _buildAvailableOrderCard(entry.value, entry.key),
@@ -1716,11 +2217,11 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
 
     final todayBudgetPrice = todayMyOrders
         .where((o) => o.price != null)
-        .fold<double>(0.0, (sum, o) => sum + o.price!);
+        .fold<double>(0.0, (summ, o) => summ + o.price!);
 
     final todayFinalPrice = todayMyOrders
         .where((o) => o.finalPrice != null)
-        .fold<double>(0.0, (sum, o) => sum + o.finalPrice!);
+        .fold<double>(0.0, (summ, o) => summ + o.finalPrice!);
 
     return Padding(
       padding: EdgeInsets.all(16),
@@ -1738,7 +2239,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.blue.withOpacity(0.3),
@@ -1749,10 +2250,10 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                   ),
                   child: Column(
                     children: [
-                      Icon(
-                        Icons.account_balance_wallet,
+                      SvgPicture.asset(
+                        Assets.imagesSvgsWallet,
                         color: Colors.white,
-                        size: 24,
+                        height: 24,
                       ),
                       SizedBox(height: 8),
                       Text(
@@ -1784,7 +2285,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.green.withOpacity(0.3),
@@ -1795,11 +2296,12 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                   ),
                   child: Column(
                     children: [
-                      Icon(
-                        Icons.monetization_on,
+                      SvgPicture.asset(
+                        Assets.imagesSvgsMoney,
                         color: Colors.white,
-                        size: 24,
+                        height: 24,
                       ),
+
                       SizedBox(height: 8),
                       Text(
                         'EGP ${todayFinalPrice.toStringAsFixed(0)}',
@@ -1863,7 +2365,10 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
           ),
           SizedBox(height: 16),
           if (myOrders.isEmpty)
-            _buildAnimatedEmptyState('No orders assigned', Icons.assignment)
+            _buildAnimatedEmptyState(
+              'No orders assigned',
+              Assets.imagesSvgsShoppingCart,
+            )
           else
             ...myOrders.asMap().entries.map(
               (entry) => Column(
@@ -1938,7 +2443,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.blue.withOpacity(0.3),
@@ -1949,10 +2454,10 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                   ),
                   child: Column(
                     children: [
-                      Icon(
-                        Icons.account_balance_wallet,
+                      SvgPicture.asset(
+                        Assets.imagesSvgsWallet,
+                        height: 24,
                         color: Colors.white,
-                        size: 24,
                       ),
                       SizedBox(height: 8),
                       Text(
@@ -1984,7 +2489,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.green.withOpacity(0.3),
@@ -1995,10 +2500,10 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                   ),
                   child: Column(
                     children: [
-                      Icon(
-                        Icons.monetization_on,
+                      SvgPicture.asset(
+                        Assets.imagesSvgsMoney,
                         color: Colors.white,
-                        size: 24,
+                        height: 24,
                       ),
                       SizedBox(height: 8),
                       Text(
@@ -2099,16 +2604,20 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         offset: Offset(50 * (1 - value), 0),
         child: Container(
           margin: EdgeInsets.only(bottom: 12),
-          padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             border: isSpecificallyAssignedToMe
                 ? Border.all(color: Colors.orange, width: 2)
-                : null,
+                : Border.all(
+                    color: organization!.secondaryColorValue.withOpacity(0.2),
+                    width: 1,
+                  ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: isSpecificallyAssignedToMe
+                    ? Colors.orange.withOpacity(0.2)
+                    : Colors.black.withOpacity(0.08),
                 blurRadius: 12,
                 offset: Offset(0, 4),
               ),
@@ -2122,191 +2631,375 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
               ),
             ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (isSpecificallyAssignedToMe)
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  margin: EdgeInsets.only(bottom: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.star, size: 12, color: Colors.orange),
-                      SizedBox(width: 4),
-                      Text(
-                        'Assigned to you',
-                        style: TextStyle(
-                          color: Colors.orange,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              if (!isSpecificallyAssignedToOther) ...[
-                Row(
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: !isSpecificallyAssignedToOther
+                  ? () => _showOrderDetailsBottomSheet(order)
+                  : null,
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: _getOrderTypeColor(order.type).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        order.type == OrderType.internal
-                            ? 'Internal'
-                            : 'External',
-                        style: TextStyle(
-                          color: _getOrderTypeColor(order.type),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    if (order.items.length > 1) ...[
-                      SizedBox(width: 8),
+                    if (isSpecificallyAssignedToMe)
                       Container(
                         padding: EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                          horizontal: 10,
+                          vertical: 6,
                         ),
+                        margin: EdgeInsets.only(bottom: 12),
                         decoration: BoxDecoration(
-                          color: Colors.grey.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          '${order.items.length} items',
-                          style: TextStyle(
-                            color: Colors.grey[700],
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.orange.withOpacity(0.2),
+                              Colors.orange.withOpacity(0.1),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.orange.withOpacity(0.3),
+                            width: 1,
                           ),
                         ),
-                      ),
-                    ],
-                    Spacer(),
-                    Text(
-                      _formatTime(order.createdAt),
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 12),
-                Row(
-                  children: [
-                    Container(
-                      height: 50,
-                      width: 50,
-                      decoration: BoxDecoration(
-                        color: _getOrderTypeColor(order.type).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      child: SvgPicture.asset(
-                        order.type == OrderType.internal
-                            ? Assets.imagesSvgsCompany
-                            : Assets.imagesSvgsShoppingCart,
-                        color: _getOrderTypeColor(order.type),
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            order.items.length == 1
-                                ? order.items.first.name
-                                : '${order.items.first.name} + ${order.items.length - 1} more',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          if (order.description.isNotEmpty)
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.star, size: 14, color: Colors.orange),
+                            SizedBox(width: 6),
                             Text(
-                              order.description,
+                              'Specifically Assigned to You',
                               style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 14,
+                                color: Colors.orange[800],
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
                               ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.person,
-                                size: 16,
-                                color: Colors.grey[600],
+                          ],
+                        ),
+                      ),
+                    if (!isSpecificallyAssignedToOther) ...[
+                      Row(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _getOrderTypeColor(
+                                order.type,
+                              ).withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: _getOrderTypeColor(
+                                  order.type,
+                                ).withOpacity(0.3),
+                                width: 1,
                               ),
-                              SizedBox(width: 4),
-                              Text(
-                                order.employeeName,
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 12,
+                            ),
+                            child: Text(
+                              order.type == OrderType.internal
+                                  ? 'Internal'
+                                  : 'External',
+                              style: TextStyle(
+                                color: _getOrderTypeColor(order.type),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          if (order.items.length > 1) ...[
+                            SizedBox(width: 8),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.grey.withOpacity(0.3),
+                                  width: 1,
                                 ),
                               ),
-                              if (order.price != null) ...[
-                                Spacer(),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.list_alt,
+                                    size: 12,
+                                    color: Colors.grey[700],
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    '${order.items.length} items',
+                                    style: TextStyle(
+                                      color: Colors.grey[700],
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                          Spacer(),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.access_time,
+                                  size: 12,
+                                  color: Colors.grey[600],
+                                ),
+                                SizedBox(width: 4),
                                 Text(
-                                  'EGP ${order.price!.toStringAsFixed(0)}',
+                                  _formatTime(order.createdAt),
                                   style: TextStyle(
-                                    color: Colors.green,
-                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey[600],
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ],
-                            ],
+                            ),
                           ),
                         ],
                       ),
-                    ),
+                      SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Container(
+                            height: 56,
+                            width: 56,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  _getOrderTypeColor(
+                                    order.type,
+                                  ).withOpacity(0.2),
+                                  _getOrderTypeColor(
+                                    order.type,
+                                  ).withOpacity(0.1),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: _getOrderTypeColor(
+                                  order.type,
+                                ).withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Center(
+                              child: SvgPicture.asset(
+                                order.type == OrderType.internal
+                                    ? Assets.imagesSvgsCompany
+                                    : Assets.imagesSvgsShoppingCart,
+                                color: _getOrderTypeColor(order.type),
+                                height: 28,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  order.items.length == 1
+                                      ? order.items.first.name
+                                      : '${order.items.first.name} + ${order.items.length - 1} more',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: Colors.grey[800],
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (order.description.isNotEmpty) ...[
+                                  SizedBox(height: 4),
+                                  Text(
+                                    order.description,
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 13,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                                SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: organization!.secondaryColorValue
+                                            .withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.person,
+                                            size: 14,
+                                            color: Colors.grey[700],
+                                          ),
+                                          SizedBox(width: 4),
+                                          Text(
+                                            order.employeeName,
+                                            style: TextStyle(
+                                              color: Colors.grey[700],
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (order.price != null) ...[
+                                      Spacer(),
+                                      Container(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              Colors.green.withOpacity(0.2),
+                                              Colors.green.withOpacity(0.1),
+                                            ],
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            SvgPicture.asset(
+                                              Assets.imagesSvgsWallet,
+                                              height: 24,
+                                              color: Colors.green[700],
+                                            ),
+
+                                            SizedBox(width: 4),
+                                            Text(
+                                              'EGP ${order.price!.toStringAsFixed(0)}',
+                                              style: TextStyle(
+                                                color: Colors.green[700],
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: isSpecificallyAssignedToMe
+                              ? () =>
+                                    _showSpecificallyAssignedBottomSheet(order)
+                              : () => _acceptOrder(order),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isSpecificallyAssignedToMe
+                                ? Colors.orange
+                                : organization!.primaryColorValue,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: EdgeInsets.symmetric(vertical: 14),
+                            elevation: 0,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SvgPicture.asset(
+                                isSpecificallyAssignedToMe
+                                    ? Assets.imagesSvgsShoppingCart
+                                    : Assets.imagesSvgsComplete,
+                                height: 18,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                isSpecificallyAssignedToMe
+                                    ? 'View Assignment'
+                                    : 'Accept Order',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ] else
+                      Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: Column(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Icons.lock_outline,
+                                  color: Colors.grey[600],
+                                  size: 32,
+                                ),
+                              ),
+                              SizedBox(height: 12),
+                              Text(
+                                'This order is specifically assigned\nto another office boy',
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontStyle: FontStyle.italic,
+                                  fontSize: 13,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                   ],
                 ),
-                SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: isSpecificallyAssignedToMe
-                        ? () => _showSpecificallyAssignedActions(order)
-                        : () => _acceptOrder(order),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: organization!.primaryColorValue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: EdgeInsets.all(12),
-                    ),
-                    child: Text(
-                      isSpecificallyAssignedToMe
-                          ? 'Accept Assignment'
-                          : 'Accept Order',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ] else
-                Center(
-                  child: Text(
-                    'This order is specifically assigned to another office boy',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontStyle: FontStyle.italic,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-            ],
+              ),
+            ),
           ),
         ),
       ),
@@ -2329,16 +3022,20 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
           onTap: () => _showOrderDetailsBottomSheet(order),
           child: Container(
             margin: EdgeInsets.only(bottom: 12),
-            padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
               border: canTransfer
-                  ? Border.all(color: Colors.orange.withOpacity(0.5), width: 1)
-                  : null,
+                  ? Border.all(color: Colors.orange.withOpacity(0.5), width: 2)
+                  : Border.all(
+                      color: organization!.secondaryColorValue.withOpacity(0.2),
+                      width: 1,
+                    ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: canTransfer
+                      ? Colors.orange.withOpacity(0.15)
+                      : Colors.black.withOpacity(0.08),
                   blurRadius: 12,
                   offset: Offset(0, 4),
                 ),
@@ -2352,191 +3049,495 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                 ),
               ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: _getOrderStatusColor(
-                          order.status,
-                        ).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        order.status.toString().split('.').last.toUpperCase(),
-                        style: TextStyle(
-                          color: _getOrderStatusColor(order.status),
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _getOrderStatusColor(
+                            order.status,
+                          ).withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: _getOrderStatusColor(
+                              order.status,
+                            ).withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          order.status.toString().split('.').last.toUpperCase(),
+                          style: TextStyle(
+                            color: _getOrderStatusColor(order.status),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
-                    ),
-                    SizedBox(width: 8),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: _getOrderTypeColor(order.type).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        order.type == OrderType.internal
-                            ? 'Internal'
-                            : 'External',
-                        style: TextStyle(
-                          color: _getOrderTypeColor(order.type),
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    if (canTransfer) ...[
                       SizedBox(width: 8),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _getOrderTypeColor(
+                            order.type,
+                          ).withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: _getOrderTypeColor(
+                              order.type,
+                            ).withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          order.type == OrderType.internal
+                              ? 'Internal'
+                              : 'External',
+                          style: TextStyle(
+                            color: _getOrderTypeColor(order.type),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      if (canTransfer) ...[
+                        SizedBox(width: 8),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.orange.withOpacity(0.2),
+                                Colors.orange.withOpacity(0.1),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.orange.withOpacity(0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.swap_horiz,
+                                size: 12,
+                                color: Colors.orange,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                'Can Transfer',
+                                style: TextStyle(
+                                  color: Colors.orange[800],
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Container(
+                        height: 56,
+                        width: 56,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              _getOrderStatusColor(
+                                order.status,
+                              ).withOpacity(0.2),
+                              _getOrderStatusColor(
+                                order.status,
+                              ).withOpacity(0.1),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: _getOrderStatusColor(
+                              order.status,
+                            ).withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Center(
+                          child: SvgPicture.asset(
+                            order.status == OrderStatus.completed
+                                ? Assets.imagesSvgsComplete
+                                : order.status == OrderStatus.needsResponse
+                                ? Assets.imagesSvgsNote
+                                : order.type == OrderType.internal
+                                ? Assets.imagesSvgsCompany
+                                : Assets.imagesSvgsShoppingCart,
+                            color: _getOrderStatusColor(order.status),
+                            height: 28,
+                            fit: BoxFit.scaleDown,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              order.items.length == 1
+                                  ? order.items.first.name
+                                  : '${order.items.first.name} + ${order.items.length - 1} more',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Colors.grey[800],
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (order.description.isNotEmpty) ...[
+                              SizedBox(height: 4),
+                              Text(
+                                order.description,
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 13,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                            SizedBox(height: 6),
+                            Row(
+                              children: [
+                                if (order.isFromAdmin)
+                                  Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.admin_panel_settings,
+                                          size: 14,
+                                          color: Colors.orange,
+                                        ),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          'Boss',
+                                          style: TextStyle(
+                                            color: Colors.orange,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                else
+                                  Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: organization!.secondaryColorValue
+                                          .withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.person,
+                                          size: 14,
+                                          color: Colors.grey[700],
+                                        ),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          order.employeeName,
+                                          style: TextStyle(
+                                            color: Colors.grey[700],
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                if (order.price != null ||
+                                    order.finalPrice != null) ...[
+                                  Spacer(),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      if (order.price != null)
+                                        Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.green.withOpacity(
+                                              0.1,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            'Budget: ${order.price!.toStringAsFixed(0)}',
+                                            style: TextStyle(
+                                              color: Colors.green[700],
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      if (order.finalPrice != null) ...[
+                                        SizedBox(height: 2),
+                                        Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              colors: [
+                                                Colors.green.withOpacity(0.2),
+                                                Colors.green.withOpacity(0.1),
+                                              ],
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            'Spent: ${order.finalPrice!.toStringAsFixed(0)}',
+                                            style: TextStyle(
+                                              color: Colors.green[700],
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        size: 16,
+                        color: Colors.grey[400],
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
                       Container(
                         padding: EdgeInsets.symmetric(
                           horizontal: 8,
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.orange.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              Icons.swap_horiz,
+                              Icons.access_time,
                               size: 12,
-                              color: Colors.orange,
+                              color: Colors.grey[600],
                             ),
                             SizedBox(width: 4),
                             Text(
-                              'Can Transfer',
+                              _formatTime(order.createdAt),
                               style: TextStyle(
-                                color: Colors.orange,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[600],
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ],
                         ),
                       ),
                     ],
-                    Spacer(),
-                    Text(
-                      _formatTime(order.createdAt),
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 12),
-                Row(
-                  children: [
-                    Container(
-                      height: 50,
-                      width: 50,
-                      decoration: BoxDecoration(
-                        color: _getOrderStatusColor(
-                          order.status,
-                        ).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      child: SvgPicture.asset(
-                        order.status == OrderStatus.completed
-                            ? Assets.imagesSvgsComplete
-                            : order.status == OrderStatus.needsResponse
-                            ? Assets.imagesSvgsNote
-                            : order.type == OrderType.internal
-                            ? Assets.imagesSvgsCompany
-                            : Assets.imagesSvgsShoppingCart,
-                        color: _getOrderStatusColor(order.status),
-
-                        fit: BoxFit.scaleDown,
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            order.items.length == 1
-                                ? order.items.first.name
-                                : '${order.items.first.name} + ${order.items.length - 1} more',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          if (order.description.isNotEmpty)
-                            Text(
-                              order.description,
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 14,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.person,
-                                size: 16,
-                                color: Colors.grey[600],
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                order.employeeName,
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 12,
-                                ),
-                              ),
-                              if (order.price != null ||
-                                  order.finalPrice != null) ...[
-                                Spacer(),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    if (order.price != null)
-                                      Text(
-                                        'Budget: EGP ${order.price!.toStringAsFixed(0)}',
-                                        style: TextStyle(
-                                          color: Colors.blue,
-                                          fontSize: 11,
-                                        ),
-                                      ),
-                                    if (order.finalPrice != null)
-                                      Text(
-                                        'Spent: EGP ${order.finalPrice!.toStringAsFixed(0)}',
-                                        style: TextStyle(
-                                          color: Colors.green,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ],
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(
-                      Icons.arrow_forward_ios,
-                      size: 16,
-                      color: Colors.grey[400],
-                    ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildQuickStatusActions(OfficeOrder order) {
+    final bool canTransfer =
+        order.status == OrderStatus.pending &&
+        order.isSpecificallyAssigned &&
+        order.specificallyAssignedOfficeBoyId == currentUser!.id;
+
+    if (order.status == OrderStatus.completed ||
+        order.status == OrderStatus.cancelled) {
+      return SizedBox.shrink();
+    }
+
+    return Container(
+      margin: EdgeInsets.only(top: 12),
+      padding: EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: [
+          if (canTransfer)
+            Container(
+              margin: EdgeInsets.only(bottom: 8),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _showTransferBottomSheet(order),
+                  icon: Icon(Icons.swap_horiz, size: 18),
+                  label: Text('Transfer to Another Office Boy'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
+              ),
+            ),
+          Row(
+            children: [
+              if (order.status == OrderStatus.pending) ...[
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _showStatusChangeBottomSheet(
+                      order,
+                      OrderStatus.cancelled,
+                    ),
+                    icon: SvgPicture.asset(
+                      Assets.imagesSvgsCancell,
+                      color: Colors.red[700],
+                      height: 18,
+                    ),
+                    label: Text('Cancel'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red[50],
+                      foregroundColor: Colors.red[700],
+                      elevation: 0,
+                      padding: EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _showStatusChangeBottomSheet(
+                      order,
+                      OrderStatus.inProgress,
+                    ),
+                    icon: Icon(Icons.delivery_dining_rounded, size: 18),
+                    label: Text('Accept & Start'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+              if (order.status == OrderStatus.inProgress) ...[
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _showStatusChangeBottomSheet(
+                      order,
+                      OrderStatus.cancelled,
+                    ),
+                    icon: SvgPicture.asset(
+                      Assets.imagesSvgsCancell,
+                      color: Colors.red[700],
+                      height: 18,
+                    ),
+                    label: Text('Cancel'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red[50],
+                      foregroundColor: Colors.red[700],
+                      elevation: 0,
+                      padding: EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _showCompletionBottomSheet(order),
+                    icon: SvgPicture.asset(
+                      Assets.imagesSvgsComplete,
+                      color: Colors.white,
+                      height: 18,
+                    ),
+                    label: Text('Complete'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -2621,7 +3622,133 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
   }
 }
 
-// Particle Painter
+// Glass Bottom Sheet Widget
+class GlassBottomSheet extends StatelessWidget {
+  final double heightFactor;
+  final Widget child;
+
+  const GlassBottomSheet({
+    super.key,
+    required this.heightFactor,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * heightFactor,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(32),
+          topRight: Radius.circular(32),
+        ),
+      ),
+      child: Stack(
+        children: [
+          // Animated background
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withOpacity(0.1),
+                    Colors.white.withOpacity(0.05),
+                    Colors.white.withOpacity(0.025),
+                  ],
+                ),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(32),
+                  topRight: Radius.circular(32),
+                ),
+              ),
+              child: CustomPaint(painter: GlassParticlesPainter()),
+            ),
+          ),
+
+          // Glass morphism content
+          Positioned.fill(
+            child: ClipRRect(
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(32),
+                topRight: Radius.circular(32),
+              ),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.white.withOpacity(0.25),
+                        Colors.white.withOpacity(0.1),
+                        Colors.white.withOpacity(0.05),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(32),
+                      topRight: Radius.circular(32),
+                    ),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: child,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Glass Particles Painter
+class GlassParticlesPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.fill
+      ..color = Colors.white.withOpacity(0.05);
+
+    // Draw floating particles
+    for (int i = 0; i < 15; i++) {
+      final x = (i % 4) * size.width / 4 + math.Random().nextDouble() * 30;
+      final y = size.height * math.Random().nextDouble() * 0.8;
+      final radius = 1 + math.Random().nextDouble() * 2;
+
+      canvas.drawCircle(Offset(x, y), radius, paint);
+    }
+
+    // Draw gradient orbs
+    for (int i = 0; i < 5; i++) {
+      final centerX = (i + 0.5) * size.width / 5;
+      final centerY =
+          size.height * 0.3 + math.Random().nextDouble() * size.height * 0.4;
+      final radius = 20 + math.Random().nextDouble() * 30;
+
+      final gradient = RadialGradient(
+        colors: [Colors.white.withOpacity(0.03), Colors.transparent],
+      );
+
+      final rect = Rect.fromCircle(
+        center: Offset(centerX, centerY),
+        radius: radius,
+      );
+      paint.shader = gradient.createShader(rect);
+      canvas.drawCircle(Offset(centerX, centerY), radius, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+// Particle Painter for Header
 class AnimatedParticlesPainter extends CustomPainter {
   final double animationValue;
   final double rotationValue;

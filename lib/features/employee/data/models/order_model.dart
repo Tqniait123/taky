@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:taqy/features/employee/data/models/user_model.dart';
 
 enum OrderStatus { pending, inProgress, completed, cancelled, needsResponse }
 
@@ -45,9 +46,10 @@ class EmployeeOrder {
   final String id;
   final String employeeId;
   final String employeeName;
+  final UserRole employeeRole;
   final String officeBoyId;
   final String officeBoyName;
-  final List<OrderItem> items; // Changed from single item to list
+  final List<OrderItem> items;
   final String description;
   final OrderType type;
   final OrderStatus status;
@@ -57,7 +59,7 @@ class EmployeeOrder {
   final double? finalPrice;
   final String organizationId;
   final String? notes;
-  final String? employeeResponse; // Employee's response to unavailable items
+  final String? employeeResponse;
   final bool isSpecificallyAssigned;
   final String? specificallyAssignedOfficeBoyId;
 
@@ -65,6 +67,7 @@ class EmployeeOrder {
     required this.id,
     required this.employeeId,
     required this.employeeName,
+    required this.employeeRole, // Added to constructor
     required this.officeBoyId,
     required this.officeBoyName,
     required this.items,
@@ -82,8 +85,13 @@ class EmployeeOrder {
     this.specificallyAssignedOfficeBoyId,
   });
 
-  // Compatibility getter for single item (for existing code)
   String get item => items.isNotEmpty ? items.first.name : '';
+
+  // Getter to check if order is from admin
+  bool get isFromAdmin => employeeRole == UserRole.admin;
+
+  // Getter to check if order is from organization
+  bool get isFromOrganization => employeeRole == UserRole.admin;
 
   factory EmployeeOrder.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
@@ -94,14 +102,30 @@ class EmployeeOrder {
           .map((item) => OrderItem.fromMap(item))
           .toList();
     } else if (data['item'] != null) {
-      // Backward compatibility for single item
       itemsList = [OrderItem(name: data['item'])];
+    }
+
+    // Fix role parsing - check multiple possible field names
+    UserRole employeeRole;
+    if (data['employeeRole'] != null) {
+      employeeRole = UserRole.values.firstWhere(
+        (e) => e.toString().split('.').last == data['employeeRole'],
+        orElse: () => UserRole.employee,
+      );
+    } else if (data['role'] != null) {
+      employeeRole = UserRole.values.firstWhere(
+        (e) => e.toString().split('.').last == data['role'],
+        orElse: () => UserRole.employee,
+      );
+    } else {
+      employeeRole = UserRole.employee; // default
     }
 
     return EmployeeOrder(
       id: doc.id,
       employeeId: data['employeeId'] ?? '',
       employeeName: data['employeeName'] ?? '',
+      employeeRole: employeeRole, // Use the parsed role
       officeBoyId: data['officeBoyId'] ?? '',
       officeBoyName: data['officeBoyName'] ?? '',
       items: itemsList,
@@ -122,17 +146,22 @@ class EmployeeOrder {
       notes: data['notes'],
       employeeResponse: data['employeeResponse'],
       isSpecificallyAssigned: data['isSpecificallyAssigned'] ?? false,
-      specificallyAssignedOfficeBoyId: data['specificallyAssignedOfficeBoyId'],    );
+      specificallyAssignedOfficeBoyId: data['specificallyAssignedOfficeBoyId'],
+    );
   }
 
   Map<String, dynamic> toFirestore() {
     return {
       'employeeId': employeeId,
       'employeeName': employeeName,
+      'employeeRole': employeeRole
+          .toString()
+          .split('.')
+          .last, // Use consistent field name
       'officeBoyId': officeBoyId,
       'officeBoyName': officeBoyName,
       'items': items.map((item) => item.toMap()).toList(),
-      'item': item, // Keep for backward compatibility
+      'item': item,
       'description': description,
       'type': type.toString().split('.').last,
       'status': status.toString().split('.').last,
@@ -145,14 +174,16 @@ class EmployeeOrder {
       'organizationId': organizationId,
       'notes': notes,
       'employeeResponse': employeeResponse,
-   'isSpecificallyAssigned': isSpecificallyAssigned,
-      'specificallyAssignedOfficeBoyId': specificallyAssignedOfficeBoyId,    };
+      'isSpecificallyAssigned': isSpecificallyAssigned,
+      'specificallyAssignedOfficeBoyId': specificallyAssignedOfficeBoyId,
+    };
   }
 
   EmployeeOrder copyWith({
     String? id,
     String? employeeId,
     String? employeeName,
+    UserRole? employeeRole, // Added
     String? officeBoyId,
     String? officeBoyName,
     List<OrderItem>? items,
@@ -166,13 +197,14 @@ class EmployeeOrder {
     String? organizationId,
     String? notes,
     String? employeeResponse,
-  bool? isSpecificallyAssigned,
+    bool? isSpecificallyAssigned,
     String? specificallyAssignedOfficeBoyId,
   }) {
     return EmployeeOrder(
       id: id ?? this.id,
       employeeId: employeeId ?? this.employeeId,
       employeeName: employeeName ?? this.employeeName,
+      employeeRole: employeeRole ?? this.employeeRole, // Added
       officeBoyId: officeBoyId ?? this.officeBoyId,
       officeBoyName: officeBoyName ?? this.officeBoyName,
       items: items ?? this.items,
@@ -186,10 +218,11 @@ class EmployeeOrder {
       organizationId: organizationId ?? this.organizationId,
       notes: notes ?? this.notes,
       employeeResponse: employeeResponse ?? this.employeeResponse,
-  isSpecificallyAssigned:
+      isSpecificallyAssigned:
           isSpecificallyAssigned ?? this.isSpecificallyAssigned,
       specificallyAssignedOfficeBoyId:
           specificallyAssignedOfficeBoyId ??
-          this.specificallyAssignedOfficeBoyId,    );
+          this.specificallyAssignedOfficeBoyId,
+    );
   }
 }

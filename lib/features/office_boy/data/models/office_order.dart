@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:taqy/features/office_boy/data/models/office_user_model.dart';
 
 enum OrderStatus { pending, inProgress, completed, cancelled, needsResponse }
 
@@ -9,7 +10,7 @@ enum ItemStatus { pending, available, notAvailable }
 class OrderItem {
   final String name;
   final ItemStatus status;
-  final String? notes; // Office boy can add notes like "out of stock"
+  final String? notes;
 
   OrderItem({required this.name, this.status = ItemStatus.pending, this.notes});
 
@@ -45,9 +46,10 @@ class OfficeOrder {
   final String id;
   final String employeeId;
   final String employeeName;
+  final UserRole employeeRole;
   final String officeBoyId;
   final String officeBoyName;
-  final List<OrderItem> items; // Changed from single item to list
+  final List<OrderItem> items;
   final String description;
   final OrderType type;
   final OrderStatus status;
@@ -57,7 +59,7 @@ class OfficeOrder {
   final double? finalPrice;
   final String organizationId;
   final String? notes;
-  final String? employeeResponse; // Employee's response to unavailable items
+  final String? employeeResponse;
   final bool isSpecificallyAssigned;
   final String? specificallyAssignedOfficeBoyId;
 
@@ -65,6 +67,7 @@ class OfficeOrder {
     required this.id,
     required this.employeeId,
     required this.employeeName,
+    required this.employeeRole, // Added to constructor
     required this.officeBoyId,
     required this.officeBoyName,
     required this.items,
@@ -82,8 +85,13 @@ class OfficeOrder {
     this.specificallyAssignedOfficeBoyId,
   });
 
-  // Compatibility getter for single item (for existing code)
   String get item => items.isNotEmpty ? items.first.name : '';
+
+  // Getter to check if order is from admin
+  bool get isFromAdmin => employeeRole == UserRole.admin;
+
+  // Getter to check if order is from organization
+  bool get isFromOrganization => employeeRole == UserRole.admin;
 
   factory OfficeOrder.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
@@ -94,14 +102,30 @@ class OfficeOrder {
           .map((item) => OrderItem.fromMap(item))
           .toList();
     } else if (data['item'] != null) {
-      // Backward compatibility for single item
       itemsList = [OrderItem(name: data['item'])];
+    }
+
+    // Fix role parsing - check multiple possible field names
+    UserRole employeeRole;
+    if (data['employeeRole'] != null) {
+      employeeRole = UserRole.values.firstWhere(
+        (e) => e.toString().split('.').last == data['employeeRole'],
+        orElse: () => UserRole.employee,
+      );
+    } else if (data['role'] != null) {
+      employeeRole = UserRole.values.firstWhere(
+        (e) => e.toString().split('.').last == data['role'],
+        orElse: () => UserRole.employee,
+      );
+    } else {
+      employeeRole = UserRole.employee; // default
     }
 
     return OfficeOrder(
       id: doc.id,
       employeeId: data['employeeId'] ?? '',
       employeeName: data['employeeName'] ?? '',
+      employeeRole: employeeRole, // Use the parsed role
       officeBoyId: data['officeBoyId'] ?? '',
       officeBoyName: data['officeBoyName'] ?? '',
       items: itemsList,
@@ -130,10 +154,14 @@ class OfficeOrder {
     return {
       'employeeId': employeeId,
       'employeeName': employeeName,
+      'employeeRole': employeeRole
+          .toString()
+          .split('.')
+          .last, // Use consistent field name
       'officeBoyId': officeBoyId,
       'officeBoyName': officeBoyName,
       'items': items.map((item) => item.toMap()).toList(),
-      'item': item, // Keep for backward compatibility
+      'item': item,
       'description': description,
       'type': type.toString().split('.').last,
       'status': status.toString().split('.').last,
@@ -155,6 +183,7 @@ class OfficeOrder {
     String? id,
     String? employeeId,
     String? employeeName,
+    UserRole? employeeRole, // Added
     String? officeBoyId,
     String? officeBoyName,
     List<OrderItem>? items,
@@ -175,6 +204,7 @@ class OfficeOrder {
       id: id ?? this.id,
       employeeId: employeeId ?? this.employeeId,
       employeeName: employeeName ?? this.employeeName,
+      employeeRole: employeeRole ?? this.employeeRole, // Added
       officeBoyId: officeBoyId ?? this.officeBoyId,
       officeBoyName: officeBoyName ?? this.officeBoyName,
       items: items ?? this.items,

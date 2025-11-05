@@ -360,52 +360,56 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
   }
 
   void _showEditOrderBottomSheet(EmployeeOrder order) {
-  if (order.status != OrderStatus.pending &&
-      order.status != OrderStatus.needsResponse) {
-    showErrorToast(
-      context,
-      'Only pending orders or orders needing response can be edited.',
+    if (order.status != OrderStatus.pending &&
+        order.status != OrderStatus.needsResponse) {
+      showErrorToast(
+        context,
+        'Only pending orders or orders needing response can be edited.',
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => EditOrderBottomSheet(
+        order: order,
+        organization: organization!,
+        officeBoys: officeBoys,
+        onOrderUpdated: (updatedOrder) async {
+          try {
+            await _firebaseService.updateDocument(
+              'orders',
+              updatedOrder.id,
+              updatedOrder.toFirestore(),
+            );
+
+            // Show appropriate message based on original status
+            if (order.status == OrderStatus.needsResponse) {
+              showSuccessToast(
+                context,
+                'Changes submitted! Order sent back for processing.',
+              );
+            } else {
+              showSuccessToast(context, 'Order updated successfully!');
+            }
+          } catch (e) {
+            showErrorToast(context, 'Failed to update order: $e');
+          }
+        },
+        onOrderDeleted: (orderId) async {
+          try {
+            await _firebaseService.deleteDocument('orders', orderId);
+            showSuccessToast(context, 'Order deleted successfully!');
+          } catch (e) {
+            showErrorToast(context, 'Failed to delete order: $e');
+          }
+        },
+      ),
     );
-    return;
   }
 
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (context) => EditOrderBottomSheet(
-      order: order,
-      organization: organization!,
-      officeBoys: officeBoys,
-      onOrderUpdated: (updatedOrder) async {
-        try {
-          await _firebaseService.updateDocument(
-            'orders',
-            updatedOrder.id,
-            updatedOrder.toFirestore(),
-          );
-          
-          // Show appropriate message based on original status
-          if (order.status == OrderStatus.needsResponse) {
-            showSuccessToast(context, 'Changes submitted! Order sent back for processing.');
-          } else {
-            showSuccessToast(context, 'Order updated successfully!');
-          }
-        } catch (e) {
-          showErrorToast(context, 'Failed to update order: $e');
-        }
-      },
-      onOrderDeleted: (orderId) async {
-        try {
-          await _firebaseService.deleteDocument('orders', orderId);
-          showSuccessToast(context, 'Order deleted successfully!');
-        } catch (e) {
-          showErrorToast(context, 'Failed to delete order: $e');
-        }
-      },
-    ),
-  );
-}
   void _showResponseBottomSheet(EmployeeOrder order) {
     showModalBottomSheet(
       context: context,
@@ -3605,6 +3609,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
       id: '',
       employeeId: currentUser!.id,
       employeeName: currentUser!.name,
+      employeeRole: currentUser!.role,
       officeBoyId: availableOfficeBoys.first.id,
       officeBoyName: availableOfficeBoys.first.name,
       items: itemsToProcess,

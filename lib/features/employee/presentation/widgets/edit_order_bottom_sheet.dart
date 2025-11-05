@@ -89,7 +89,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
     _selectedType = widget.order.type;
     _selectedOfficeBoy = widget.officeBoys.firstWhere(
       (officeBoy) => officeBoy.id == widget.order.officeBoyId,
-      // orElse: () => widget.officeBoys.isNotEmpty ? widget.officeBoys.first : null,
+      orElse: () => widget.officeBoys.first,
     );
   }
 

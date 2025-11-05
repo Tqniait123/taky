@@ -1367,6 +1367,8 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
         id: '',
         employeeId: widget.employee.id,
         employeeName: widget.employee.name,
+        employeeRole: widget.employee.role,
+        
         officeBoyId: _selectedOfficeBoy!.id,
         officeBoyName: _selectedOfficeBoy!.name,
         items: items,
