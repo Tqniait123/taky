@@ -1,9 +1,17 @@
+import 'dart:math' as math;
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lottie/lottie.dart';
 import 'package:taqy/config/routes/routes.dart';
 import 'package:taqy/core/services/firebase_service.dart';
+import 'package:taqy/core/static/app_assets.dart';
+import 'package:taqy/core/theme/colors.dart';
+import 'package:taqy/core/utils/dialogs/error_toast.dart';
+import 'package:taqy/core/utils/widgets/app_images.dart';
 import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
 import 'package:taqy/features/office_boy/data/models/office_order.dart';
 import 'package:taqy/features/office_boy/data/models/office_organization.dart';
@@ -11,7 +19,6 @@ import 'package:taqy/features/office_boy/data/models/office_user_model.dart';
 import 'package:taqy/features/office_boy/presentation/widgets/office_profile.dart';
 import 'package:taqy/features/office_boy/presentation/widgets/order_details.dart';
 
-// MAIN OFFICE BOY LAYOUT
 class OfficeBoyLayout extends StatefulWidget {
   const OfficeBoyLayout({super.key});
 
@@ -22,7 +29,6 @@ class OfficeBoyLayout extends StatefulWidget {
 class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
     with TickerProviderStateMixin {
   final FirebaseService _firebaseService = FirebaseService();
-  late TabController _tabController;
 
   OfficeUserModel? currentUser;
   OfficeOrganization? organization;
@@ -32,16 +38,119 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
   bool isLoading = true;
   String? errorMessage;
 
+  // Animation Controllers
+  late AnimationController _backgroundController;
+  late AnimationController _pulseController;
+  late AnimationController _slideController;
+  late AnimationController _fadeController;
+  late AnimationController _scaleController;
+  late AnimationController _rotationController;
+  late AnimationController _shimmerController;
+
+  // Animations
+  late Animation<double> _backgroundGradient;
+  late Animation<double> _pulseAnimation;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _rotationAnimation;
+  late Animation<double> _shimmerAnimation;
+
+  int _selectedIndex = 0;
+  double _scrollOffset = 0.0;
+  bool _isHeaderCollapsed = false;
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _scrollController.addListener(_onScroll);
+    _initializeAnimations();
     _loadData();
+  }
+
+  void _initializeAnimations() {
+    _backgroundController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    );
+    _backgroundGradient = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _backgroundController, curve: Curves.easeInOut),
+    );
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
+    _slideController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(parent: _slideController, curve: Curves.elasticOut),
+        );
+
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeOut));
+
+    _scaleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
+    );
+
+    _rotationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 10),
+    );
+    _rotationAnimation = Tween<double>(begin: 0.0, end: 2 * math.pi).animate(
+      CurvedAnimation(parent: _rotationController, curve: Curves.linear),
+    );
+
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+    _shimmerAnimation = Tween<double>(begin: -1.0, end: 2.0).animate(
+      CurvedAnimation(parent: _shimmerController, curve: Curves.easeInOut),
+    );
+
+    _backgroundController.repeat(reverse: true);
+    _pulseController.repeat(reverse: true);
+    _rotationController.repeat();
+    _shimmerController.repeat();
+  }
+
+  void _onScroll() {
+    setState(() {
+      _scrollOffset = _scrollController.offset;
+      _isHeaderCollapsed = _scrollOffset > 100;
+    });
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _scrollController.dispose();
+    _backgroundController.dispose();
+    _pulseController.dispose();
+    _slideController.dispose();
+    _fadeController.dispose();
+    _scaleController.dispose();
+    _rotationController.dispose();
+    _shimmerController.dispose();
     super.dispose();
   }
 
@@ -52,22 +161,20 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         errorMessage = null;
       });
 
-      final user = _firebaseService.currentUser;
-      if (user == null) {
-        throw Exception('User not authenticated');
-      }
+      _slideController.reset();
+      _fadeController.reset();
+      _scaleController.reset();
 
-      // Get current user data
+      final user = _firebaseService.currentUser;
+      if (user == null) throw Exception('User not authenticated');
+
       final userDoc = await _firebaseService.getDocument('users', user.uid);
-      if (!userDoc.exists) {
-        throw Exception('User data not found');
-      }
+      if (!userDoc.exists) throw Exception('User data not found');
 
       setState(() {
         currentUser = OfficeUserModel.fromFirestore(userDoc);
       });
 
-      // Load organization data
       final orgDoc = await _firebaseService.getDocument(
         'organizations',
         currentUser!.organizationId,
@@ -76,13 +183,19 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         setState(() {
           organization = OfficeOrganization.fromFirestore(orgDoc);
         });
+
+        ColorManager().updateColors(
+          organization!.primaryColorValue,
+          organization!.secondaryColorValue,
+        );
       }
 
-      // Load other office boys
       await _loadOtherOfficeBoys();
-
-      // Load orders
       _loadOrders();
+
+      _slideController.forward();
+      _fadeController.forward();
+      _scaleController.forward();
     } catch (e) {
       setState(() {
         errorMessage = e.toString();
@@ -97,58 +210,16 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
           .collection('users')
           .where('organizationId', isEqualTo: currentUser!.organizationId)
           .where('role', isEqualTo: 'officeBoy')
-          .where(
-            FieldPath.documentId,
-            isNotEqualTo: currentUser!.id,
-          ) // Use document ID instead of 'id' field
           .get();
 
       setState(() {
         otherOfficeBoys = snapshot.docs
+            .where((doc) => doc.id != currentUser!.id)
             .map((doc) => OfficeUserModel.fromFirestore(doc))
             .toList();
       });
-
-      print('Loaded ${otherOfficeBoys.length} other office boys');
     } catch (e) {
       print('Error loading other office boys: $e');
-
-      // Fallback to manual filtering if index error persists
-      if (e.toString().contains('index')) {
-        await _loadOtherOfficeBoysFallback();
-      } else {
-        _showErrorToast('Failed to load other office boys: $e');
-      }
-    }
-  }
-
-  Future<void> _loadOtherOfficeBoysFallback() async {
-    try {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .where('organizationId', isEqualTo: currentUser!.organizationId)
-          .get();
-
-      final filteredOfficeBoys = snapshot.docs
-          .where((doc) {
-            final data = doc.data();
-            final isOfficeBoy = data['role'] == 'officeBoy';
-            final isNotCurrentUser = doc.id != currentUser!.id;
-            return isOfficeBoy && isNotCurrentUser;
-          })
-          .map((doc) => OfficeUserModel.fromFirestore(doc))
-          .toList();
-
-      setState(() {
-        otherOfficeBoys = filteredOfficeBoys;
-      });
-
-      print(
-        'Loaded ${otherOfficeBoys.length} other office boys (fallback method)',
-      );
-    } catch (e) {
-      print('Error in fallback method: $e');
-      _showErrorToast('Failed to load other office boys');
     }
   }
 
@@ -165,7 +236,6 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                     .map((doc) => OfficeOrder.fromFirestore(doc))
                     .toList();
 
-                // My orders (assigned to me or specifically assigned to me)
                 myOrders =
                     allOrders
                         .where(
@@ -178,19 +248,13 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                         .toList()
                       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-                // Available orders logic
                 availableOrders = allOrders.where((order) {
-                  // Order must be pending
                   if (order.status != OrderStatus.pending) return false;
-
-                  // If order is specifically assigned, only show to that office boy
                   if (order.isSpecificallyAssigned) {
                     return order.specificallyAssignedOfficeBoyId ==
                             currentUser!.id &&
                         order.officeBoyId != currentUser!.id;
                   }
-
-                  // If not specifically assigned, show to all office boys
                   return order.officeBoyId != currentUser!.id;
                 }).toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
@@ -211,10 +275,10 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
 
   Future<void> _acceptOrder(OfficeOrder order) async {
     try {
-      // Check if this order was specifically assigned to someone else
       if (order.isSpecificallyAssigned &&
           order.specificallyAssignedOfficeBoyId != currentUser!.id) {
-        _showErrorToast(
+        showErrorToast(
+          context,
           'This order is specifically assigned to another office boy',
         );
         return;
@@ -232,9 +296,9 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         updatedOrder.toFirestore(),
       );
 
-      _showSuccessToast('Order accepted successfully!');
+      showSuccessToast(context, 'Order accepted successfully!');
     } catch (e) {
-      _showErrorToast('Failed to accept order: $e');
+      showErrorToast(context, 'Failed to accept order: $e');
     }
   }
 
@@ -251,13 +315,12 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         updatedOrder.toFirestore(),
       );
 
-      _showSuccessToast('Order rejected and made available for others');
+      showSuccessToast(context, 'Order rejected and made available for others');
     } catch (e) {
-      _showErrorToast('Failed to reject order: $e');
+      showErrorToast(context, 'Failed to reject order: $e');
     }
   }
 
-  // NEW: Transfer order to another specific office boy
   Future<void> _transferOrder(
     OfficeOrder order,
     String newOfficeBoyId,
@@ -277,16 +340,15 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         updatedOrder.toFirestore(),
       );
 
-      _showSuccessToast('Order transferred to $newOfficeBoyName');
+      showSuccessToast(context, 'Order transferred to $newOfficeBoyName');
     } catch (e) {
-      _showErrorToast('Failed to transfer order: $e');
+      showErrorToast(context, 'Failed to transfer order: $e');
     }
   }
 
-  // NEW: Simplified transfer dialog
   void _showTransferDialog(OfficeOrder order) {
     if (otherOfficeBoys.isEmpty) {
-      _showErrorToast('No other office boys available for transfer');
+      showErrorToast(context, 'No other office boys available for transfer');
       return;
     }
 
@@ -312,7 +374,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                   ),
                 ),
                 title: Text(officeBoy.name),
-                subtitle: Text(officeBoy.email ?? ''),
+                subtitle: Text(officeBoy.email),
                 onTap: () {
                   Navigator.pop(context);
                   _showTransferConfirmation(order, officeBoy);
@@ -331,7 +393,6 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
     );
   }
 
-  // NEW: Confirmation for transferring to specific office boy
   void _showTransferConfirmation(
     OfficeOrder order,
     OfficeUserModel newOfficeBoy,
@@ -413,16 +474,13 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         'updatedAt': Timestamp.fromDate(DateTime.now()),
       };
 
-      // Check if all items are processed
       final bool allItemsProcessed = updatedItems.every(
         (item) => item.status != ItemStatus.pending,
       );
-
       final bool hasUnavailableItems = updatedItems.any(
         (item) => item.status == ItemStatus.notAvailable,
       );
 
-      // Update order status based on item statuses
       if (allItemsProcessed &&
           hasUnavailableItems &&
           order.status == OrderStatus.inProgress) {
@@ -433,9 +491,9 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
       }
 
       await _firebaseService.updateDocument('orders', order.id, updateData);
-      _showSuccessToast('Item status updated successfully');
+      showSuccessToast(context, 'Item status updated successfully');
     } catch (e) {
-      _showErrorToast('Failed to update item status: $e');
+      showErrorToast(context, 'Failed to update item status: $e');
     }
   }
 
@@ -463,9 +521,9 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
       }
 
       await _firebaseService.updateDocument('orders', order.id, updateData);
-      _showSuccessToast('Order ${status.toString().split('.').last}!');
+      showSuccessToast(context, 'Order ${status.toString().split('.').last}!');
     } catch (e) {
-      _showErrorToast('Failed to update order: $e');
+      showErrorToast(context, 'Failed to update order: $e');
     }
   }
 
@@ -668,7 +726,6 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
             children: [
               Text('Mark this order as completed?'),
               SizedBox(height: 16),
-
               if (order.type == OrderType.external) ...[
                 TextField(
                   controller: priceController,
@@ -684,7 +741,6 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                 ),
                 SizedBox(height: 12),
               ],
-
               TextField(
                 controller: notesController,
                 decoration: InputDecoration(
@@ -707,12 +763,8 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
               onPressed: () async {
                 if (order.type == OrderType.external &&
                     priceController.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Please enter the final price'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
+                  showErrorToast(context, 'Please enter the final price');
+
                   return;
                 }
 
@@ -722,12 +774,8 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                   try {
                     finalPrice = double.parse(priceController.text.trim());
                   } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Please enter a valid price'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
+                    showErrorToast(context, 'Please enter a valid price');
+
                     return;
                   }
                 }
@@ -858,19 +906,65 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
   }
 
   void _showProfileBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => OfficeBoyProfileBottomSheet(
-        user: currentUser!,
-        organization: organization!,
-        onLogout: () => _handleLogout(),
-        onProfileUpdated: (updatedUser) {
-          setState(() {
-            currentUser = updatedUser;
-          });
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return OfficeBoyProfileBottomSheet(
+            user: currentUser!,
+            organization: organization!,
+            onLogout: () => _handleLogout(),
+            onProfileUpdated: (updatedUser) {
+              setState(() {
+                currentUser = updatedUser;
+              });
+            },
+          );
         },
+        transitionDuration: const Duration(milliseconds: 600),
+        reverseTransitionDuration: const Duration(milliseconds: 400),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(0.0, 1.0);
+          const end = Offset.zero;
+          const curve = Curves.easeOutCubic;
+
+          var tween = Tween(
+            begin: begin,
+            end: end,
+          ).chain(CurveTween(curve: curve));
+
+          var scaleAnimation = Tween<double>(
+            begin: 0.9,
+            end: 1.0,
+          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut));
+
+          var fadeAnimation = Tween<double>(
+            begin: 0.0,
+            end: 1.0,
+          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut));
+
+          return Stack(
+            children: [
+              FadeTransition(
+                opacity: fadeAnimation,
+                child: Container(color: Colors.black.withOpacity(0.5)),
+              ),
+              SlideTransition(
+                position: animation.drive(tween),
+                child: FadeTransition(
+                  opacity: fadeAnimation,
+                  child: ScaleTransition(
+                    scale: scaleAnimation,
+                    alignment: Alignment.bottomCenter,
+                    child: child,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+        opaque: false,
+        barrierDismissible: true,
+        barrierColor: Colors.transparent,
       ),
     );
   }
@@ -892,8 +986,8 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         onStatusUpdate: _updateOrderWithNotes,
         onTransferRequest: canTransfer
             ? () {
-                Navigator.pop(context); // Close details sheet
-                _showTransferDialog(order); // Show transfer dialog
+                Navigator.pop(context);
+                _showTransferDialog(order);
               }
             : null,
       ),
@@ -907,28 +1001,16 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         context.go(Routes.login);
       }
     } catch (e) {
-      _showErrorToast('Failed to logout: $e');
+      showErrorToast(context, 'Failed to logout: $e');
     }
-  }
-
-  void _showErrorToast(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
-    );
-  }
-
-  void _showSuccessToast(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.green),
-    );
   }
 
   Color _getOrderTypeColor(OrderType type) {
     switch (type) {
       case OrderType.internal:
-        return Colors.blue;
+        return organization?.secondaryColorValue ?? Colors.blue;
       case OrderType.external:
-        return Colors.orange;
+        return organization?.primaryColorValue ?? Colors.orange;
     }
   }
 
@@ -962,389 +1044,293 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (isLoading) {
-      return Scaffold(
-        backgroundColor: Colors.grey[50],
-        body: Center(
-          child: CircularProgressIndicator(
-            color: organization?.primaryColorValue ?? Colors.blue,
-          ),
+  Widget _buildAnimatedHeader() {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.5,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            organization?.primaryColorValue ?? AppColors.primary,
+            organization?.secondaryColorValue ?? AppColors.secondary,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-      );
-    }
-
-    if (errorMessage != null || currentUser == null || organization == null) {
-      return Scaffold(
-        backgroundColor: Colors.grey[50],
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, size: 64, color: Colors.red),
-              SizedBox(height: 16),
-              Text(
-                'Error loading data',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      ),
+      child: SafeArea(
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: AnimatedBuilder(
+                animation: _backgroundController,
+                builder: (context, child) => CustomPaint(
+                  painter: AnimatedParticlesPainter(
+                    _backgroundGradient.value,
+                    _rotationAnimation.value,
+                  ),
+                ),
               ),
-              SizedBox(height: 8),
-              Text(errorMessage ?? 'Unknown error'),
-              SizedBox(height: 16),
-              ElevatedButton(onPressed: _loadData, child: Text('Retry')),
+            ),
+            Positioned(
+              top: 20,
+              left: 20,
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: Duration(milliseconds: 800),
+                curve: Curves.elasticOut,
+                builder: (context, value, child) => Transform.scale(
+                  scale: value,
+                  child: AnimatedContainer(
+                    duration: Duration(milliseconds: 300),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: AnimatedBuilder(
+                        animation: _pulseController,
+                        builder: (context, child) => Transform.scale(
+                          scale: _pulseAnimation.value,
+                          child: SvgPicture.asset(
+                            Assets.imagesSvgsNotification,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      onPressed: _loadData,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 20,
+              right: 20,
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: Duration(milliseconds: 300),
+                curve: Curves.elasticOut,
+                builder: (context, value, child) => Transform.scale(
+                  scale: value,
+                  child: AnimatedContainer(
+                    duration: Duration(milliseconds: 300),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: AnimatedBuilder(
+                        animation: _rotationController,
+                        builder: (context, child) => Transform.rotate(
+                          angle: _rotationAnimation.value * 0.1,
+                          child: SvgPicture.asset(
+                            Assets.imagesSvgsSetting,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      onPressed: _showProfileBottomSheet,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Center(
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: Duration(milliseconds: 1200),
+                curve: Curves.elasticOut,
+                builder: (context, value, child) => Transform.scale(
+                  scale: value,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      AnimatedBuilder(
+                        animation: _pulseController,
+                        builder: (context, child) => Transform.scale(
+                          scale: _pulseAnimation.value,
+                          child: Container(
+                            height: 80,
+                            width: 80,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.3),
+                                width: 2,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.white.withOpacity(0.2),
+                                  blurRadius: 20,
+                                  spreadRadius: 2,
+                                ),
+                              ],
+                            ),
+                            child: organization?.logoUrl != null
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(18),
+                                    child: Image.network(
+                                      organization!.logoUrl!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              Center(
+                                                child: Icon(
+                                                  Icons.delivery_dining,
+                                                  color: Colors.white,
+                                                  size: 40,
+                                                ),
+                                              ),
+                                    ),
+                                  )
+                                : Center(
+                                    child: Icon(
+                                      Icons.delivery_dining,
+                                      color: Colors.white,
+                                      size: 40,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 50.0, end: 0.0),
+                        duration: Duration(milliseconds: 1000),
+                        curve: Curves.easeOutBack,
+                        builder: (context, value, child) => Transform.translate(
+                          offset: Offset(0, value),
+                          child: Text(
+                            'Welcome, ${currentUser?.name ?? ''}',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.8),
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                      _buildAnimatedNavigationBar(),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnimatedNavigationBar() {
+    final navItems = [
+      {'title': 'Available', 'icon': Assets.imagesSvgsPending},
+      {'title': 'My Orders', 'icon': Assets.imagesSvgsOrder},
+      {'title': 'Statistics', 'icon': Icons.analytics},
+    ];
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 1400),
+      curve: Curves.elasticOut,
+      builder: (context, value, child) => Transform.scale(
+        scale: value,
+        child: Container(
+          margin: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: AppColors.glass,
+            borderRadius: BorderRadius.circular(25),
+            border: Border.all(color: AppColors.glassStroke, width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: Offset(0, 8),
+              ),
             ],
           ),
-        ),
-      );
-    }
+          child: Row(
+            children: navItems.asMap().entries.map((entry) {
+              final index = entry.key;
+              final item = entry.value;
+              final isSelected = _selectedIndex == index;
 
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        title: Row(
-          children: [
-            Container(
-              height: 40,
-              width: 40,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    organization!.primaryColorValue,
-                    organization!.secondaryColorValue,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(Icons.delivery_dining, color: Colors.white, size: 20),
-            ),
-            SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  organization!.name,
-                  style: TextStyle(
-                    color: Colors.black87,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  'Hi, ${currentUser!.name}',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                ),
-              ],
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh, color: Colors.black87),
-            onPressed: _loadData,
-          ),
-          IconButton(
-            icon: Icon(Icons.person, color: Colors.black87),
-            onPressed: _showProfileBottomSheet,
-          ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: organization!.primaryColorValue,
-          labelColor: organization!.primaryColorValue,
-          unselectedLabelColor: Colors.grey[600],
-          tabs: [
-            Tab(icon: Icon(Icons.pending_actions), text: 'Available'),
-            Tab(icon: Icon(Icons.assignment), text: 'My Orders'),
-            Tab(icon: Icon(Icons.analytics), text: 'Stats'),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildAvailableOrdersTab(),
-          _buildMyOrdersTab(),
-          _buildStatsTab(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAvailableOrdersTab() {
-    return RefreshIndicator(
-      onRefresh: _loadData,
-      child: SingleChildScrollView(
-        physics: AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Container(
-              padding: EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    organization!.primaryColorValue,
-                    organization!.secondaryColorValue,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Center(
-                child: Column(
-                  children: [
-                    Icon(Icons.delivery_dining, color: Colors.white, size: 40),
-                    SizedBox(height: 8),
-                    Text(
-                      'Available Orders',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      'Accept orders from employees',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SizedBox(height: 24),
-
-            // Stats Row
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    'Available',
-                    availableOrders.length.toString(),
-                    Icons.pending_actions,
-                    Colors.orange,
-                  ),
-                ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatCard(
-                    'My Active',
-                    myOrders
-                        .where((o) => o.status != OrderStatus.completed)
-                        .length
-                        .toString(),
-                    Icons.assignment,
-                    Colors.blue,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 24),
-
-            // Available Orders List
-            if (availableOrders.isEmpty)
-              _buildEmptyState('No available orders', Icons.inbox)
-            else
-              ...availableOrders.map(
-                (order) => _buildAvailableOrderCard(order),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMyOrdersTab() {
-    // Filter today's orders from my orders
-    final todayMyOrders = myOrders
-        .where(
-          (o) =>
-              o.createdAt.day == DateTime.now().day &&
-              o.createdAt.month == DateTime.now().month &&
-              o.createdAt.year == DateTime.now().year,
-        )
-        .toList();
-
-    // Calculate today's budget and final prices for my orders
-    final todayBudgetPrice = todayMyOrders
-        .where((o) => o.price != null)
-        .fold<double>(0.0, (sum, o) => sum + o.price!);
-
-    final todayFinalPrice = todayMyOrders
-        .where((o) => o.finalPrice != null)
-        .fold<double>(0.0, (sum, o) => sum + o.finalPrice!);
-
-    return RefreshIndicator(
-      onRefresh: _loadData,
-      child: SingleChildScrollView(
-        physics: AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Today's Financial Overview for My Orders
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: EdgeInsets.all(16),
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() => _selectedIndex = index);
+                    _slideController.forward();
+                    _fadeController.forward();
+                  },
+                  child: AnimatedContainer(
+                    duration: Duration(milliseconds: 400),
+                    curve: Curves.easeInOutCubic,
+                    margin: EdgeInsets.all(2),
+                    padding: EdgeInsets.symmetric(vertical: 12),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.blue[400]!, Colors.blue[600]!],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.blue.withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
+                      gradient: isSelected
+                          ? LinearGradient(
+                              colors: [
+                                Colors.white.withOpacity(.1),
+                                Colors.white.withOpacity(.2),
+                                Colors.white.withOpacity(.3),
+                              ],
+                            )
+                          : null,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: Colors.white.withOpacity(0.2),
+                                blurRadius: 10,
+                                spreadRadius: 1,
+                              ),
+                            ]
+                          : null,
                     ),
                     child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.account_balance_wallet,
-                          color: Colors.white,
-                          size: 24,
+                        AnimatedScale(
+                          scale: isSelected ? 1.2 : 1.0,
+                          duration: Duration(milliseconds: 300),
+                          curve: Curves.elasticOut,
+                          child: navItems[index]['icon'] is String
+                              ? SvgPicture.asset(
+                                  item['icon'] as String,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : Colors.white.withOpacity(0.7),
+                                )
+                              : Icon(
+                                  item['icon'] as IconData,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : Colors.white.withOpacity(0.7),
+                                ),
                         ),
-                        SizedBox(height: 8),
-                        Text(
-                          'EGP ${todayBudgetPrice.toStringAsFixed(0)}',
+                        SizedBox(height: 4),
+                        AnimatedDefaultTextStyle(
+                          duration: Duration(milliseconds: 300),
                           style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: isSelected
+                                ? Colors.white
+                                : Colors.white.withOpacity(0.7),
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                            fontSize: 11,
                           ),
-                        ),
-                        Text(
-                          'Today\'s Budget',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.white.withOpacity(0.9),
-                          ),
+                          child: Text(item['title'] as String),
                         ),
                       ],
                     ),
                   ),
                 ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Container(
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.green[400]!, Colors.green[600]!],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.green.withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.monetization_on,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'EGP ${todayFinalPrice.toStringAsFixed(0)}',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Text(
-                          'Today\'s Spent',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.white.withOpacity(0.9),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            SizedBox(height: 24),
-
-            // Status Summary
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    'In Progress',
-                    myOrders
-                        .where((o) => o.status == OrderStatus.inProgress)
-                        .length
-                        .toString(),
-                    Icons.hourglass_empty,
-                    Colors.blue,
-                  ),
-                ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatCard(
-                    'Completed',
-                    myOrders
-                        .where((o) => o.status == OrderStatus.completed)
-                        .length
-                        .toString(),
-                    Icons.check_circle,
-                    Colors.green,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 24),
-
-            Text(
-              'My Orders',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            SizedBox(height: 16),
-
-            if (myOrders.isEmpty)
-              _buildEmptyState('No orders assigned', Icons.assignment)
-            else
-              ...myOrders.map(
-                (order) => Column(
-                  children: [
-                    _buildMyOrderCard(order),
-                    if (order.status == OrderStatus.inProgress)
-                      _buildItemManagementSection(order),
-                    _buildQuickStatusActions(order),
-                    SizedBox(height: 16),
-                  ],
-                ),
-              ),
-          ],
+              );
+            }).toList(),
+          ),
         ),
       ),
     );
@@ -1355,16 +1341,23 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
       margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.blue[50],
+        color: organization?.secondaryColorValue.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue[200]!),
+        border: Border.all(
+          color: organization!.secondaryColorValue.withOpacity(0.3),
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.checklist, color: Colors.blue[700], size: 20),
+              Icon(
+                Icons.checklist,
+                color: organization!.secondaryColorValue,
+                size: 20,
+              ),
               SizedBox(width: 8),
               Text(
                 'Item Availability Check',
@@ -1467,6 +1460,427 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
     );
   }
 
+  Widget _buildAnimatedEmptyState(String message, IconData icon) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 1000),
+      curve: Curves.elasticOut,
+      builder: (context, value, child) => Center(
+        child: Column(
+          children: [
+            Lottie.asset(
+              'assets/images/lottie/Package Delivery.json',
+              fit: BoxFit.contain,
+              repeat: true,
+              animate: true,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: AnimatedBuilder(
+            animation: _shimmerController,
+            builder: (context, child) => ShimmerLoading(
+              shimmerAnimation: _shimmerAnimation,
+              primaryColor:
+                  organization?.primaryColorValue ?? AppColors.primary,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (errorMessage != null || currentUser == null || organization == null) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.0, end: 1.0),
+          duration: const Duration(milliseconds: 800),
+          curve: Curves.elasticOut,
+          builder: (context, value, child) => Transform.scale(
+            scale: value.clamp(0.1, 1.0),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AnimatedBuilder(
+                    animation: _pulseController,
+                    builder: (context, child) => Transform.scale(
+                      scale: _pulseAnimation.value.clamp(0.5, 1.5),
+                      child: Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: AppColors.error,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Error loading data',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 8),
+                  Text(errorMessage ?? 'Unknown error'),
+                  SizedBox(height: 16),
+                  AnimatedContainer(
+                    duration: Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    child: ElevatedButton(
+                      onPressed: _loadData,
+                      child: Text('Retry'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: RefreshIndicator(
+        onRefresh: _loadData,
+        color: organization!.primaryColorValue,
+        strokeWidth: 2,
+        backgroundColor: Colors.white.withOpacity(0.8),
+        elevation: 0,
+        child: SingleChildScrollView(
+          physics: AlwaysScrollableScrollPhysics(),
+          controller: _scrollController,
+          child: AnimatedBuilder(
+            animation: Listenable.merge([
+              _fadeController,
+              _slideController,
+              _scaleController,
+            ]),
+            builder: (context, child) => FadeTransition(
+              opacity: AlwaysStoppedAnimation(
+                _fadeAnimation.value.clamp(0.0, 1.0),
+              ),
+              child: SlideTransition(
+                position: _slideAnimation,
+                child: ScaleTransition(
+                  scale: AlwaysStoppedAnimation(
+                    _scaleAnimation.value.clamp(0.1, 1.0),
+                  ),
+                  child: Stack(
+                    children: [
+                      AnimatedPositioned(
+                        duration: const Duration(milliseconds: 500),
+                        curve: Curves.easeInOut,
+                        top: _isHeaderCollapsed ? -50 : 0,
+                        left: 0,
+                        right: 0,
+                        child: _buildAnimatedHeader(),
+                      ),
+                      Column(
+                        children: [
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.42,
+                          ),
+                          AnimatedContainer(
+                            duration: Duration(milliseconds: 600),
+                            curve: Curves.easeOutCubic,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(24),
+                                topRight: Radius.circular(24),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 20,
+                                  offset: Offset(0, -5),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              children: [
+                                SizedBox(height: 16),
+                                _buildSelectedContent(),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSelectedContent() {
+    return AnimatedSwitcher(
+      duration: Duration(milliseconds: 600),
+      transitionBuilder: (Widget child, Animation<double> animation) {
+        return FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.3, 0),
+              end: Offset.zero,
+            ).animate(animation),
+            child: child,
+          ),
+        );
+      },
+      child: Container(
+        key: ValueKey(_selectedIndex),
+        child: _getSelectedContent(),
+      ),
+    );
+  }
+
+  Widget _getSelectedContent() {
+    switch (_selectedIndex) {
+      case 0:
+        return _buildAvailableOrdersTab();
+      case 1:
+        return _buildMyOrdersTab();
+      case 2:
+        return _buildStatsTab();
+      default:
+        return _buildAvailableOrdersTab();
+    }
+  }
+
+  Widget _buildAvailableOrdersTab() {
+    return Padding(
+      padding: EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  'Available',
+                  availableOrders.length.toString(),
+                  Assets.imagesSvgsPending,
+                  organization!.primaryColorValue,
+                  organization!.secondaryColorValue,
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  'My Active',
+                  myOrders
+                      .where((o) => o.status != OrderStatus.completed)
+                      .length
+                      .toString(),
+                  Assets.imagesSvgsCoffee,
+                  organization!.primaryColorValue,
+                  organization!.secondaryColorValue,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 24),
+          if (availableOrders.isEmpty)
+            _buildAnimatedEmptyState('No available orders', Icons.inbox)
+          else
+            ...availableOrders.asMap().entries.map(
+              (entry) => _buildAvailableOrderCard(entry.value, entry.key),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMyOrdersTab() {
+    final todayMyOrders = myOrders
+        .where(
+          (o) =>
+              o.createdAt.day == DateTime.now().day &&
+              o.createdAt.month == DateTime.now().month &&
+              o.createdAt.year == DateTime.now().year,
+        )
+        .toList();
+
+    final todayBudgetPrice = todayMyOrders
+        .where((o) => o.price != null)
+        .fold<double>(0.0, (sum, o) => sum + o.price!);
+
+    final todayFinalPrice = todayMyOrders
+        .where((o) => o.finalPrice != null)
+        .fold<double>(0.0, (sum, o) => sum + o.finalPrice!);
+
+    return Padding(
+      padding: EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.blue[400]!, Colors.blue[600]!],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.blue.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.account_balance_wallet,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'EGP ${todayBudgetPrice.toStringAsFixed(0)}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        'Today\'s Budget',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Container(
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.green[400]!, Colors.green[600]!],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.green.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.monetization_on,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'EGP ${todayFinalPrice.toStringAsFixed(0)}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        'Today\'s Spent',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  'In Progress',
+                  myOrders
+                      .where((o) => o.status == OrderStatus.inProgress)
+                      .length
+                      .toString(),
+                  Assets.imagesSvgsPending,
+                  organization!.primaryColorValue,
+                  organization!.secondaryColorValue,
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  'Completed',
+                  myOrders
+                      .where((o) => o.status == OrderStatus.completed)
+                      .length
+                      .toString(),
+                  Assets.imagesSvgsComplete,
+                  organization!.primaryColorValue,
+                  organization!.secondaryColorValue,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 24),
+          Text(
+            'My Orders',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[700],
+            ),
+          ),
+          SizedBox(height: 16),
+          if (myOrders.isEmpty)
+            _buildAnimatedEmptyState('No orders assigned', Icons.assignment)
+          else
+            ...myOrders.asMap().entries.map(
+              (entry) => Column(
+                children: [
+                  _buildMyOrderCard(entry.value, entry.key),
+                  if (entry.value.status == OrderStatus.inProgress)
+                    _buildItemManagementSection(entry.value),
+                  _buildQuickStatusActions(entry.value),
+                  SizedBox(height: 16),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildStatsTab() {
     final totalOrders = myOrders.length;
     final completedOrders = myOrders
@@ -1482,7 +1896,6 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         .where((o) => o.status == OrderStatus.needsResponse)
         .length;
 
-    // Filter today's orders
     final todayOrders = myOrders
         .where(
           (o) =>
@@ -1492,7 +1905,6 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         )
         .toList();
 
-    // Calculate today's budget and final prices
     final todayBudgetPrice = todayOrders
         .where((o) => o.price != null)
         .fold<double>(0.0, (sum, o) => sum + o.price!);
@@ -1501,347 +1913,176 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         .where((o) => o.finalPrice != null)
         .fold<double>(0.0, (sum, o) => sum + o.finalPrice!);
 
-    return RefreshIndicator(
-      onRefresh: _loadData,
-      child: SingleChildScrollView(
-        physics: AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'My Statistics',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            SizedBox(height: 16),
-
-            // Today's Financial Overview - Two containers side by side
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.blue[400]!, Colors.blue[600]!],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.blue.withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.account_balance_wallet,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'EGP ${todayBudgetPrice.toStringAsFixed(0)}',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Text(
-                          'Today\'s Budget',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.white.withOpacity(0.9),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Container(
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.green[400]!, Colors.green[600]!],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.green.withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.monetization_on,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'EGP ${todayFinalPrice.toStringAsFixed(0)}',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Text(
-                          'Today\'s Spent',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.white.withOpacity(0.9),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            SizedBox(height: 24),
-
-            GridView.count(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1.1,
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              children: [
-                _buildStatCard(
-                  'Total Orders',
-                  totalOrders.toString(),
-                  Icons.receipt_long,
-                  organization!.primaryColorValue,
-                ),
-                _buildStatCard(
-                  'Today\'s Orders',
-                  todayOrders.length.toString(),
-                  Icons.today,
-                  Colors.blue,
-                ),
-                _buildStatCard(
-                  'Completed',
-                  completedOrders.toString(),
-                  Icons.check_circle,
-                  Colors.green,
-                ),
-                _buildStatCard(
-                  'In Progress',
-                  inProgressOrders.toString(),
-                  Icons.hourglass_empty,
-                  Colors.orange,
-                ),
-                _buildStatCard(
-                  'Needs Response',
-                  needsResponseOrders.toString(),
-                  Icons.help_outline,
-                  Colors.purple,
-                ),
-                _buildStatCard(
-                  'Cancelled',
-                  cancelledOrders.toString(),
-                  Icons.cancel,
-                  Colors.red,
-                ),
-              ],
-            ),
-
-            SizedBox(height: 24),
-
-            // Performance Card
-            Container(
-              padding: EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    'Performance',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Completion Rate'),
-                      Text(
-                        totalOrders > 0
-                            ? '${((completedOrders / totalOrders) * 100).toStringAsFixed(1)}%'
-                            : '0%',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Cancellation Rate'),
-                      Text(
-                        totalOrders > 0
-                            ? '${((cancelledOrders / totalOrders) * 100).toStringAsFixed(1)}%'
-                            : '0%',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.red,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Today\'s Budget vs Spent'),
-                      Text(
-                        todayBudgetPrice > 0
-                            ? '${((todayFinalPrice / todayBudgetPrice) * 100).toStringAsFixed(1)}%'
-                            : '0%',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: todayFinalPrice <= todayBudgetPrice
-                              ? Colors.green
-                              : Colors.red,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            SizedBox(height: 24),
-
-            // Order Status Breakdown
-            Container(
-              padding: EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Order Status Breakdown',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  _buildStatusRow(
-                    'Completed',
-                    completedOrders,
-                    totalOrders,
-                    Colors.green,
-                  ),
-                  _buildStatusRow(
-                    'In Progress',
-                    inProgressOrders,
-                    totalOrders,
-                    Colors.orange,
-                  ),
-                  _buildStatusRow(
-                    'Needs Response',
-                    needsResponseOrders,
-                    totalOrders,
-                    Colors.purple,
-                  ),
-                  _buildStatusRow(
-                    'Cancelled',
-                    cancelledOrders,
-                    totalOrders,
-                    Colors.red,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusRow(String label, int count, int total, Color color) {
-    final percentage = total > 0 ? (count / total) * 100 : 0.0;
-
     return Padding(
-      padding: EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.all(16),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            'My Statistics',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[700],
+            ),
+          ),
+          SizedBox(height: 16),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                label,
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              Expanded(
+                child: Container(
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.blue[400]!, Colors.blue[600]!],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.blue.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.account_balance_wallet,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'EGP ${todayBudgetPrice.toStringAsFixed(0)}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        'Today\'s Budget',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              Text(
-                '$count (${percentage.toStringAsFixed(1)}%)',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: color,
+              SizedBox(width: 12),
+              Expanded(
+                child: Container(
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.green[400]!, Colors.green[600]!],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.green.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.monetization_on,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'EGP ${todayFinalPrice.toStringAsFixed(0)}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        'Today\'s Spent',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
-          SizedBox(height: 4),
-          LinearProgressIndicator(
-            value: total > 0 ? count / total : 0,
-            backgroundColor: Colors.grey[200],
-            valueColor: AlwaysStoppedAnimation<Color>(color),
+          SizedBox(height: 24),
+          GridView.count(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 1.1,
+            shrinkWrap: true,
+            padding: EdgeInsets.zero,
+            physics: NeverScrollableScrollPhysics(),
+            children: [
+              _buildStatCard(
+                'Total Orders',
+                totalOrders.toString(),
+                Assets.imagesSvgsOrder,
+                organization!.primaryColorValue,
+                organization!.secondaryColorValue,
+              ),
+              _buildStatCard(
+                'Today\'s Orders',
+                todayOrders.length.toString(),
+                Assets.imagesSvgsCalendar,
+                organization!.primaryColorValue,
+                organization!.secondaryColorValue,
+              ),
+              _buildStatCard(
+                'Completed',
+                completedOrders.toString(),
+                Assets.imagesSvgsComplete,
+                organization!.primaryColorValue,
+                organization!.secondaryColorValue,
+              ),
+              _buildStatCard(
+                'In Progress',
+                inProgressOrders.toString(),
+                Assets.imagesSvgsPending,
+                organization!.primaryColorValue,
+                organization!.secondaryColorValue,
+              ),
+              _buildStatCard(
+                'Needs Response',
+                needsResponseOrders.toString(),
+                Assets.imagesSvgsNote,
+                organization!.primaryColorValue,
+                organization!.secondaryColorValue,
+              ),
+              _buildStatCard(
+                'Cancelled',
+                cancelledOrders.toString(),
+                Assets.imagesSvgsCancell,
+                organization!.primaryColorValue,
+                organization!.secondaryColorValue,
+              ),
+            ],
           ),
+          SizedBox(height: 24),
         ],
       ),
     );
   }
 
-  Widget _buildAvailableOrderCard(OfficeOrder order) {
+  Widget _buildAvailableOrderCard(OfficeOrder order, int index) {
     final isSpecificallyAssignedToMe =
         order.isSpecificallyAssigned &&
         order.specificallyAssignedOfficeBoyId == currentUser!.id;
@@ -1850,380 +2091,85 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         order.isSpecificallyAssigned &&
         order.specificallyAssignedOfficeBoyId != currentUser!.id;
 
-    return Container(
-      margin: EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-        border: isSpecificallyAssignedToMe
-            ? Border.all(color: Colors.orange, width: 2)
-            : null,
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Assignment status badge
-                if (isSpecificallyAssignedToMe)
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.star, size: 12, color: Colors.orange),
-                        SizedBox(width: 4),
-                        Text(
-                          'Assigned to you',
-                          style: TextStyle(
-                            color: Colors.orange,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                if (isSpecificallyAssignedToOther)
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.person, size: 12, color: Colors.grey),
-                        SizedBox(width: 4),
-                        Text(
-                          'Assigned to specific office boy',
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                if (isSpecificallyAssignedToMe ||
-                    !isSpecificallyAssignedToOther) ...[
-                  if (isSpecificallyAssignedToMe ||
-                      isSpecificallyAssignedToOther)
-                    SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _getOrderTypeColor(
-                            order.type,
-                          ).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          order.type == OrderType.internal
-                              ? 'Internal'
-                              : 'External',
-                          style: TextStyle(
-                            color: _getOrderTypeColor(order.type),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      if (order.items.length > 1) ...[
-                        SizedBox(width: 8),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            '${order.items.length} items',
-                            style: TextStyle(
-                              color: Colors.grey[700],
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                      Spacer(),
-                      Text(
-                        _formatTime(order.createdAt),
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 12),
-
-                  Row(
-                    children: [
-                      Container(
-                        height: 50,
-                        width: 50,
-                        decoration: BoxDecoration(
-                          color: _getOrderTypeColor(
-                            order.type,
-                          ).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                        child: Icon(
-                          order.type == OrderType.internal
-                              ? Icons.home
-                              : Icons.store,
-                          color: _getOrderTypeColor(order.type),
-                        ),
-                      ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              order.items.length == 1
-                                  ? order.items.first.name
-                                  : '${order.items.first.name} + ${order.items.length - 1} more',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                            if (order.description.isNotEmpty)
-                              Text(
-                                order.description,
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 14,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.person,
-                                  size: 16,
-                                  color: Colors.grey[600],
-                                ),
-                                SizedBox(width: 4),
-                                Text(
-                                  order.employeeName,
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                if (order.price != null) ...[
-                                  Spacer(),
-                                  Text(
-                                    'EGP ${order.price!.toStringAsFixed(0)}',
-                                    style: TextStyle(
-                                      color: Colors.green,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  // Show items preview for multi-item orders
-                  if (order.items.length > 1) ...[
-                    SizedBox(height: 12),
-                    Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Items:',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                              fontSize: 12,
-                              color: Colors.grey[700],
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          ...order.items
-                              .take(3)
-                              .map(
-                                (item) => Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 1),
-                                  child: Text(
-                                    '• ${item.name}',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          if (order.items.length > 3)
-                            Text(
-                              '... and ${order.items.length - 3} more items',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[500],
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ] else
-                  // Show limited info for orders assigned to others
-                  Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Center(
-                      child: Text(
-                        'This order is specifically assigned to another office boy',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontStyle: FontStyle.italic,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-
-          // Action buttons
-          if (isSpecificallyAssignedToMe || !order.isSpecificallyAssigned)
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: isSpecificallyAssignedToMe
-                    ? () => _showSpecificallyAssignedActions(order)
-                    : () => _acceptOrder(order),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: organization!.primaryColorValue,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(12),
-                      bottomRight: Radius.circular(12),
-                    ),
-                  ),
-                  padding: EdgeInsets.all(16),
-                ),
-                child: Text(
-                  isSpecificallyAssignedToMe
-                      ? 'Accept Assignment'
-                      : 'Accept Order',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            )
-          else if (isSpecificallyAssignedToOther)
-            Container(
-              padding: EdgeInsets.all(16),
-              child: Text(
-                'Waiting for assigned office boy to respond',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 12,
-                  fontStyle: FontStyle.italic,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMyOrderCard(OfficeOrder order) {
-    final bool canTransfer =
-        order.status == OrderStatus.pending &&
-        order.isSpecificallyAssigned &&
-        order.specificallyAssignedOfficeBoyId == currentUser!.id;
-
-    return Container(
-      margin: EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-        border: canTransfer
-            ? Border.all(color: Colors.orange.withOpacity(0.5), width: 1)
-            : null,
-      ),
-      child: Column(
-        children: [
-          InkWell(
-            onTap: () => _showOrderDetailsBottomSheet(order),
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 400 + (index * 50)),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) => Transform.translate(
+        offset: Offset(50 * (1 - value), 0),
+        child: Container(
+          margin: EdgeInsets.only(bottom: 12),
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+            border: isSpecificallyAssignedToMe
+                ? Border.all(color: Colors.orange, width: 2)
+                : null,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 12,
+                offset: Offset(0, 4),
+              ),
+            ],
+            image: DecorationImage(
+              image: AssetImage(AppImages.homePattern),
+              fit: BoxFit.fill,
+              colorFilter: ColorFilter.mode(
+                organization!.secondaryColorValue.withOpacity(.5),
+                BlendMode.modulate,
+              ),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isSpecificallyAssignedToMe)
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  margin: EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _getOrderStatusColor(
-                            order.status,
-                          ).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          order.status.toString().split('.').last.toUpperCase(),
-                          style: TextStyle(
-                            color: _getOrderStatusColor(order.status),
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
+                      Icon(Icons.star, size: 12, color: Colors.orange),
+                      SizedBox(width: 4),
+                      Text(
+                        'Assigned to you',
+                        style: TextStyle(
+                          color: Colors.orange,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
+                    ],
+                  ),
+                ),
+              if (!isSpecificallyAssignedToOther) ...[
+                Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _getOrderTypeColor(order.type).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        order.type == OrderType.internal
+                            ? 'Internal'
+                            : 'External',
+                        style: TextStyle(
+                          color: _getOrderTypeColor(order.type),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    if (order.items.length > 1) ...[
                       SizedBox(width: 8),
                       Container(
                         padding: EdgeInsets.symmetric(
@@ -2231,190 +2177,366 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: _getOrderTypeColor(
-                            order.type,
-                          ).withOpacity(0.1),
+                          color: Colors.grey.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          order.type == OrderType.internal
-                              ? 'Internal'
-                              : 'External',
+                          '${order.items.length} items',
                           style: TextStyle(
-                            color: _getOrderTypeColor(order.type),
-                            fontSize: 10,
+                            color: Colors.grey[700],
+                            fontSize: 12,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
-                      if (order.items.length > 1) ...[
-                        SizedBox(width: 8),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            '${order.items.length} items',
+                    ],
+                    Spacer(),
+                    Text(
+                      _formatTime(order.createdAt),
+                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 12),
+                Row(
+                  children: [
+                    Container(
+                      height: 50,
+                      width: 50,
+                      decoration: BoxDecoration(
+                        color: _getOrderTypeColor(order.type).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      child: SvgPicture.asset(
+                        order.type == OrderType.internal
+                            ? Assets.imagesSvgsCompany
+                            : Assets.imagesSvgsShoppingCart,
+                        color: _getOrderTypeColor(order.type),
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            order.items.length == 1
+                                ? order.items.first.name
+                                : '${order.items.first.name} + ${order.items.length - 1} more',
                             style: TextStyle(
-                              color: Colors.grey[700],
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
                             ),
                           ),
-                        ),
-                      ],
-                      // Transfer badge for transferable orders
-                      if (canTransfer) ...[
-                        SizedBox(width: 8),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
+                          if (order.description.isNotEmpty)
+                            Text(
+                              order.description,
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          Row(
                             children: [
                               Icon(
-                                Icons.swap_horiz,
-                                size: 12,
-                                color: Colors.orange,
+                                Icons.person,
+                                size: 16,
+                                color: Colors.grey[600],
                               ),
                               SizedBox(width: 4),
                               Text(
-                                'Can Transfer',
+                                order.employeeName,
                                 style: TextStyle(
-                                  color: Colors.orange,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey[600],
+                                  fontSize: 12,
                                 ),
                               ),
+                              if (order.price != null) ...[
+                                Spacer(),
+                                Text(
+                                  'EGP ${order.price!.toStringAsFixed(0)}',
+                                  style: TextStyle(
+                                    color: Colors.green,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
-                        ),
-                      ],
-                      Spacer(),
-                      Text(
-                        _formatTime(order.createdAt),
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                        ],
                       ),
-                    ],
+                    ),
+                  ],
+                ),
+                SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: isSpecificallyAssignedToMe
+                        ? () => _showSpecificallyAssignedActions(order)
+                        : () => _acceptOrder(order),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: organization!.primaryColorValue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: EdgeInsets.all(12),
+                    ),
+                    child: Text(
+                      isSpecificallyAssignedToMe
+                          ? 'Accept Assignment'
+                          : 'Accept Order',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                  SizedBox(height: 12),
+                ),
+              ] else
+                Center(
+                  child: Text(
+                    'This order is specifically assigned to another office boy',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontStyle: FontStyle.italic,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-                  Row(
-                    children: [
-                      Container(
-                        height: 50,
-                        width: 50,
-                        decoration: BoxDecoration(
-                          color: _getOrderStatusColor(
-                            order.status,
-                          ).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                        child: Icon(
-                          order.status == OrderStatus.completed
-                              ? Icons.check_circle
-                              : order.status == OrderStatus.needsResponse
-                              ? Icons.help_outline
-                              : order.type == OrderType.internal
-                              ? Icons.home
-                              : Icons.store,
+  Widget _buildMyOrderCard(OfficeOrder order, int index) {
+    final bool canTransfer =
+        order.status == OrderStatus.pending &&
+        order.isSpecificallyAssigned &&
+        order.specificallyAssignedOfficeBoyId == currentUser!.id;
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 400 + (index * 50)),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) => Transform.translate(
+        offset: Offset(50 * (1 - value), 0),
+        child: GestureDetector(
+          onTap: () => _showOrderDetailsBottomSheet(order),
+          child: Container(
+            margin: EdgeInsets.only(bottom: 12),
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: canTransfer
+                  ? Border.all(color: Colors.orange.withOpacity(0.5), width: 1)
+                  : null,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 12,
+                  offset: Offset(0, 4),
+                ),
+              ],
+              image: DecorationImage(
+                image: AssetImage(AppImages.homePattern),
+                fit: BoxFit.fill,
+                colorFilter: ColorFilter.mode(
+                  organization!.secondaryColorValue.withOpacity(.5),
+                  BlendMode.modulate,
+                ),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _getOrderStatusColor(
+                          order.status,
+                        ).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        order.status.toString().split('.').last.toUpperCase(),
+                        style: TextStyle(
                           color: _getOrderStatusColor(order.status),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                    ),
+                    SizedBox(width: 8),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _getOrderTypeColor(order.type).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        order.type == OrderType.internal
+                            ? 'Internal'
+                            : 'External',
+                        style: TextStyle(
+                          color: _getOrderTypeColor(order.type),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    if (canTransfer) ...[
+                      SizedBox(width: 8),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              order.items.length == 1
-                                  ? order.items.first.name
-                                  : '${order.items.first.name} + ${order.items.length - 1} more',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
+                            Icon(
+                              Icons.swap_horiz,
+                              size: 12,
+                              color: Colors.orange,
                             ),
-                            if (order.description.isNotEmpty)
-                              Text(
-                                order.description,
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 14,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
+                            SizedBox(width: 4),
+                            Text(
+                              'Can Transfer',
+                              style: TextStyle(
+                                color: Colors.orange,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
                               ),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.person,
-                                  size: 16,
-                                  color: Colors.grey[600],
-                                ),
-                                SizedBox(width: 4),
-                                Text(
-                                  order.employeeName,
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                // Show both prices when available
-                                if (order.price != null ||
-                                    order.finalPrice != null) ...[
-                                  Spacer(),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      if (order.price != null)
-                                        Text(
-                                          'Budget: EGP ${order.price!.toStringAsFixed(0)}',
-                                          style: TextStyle(
-                                            color: Colors.blue,
-                                            fontSize: 11,
-                                          ),
-                                        ),
-                                      if (order.finalPrice != null)
-                                        Text(
-                                          'Spent: EGP ${order.finalPrice!.toStringAsFixed(0)}',
-                                          style: TextStyle(
-                                            color: Colors.green,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ],
-                              ],
                             ),
                           ],
                         ),
                       ),
-                      Icon(
-                        Icons.arrow_forward_ios,
-                        size: 16,
-                        color: Colors.grey[400],
-                      ),
                     ],
-                  ),
-                ],
-              ),
+                    Spacer(),
+                    Text(
+                      _formatTime(order.createdAt),
+                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 12),
+                Row(
+                  children: [
+                    Container(
+                      height: 50,
+                      width: 50,
+                      decoration: BoxDecoration(
+                        color: _getOrderStatusColor(
+                          order.status,
+                        ).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      child: SvgPicture.asset(
+                        order.status == OrderStatus.completed
+                            ? Assets.imagesSvgsComplete
+                            : order.status == OrderStatus.needsResponse
+                            ? Assets.imagesSvgsNote
+                            : order.type == OrderType.internal
+                            ? Assets.imagesSvgsCompany
+                            : Assets.imagesSvgsShoppingCart,
+                        color: _getOrderStatusColor(order.status),
+
+                        fit: BoxFit.scaleDown,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            order.items.length == 1
+                                ? order.items.first.name
+                                : '${order.items.first.name} + ${order.items.length - 1} more',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          if (order.description.isNotEmpty)
+                            Text(
+                              order.description,
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.person,
+                                size: 16,
+                                color: Colors.grey[600],
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                order.employeeName,
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 12,
+                                ),
+                              ),
+                              if (order.price != null ||
+                                  order.finalPrice != null) ...[
+                                Spacer(),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    if (order.price != null)
+                                      Text(
+                                        'Budget: EGP ${order.price!.toStringAsFixed(0)}',
+                                        style: TextStyle(
+                                          color: Colors.blue,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    if (order.finalPrice != null)
+                                      Text(
+                                        'Spent: EGP ${order.finalPrice!.toStringAsFixed(0)}',
+                                        style: TextStyle(
+                                          color: Colors.green,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      size: 16,
+                      color: Colors.grey[400],
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -2422,62 +2544,194 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
   Widget _buildStatCard(
     String title,
     String value,
-    IconData icon,
+    String icon,
     Color color,
+    Color textColor,
   ) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: EdgeInsets.all(12),
-            decoration: BoxDecoration(
+    return AnimatedBuilder(
+      animation: _pulseController,
+      builder: (context, child) => Container(
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
               color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(30),
+              blurRadius:
+                  8 + (math.sin(_pulseController.value * 2 * math.pi) * 2),
+              spreadRadius: 1,
+              offset: Offset(0, 2),
             ),
-            child: Icon(icon, color: color, size: 24),
-          ),
-          SizedBox(height: 12),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
+          ],
+          image: DecorationImage(
+            image: AssetImage(AppImages.pattern),
+            colorFilter: ColorFilter.mode(
+              textColor.withOpacity(.5),
+              BlendMode.modulate,
             ),
           ),
-          Text(title, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(String message, IconData icon) {
-    return Center(
-      child: Container(
-        padding: EdgeInsets.all(40),
+        ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Icon(icon, size: 64, color: Colors.grey[300]),
-            SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: textColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Transform.rotate(
+                    angle: math.sin(_pulseController.value * 2 * math.pi) * 0.1,
+                    child: SvgPicture.asset(icon, color: color, height: 20),
+                  ),
+                ),
+                ShaderMask(
+                  shaderCallback: (bounds) => LinearGradient(
+                    colors: [textColor, color],
+                  ).createShader(bounds),
+                  child: Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 8),
             Text(
-              message,
-              style: TextStyle(color: Colors.grey[600], fontSize: 16),
+              title,
+              style: TextStyle(
+                color: AppColors.onSurfaceVariant,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+// Particle Painter
+class AnimatedParticlesPainter extends CustomPainter {
+  final double animationValue;
+  final double rotationValue;
+
+  AnimatedParticlesPainter(this.animationValue, this.rotationValue);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withOpacity(0.1)
+      ..style = PaintingStyle.fill;
+
+    for (int i = 0; i < 15; i++) {
+      final x =
+          (size.width * 0.2) +
+          (i * size.width * 0.05) +
+          (math.sin(animationValue * 2 * math.pi + i) * 20);
+      final y =
+          (size.height * 0.3) +
+          (math.cos(animationValue * 2 * math.pi + i * 0.5) * 30);
+      final radius = 2 + math.sin(animationValue * 2 * math.pi + i) * 1.5;
+
+      canvas.drawCircle(Offset(x, y), radius.abs(), paint);
+    }
+
+    final gradient = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          Colors.white.withOpacity(0.0),
+          Colors.white.withOpacity(0.1),
+          Colors.white.withOpacity(0.0),
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
+      ..strokeWidth = 2;
+
+    for (int i = 0; i < 3; i++) {
+      final path = Path();
+      final startY = size.height * (0.2 + i * 0.15);
+
+      path.moveTo(-50, startY);
+
+      for (double x = -50; x <= size.width + 50; x += 10) {
+        final y =
+            startY +
+            math.sin((x * 0.01) + (animationValue * 2 * math.pi) + (i * 2)) *
+                15;
+        path.lineTo(x, y);
+      }
+
+      canvas.drawPath(path, gradient);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+// Shimmer Loading
+class ShimmerLoading extends StatelessWidget {
+  final Animation<double> shimmerAnimation;
+  final Color primaryColor;
+
+  const ShimmerLoading({
+    super.key,
+    required this.shimmerAnimation,
+    required this.primaryColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              colors: [Colors.grey[300]!, Colors.grey[100]!, Colors.grey[300]!],
+              stops: [
+                (shimmerAnimation.value - 1).clamp(0.0, 1.0),
+                shimmerAnimation.value.clamp(0.0, 1.0),
+                (shimmerAnimation.value + 1).clamp(0.0, 1.0),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        SizedBox(height: 16),
+        AnimatedContainer(
+          duration: Duration(milliseconds: 300),
+          width: 120,
+          height: 16,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            gradient: LinearGradient(
+              colors: [Colors.grey[300]!, Colors.grey[100]!, Colors.grey[300]!],
+              stops: [
+                (shimmerAnimation.value - 1).clamp(0.0, 1.0),
+                shimmerAnimation.value.clamp(0.0, 1.0),
+                (shimmerAnimation.value + 1).clamp(0.0, 1.0),
+              ],
+            ),
+          ),
+        ),
+        SizedBox(height: 24),
+        CircularProgressIndicator(color: primaryColor, strokeWidth: 3),
+      ],
     );
   }
 }
