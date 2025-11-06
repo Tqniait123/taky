@@ -29,7 +29,13 @@ enum HistoryFilter { all, completed, cancelled, none }
 HistoryFilter _currentHistoryFilter = HistoryFilter.all;
 
 class EmployeeLayout extends StatefulWidget {
-  const EmployeeLayout({super.key});
+  const EmployeeLayout({
+    super.key,
+    this.showAdminSwitch = false,
+    this.onSwitchToAdmin,
+  });
+  final bool showAdminSwitch;
+  final VoidCallback? onSwitchToAdmin;
 
   @override
   State<EmployeeLayout> createState() => _EmployeeLayoutState();
@@ -588,6 +594,118 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                           ),
                         ),
                         onPressed: _loadData,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            if (widget.showAdminSwitch)
+              Positioned(
+                top: 20,
+                left: 20,
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: Duration(milliseconds: 600),
+                  curve: Curves.elasticOut,
+                  builder: (context, value, child) => Transform.scale(
+                    scale: value,
+                    child: GestureDetector(
+                      onTap: widget.onSwitchToAdmin,
+                      child: AnimatedContainer(
+                        duration: Duration(milliseconds: 400),
+                        curve: Curves.easeInOutCubic,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.glass,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: AppColors.glassStroke,
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 15,
+                              offset: Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.white.withOpacity(.2),
+                                    Colors.white.withOpacity(.3),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    widget.showAdminSwitch
+                                        ? Icons.person
+                                        : Icons.admin_panel_settings,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                  SizedBox(width: 2),
+                                  SvgPicture.asset(
+                                    Assets.imagesSvgsComplete,
+                                    color: Colors.greenAccent,
+                                    height: 14,
+                                    width: 14,
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            SizedBox(width: 4),
+
+                            // Arrow indicator
+                            AnimatedBuilder(
+                              animation: _pulseController,
+                              builder: (context, child) => Transform.scale(
+                                scale: _pulseAnimation.value,
+                                child: Icon(
+                                  Icons.arrow_forward_rounded,
+                                  color: Colors.white.withOpacity(0.8),
+                                  size: 16,
+                                ),
+                              ),
+                            ),
+
+                            SizedBox(width: 4),
+
+                            // Target view indicator
+                            Container(
+                              padding: EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Icon(
+                                widget.showAdminSwitch
+                                    ? Icons.admin_panel_settings
+                                    : Icons.person,
+                                color: Colors.white.withOpacity(0.9),
+                                size: 18,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

@@ -732,14 +732,22 @@ class _AdminLayoutState extends State<AdminLayout>
     }
 
     if (isEmployeeView) {
-      return Scaffold(
-        body: Stack(
-          children: [
-            EmployeeLayout(),
-            Positioned(top: 65, left: 20, child: _buildViewSwitchButton()),
-          ],
-        ),
-      );
+      // return Scaffold(
+      //   body: Stack(
+      //     children: [
+      //       EmployeeLayout(),
+      //       Positioned(top: 65, left: 20, child: _buildViewSwitchButton()),
+
+      //     ],
+      //   ),
+      // );
+
+      if (isEmployeeView) {
+        return EmployeeLayout(
+          showAdminSwitch: true,
+          onSwitchToAdmin: _toggleView,
+        );
+      }
     }
 
     return Scaffold(
