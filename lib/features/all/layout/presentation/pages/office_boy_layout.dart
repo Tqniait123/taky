@@ -238,54 +238,71 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
   }
 
   void _loadOrders() {
-    FirebaseFirestore.instance
-        .collection('orders')
-        .where('organizationId', isEqualTo: currentUser!.organizationId)
-        .snapshots()
-        .listen(
-          (snapshot) {
-            if (mounted) {
-              setState(() {
-                final allOrders = snapshot.docs
-                    .map((doc) => OfficeOrder.fromFirestore(doc))
-                    .toList();
+  FirebaseFirestore.instance
+      .collection('orders')
+      .where('organizationId', isEqualTo: currentUser!.organizationId)
+      .snapshots()
+      .listen(
+        (snapshot) {
+          if (mounted) {
+            setState(() {
+              final allOrders = snapshot.docs
+                  .map((doc) => OfficeOrder.fromFirestore(doc))
+                  .toList();
 
-                myOrders =
-                    allOrders
-                        .where(
-                          (order) =>
-                              order.officeBoyId == currentUser!.id ||
-                              (order.isSpecificallyAssigned &&
-                                  order.specificallyAssignedOfficeBoyId ==
-                                      currentUser!.id),
-                        )
-                        .toList()
-                      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+              // Get current date for filtering
+              final now = DateTime.now();
+              final today = DateTime(now.year, now.month, now.day);
 
-                availableOrders = allOrders.where((order) {
-                  if (order.status != OrderStatus.pending) return false;
-                  if (order.isSpecificallyAssigned) {
-                    return order.specificallyAssignedOfficeBoyId ==
-                            currentUser!.id &&
-                        order.officeBoyId != currentUser!.id;
-                  }
-                  return order.officeBoyId != currentUser!.id;
-                }).toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+              // Get TODAY'S orders for current user (replace userOrders with todayOrders)
+              myOrders = allOrders
+                  .where(
+                    (order) {
+                      // First check if it's today's order
+                      final orderDate = DateTime(
+                        order.createdAt.year,
+                        order.createdAt.month,
+                        order.createdAt.day,
+                      );
+                      final isToday = orderDate.isAtSameMomentAs(today);
+                      
+                      // Then check if it belongs to current user
+                      final isMyOrder = order.officeBoyId == currentUser!.id ||
+                          (order.isSpecificallyAssigned &&
+                              order.specificallyAssignedOfficeBoyId ==
+                                  currentUser!.id);
+                      
+                      return isToday && isMyOrder;
+                    },
+                  )
+                  .toList()
+                ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-                isLoading = false;
-              });
-            }
-          },
-          onError: (error) {
-            if (mounted) {
-              setState(() {
-                errorMessage = error.toString();
-                isLoading = false;
-              });
-            }
-          },
-        );
-  }
+              // Available orders (unchanged)
+              availableOrders = allOrders.where((order) {
+                if (order.status != OrderStatus.pending) return false;
+                if (order.isSpecificallyAssigned) {
+                  return order.specificallyAssignedOfficeBoyId ==
+                          currentUser!.id &&
+                      order.officeBoyId != currentUser!.id;
+                }
+                return order.officeBoyId != currentUser!.id;
+              }).toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+              isLoading = false;
+            });
+          }
+        },
+        onError: (error) {
+          if (mounted) {
+            setState(() {
+              errorMessage = error.toString();
+              isLoading = false;
+            });
+          }
+        },
+      );
+}
 
   Future<void> _acceptOrder(OfficeOrder order) async {
     try {
