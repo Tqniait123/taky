@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:lottie/lottie.dart';
 import 'package:taqy/core/utils/widgets/app_images.dart';
 import 'package:taqy/features/admin/data/models/app_user.dart';
 import 'package:taqy/features/admin/data/models/order.dart';
@@ -657,7 +658,7 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
         _buildOrderFilters(),
         Expanded(
           child: filteredOrders.isEmpty
-              ? _buildEmptyState()
+              ? _buildEmptyState('No orders found', Icons.receipt_long_rounded)
               : _buildOrdersList(),
         ),
       ],
@@ -1171,34 +1172,26 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.inbox_outlined,
-            size: 64,
-            color: Colors.white.withOpacity(0.3),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No orders found',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.6),
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
+  Widget _buildEmptyState(String message, IconData icon) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 1000),
+      curve: Curves.elasticOut,
+      builder: (context, value, child) => Center(
+        child: Column(
+          children: [
+            SizedBox(height: 60),
+            Text(message, style: TextStyle(fontSize: 16, color: Colors.white)),
+            Lottie.asset(
+              'assets/images/lottie/Package Delivery.json',
+              fit: BoxFit.contain,
+              repeat: true,
+              animate: true,
+              height: value * 200,
+              width: value * 200,
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Try changing the filter',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.4),
-              fontSize: 13,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -832,7 +832,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
           widget.order.isFromAdmin
               ? _buildInfoRow(
                   Icons.admin_panel_settings,
-                  'Owner',
+                  'Admin',
                   widget.order.employeeName,
                 )
               : _buildInfoRow(

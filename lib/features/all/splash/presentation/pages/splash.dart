@@ -503,7 +503,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
         child: Column(
           children: [
             Text(
-              'Powered By TaQy Team',
+              'Powered By Tqnia Team',
               style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12, fontWeight: FontWeight.w300),
             ),
             const SizedBox(height: 4),

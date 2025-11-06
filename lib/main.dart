@@ -67,6 +67,7 @@ Future<void> main() async {
   // FcmService fcmService = FcmService(preferences: sl());
   // await fcmService.initNotifications();
   // FirebaseMessaging.onBackgroundMessage(fcmBackgroundHandler);
+
   await ColorManager().initialize();
 
   Bloc.observer = MyBlocObserver();

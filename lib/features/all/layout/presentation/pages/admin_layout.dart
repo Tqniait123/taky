@@ -14,6 +14,7 @@ import 'package:taqy/features/admin/data/models/app_user.dart';
 import 'package:taqy/features/admin/data/models/order.dart';
 import 'package:taqy/features/admin/data/models/organization.dart';
 import 'package:taqy/features/admin/presentation/widgets/admin_settings_bottom_sheet.dart';
+import 'package:taqy/features/admin/presentation/widgets/support_bottom_sheet.dart';
 import 'package:taqy/features/admin/presentation/widgets/user_details_bottom_sheet.dart';
 import 'package:taqy/features/all/layout/presentation/pages/employee_layout.dart';
 
@@ -990,7 +991,12 @@ class _AdminLayoutState extends State<AdminLayout>
                           ),
                         ),
                       ),
-                      onPressed: _loadData,
+                      onPressed: () {
+                        context.showSupportBottomSheet(
+                          primaryColor: organization!.primaryColorValue,
+                          secondaryColor: organization!.secondaryColorValue,
+                        );
+                      },
                     ),
                   ),
                 ),
