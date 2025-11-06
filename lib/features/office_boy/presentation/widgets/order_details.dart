@@ -7,6 +7,7 @@ import 'package:taqy/core/utils/dialogs/error_toast.dart';
 import 'package:taqy/core/utils/widgets/app_images.dart';
 import 'package:taqy/features/office_boy/data/models/office_order.dart';
 import 'package:taqy/features/office_boy/data/models/office_organization.dart';
+import 'package:taqy/features/office_boy/data/models/office_user_model.dart';
 
 class OrderDetailsBottomSheet extends StatefulWidget {
   final OfficeOrder order;
@@ -16,6 +17,7 @@ class OrderDetailsBottomSheet extends StatefulWidget {
   onStatusUpdate;
   final Function(OfficeOrder, int, ItemStatus, String?)? onItemStatusUpdate;
   final VoidCallback? onTransferRequest;
+  final List<OfficeUserModel>? otherOfficeBoys;
 
   const OrderDetailsBottomSheet({
     super.key,
@@ -25,6 +27,7 @@ class OrderDetailsBottomSheet extends StatefulWidget {
     required this.onStatusUpdate,
     this.onItemStatusUpdate,
     this.onTransferRequest,
+    this.otherOfficeBoys,
   });
 
   @override
@@ -191,7 +194,9 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
     return widget.isOfficeBoy &&
         widget.order.status == OrderStatus.pending &&
         widget.order.isSpecificallyAssigned &&
-        widget.onTransferRequest != null;
+        widget.onTransferRequest != null &&
+        widget.otherOfficeBoys != null &&
+        widget.otherOfficeBoys!.isNotEmpty;
   }
 
   @override

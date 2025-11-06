@@ -1454,7 +1454,8 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
     final bool canTransfer =
         order.status == OrderStatus.pending &&
         order.isSpecificallyAssigned &&
-        order.specificallyAssignedOfficeBoyId == currentUser!.id;
+        order.specificallyAssignedOfficeBoyId == currentUser!.id&&
+      otherOfficeBoys.isNotEmpty;
 
     showModalBottomSheet(
       context: context,
@@ -1465,6 +1466,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         organization: organization!,
         isOfficeBoy: true,
         onStatusUpdate: _updateOrderWithNotes,
+        otherOfficeBoys: otherOfficeBoys,
         onTransferRequest: canTransfer
             ? () {
                 Navigator.pop(context);
@@ -3412,7 +3414,8 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
     final bool canTransfer =
         order.status == OrderStatus.pending &&
         order.isSpecificallyAssigned &&
-        order.specificallyAssignedOfficeBoyId == currentUser!.id;
+        order.specificallyAssignedOfficeBoyId == currentUser!.id &&
+        otherOfficeBoys.isNotEmpty;
 
     if (order.status == OrderStatus.completed ||
         order.status == OrderStatus.cancelled) {
