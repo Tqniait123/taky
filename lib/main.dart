@@ -71,6 +71,7 @@ Future<void> main() async {
   await ColorManager().initialize();
 
   Bloc.observer = MyBlocObserver();
+  
 
   // Set status bar color globally
   SystemChrome.setSystemUIOverlayStyle(
