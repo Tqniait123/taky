@@ -1,8 +1,10 @@
 import 'dart:math' as math;
 import 'dart:ui';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:taqy/core/notifications/notification_service.dart';
 import 'package:taqy/core/utils/dialogs/error_toast.dart';
 import 'package:taqy/core/utils/widgets/app_images.dart';
 import 'package:taqy/features/employee/data/models/order_model.dart';
@@ -1340,63 +1342,86 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
   }
 
   void _submitOrder() async {
-    if (_selectedItems.isEmpty) {
-      showErrorToast(context, 'Please select at least one item');
-      return;
-    }
-
-    if (_selectedOfficeBoy == null) {
-      showErrorToast(context, 'Please select an office boy');
-      return;
-    }
-
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    setState(() {
-      _isSubmitting = true;
-    });
-
-    try {
-      final items = _selectedItems
-          .map((itemName) => OrderItem(name: itemName))
-          .toList();
-
-      final order = EmployeeOrder(
-        id: '',
-        employeeId: widget.employee.id,
-        employeeName: widget.employee.name,
-        employeeRole: widget.employee.role,
-        
-        officeBoyId: _selectedOfficeBoy!.id,
-        officeBoyName: _selectedOfficeBoy!.name,
-        items: items,
-        description: _descriptionController.text.trim(),
-        type: _selectedType,
-        status: OrderStatus.pending,
-        createdAt: DateTime.now(),
-        price: _priceController.text.isNotEmpty
-            ? double.tryParse(_priceController.text)
-            : null,
-        organizationId: widget.organization.id,
-        notes: _notesController.text.trim().isNotEmpty
-            ? _notesController.text.trim()
-            : null,
-             isSpecificallyAssigned: true, // Employee specifically chose this office boy
-      specificallyAssignedOfficeBoyId: _selectedOfficeBoy!.id,
-      );
-
-      widget.onOrderCreated(order);
-      Navigator.pop(context);
-    } catch (e) {
-      showErrorToast(context, 'Failed to place order: $e');
-    } finally {
-      setState(() {
-        _isSubmitting = false;
-      });
-    }
+  if (_selectedItems.isEmpty) {
+    showErrorToast(context, 'Please select at least one item');
+    return;
   }
+
+  if (_selectedOfficeBoy == null) {
+    showErrorToast(context, 'Please select an office boy');
+    return;
+  }
+
+  if (!_formKey.currentState!.validate()) {
+    return;
+  }
+
+  setState(() {
+    _isSubmitting = true;
+  });
+
+  try {
+    final items = _selectedItems
+        .map((itemName) => OrderItem(name: itemName))
+        .toList();
+
+    final order = EmployeeOrder(
+      id: '',
+      employeeId: widget.employee.id,
+      employeeName: widget.employee.name,
+      employeeRole: widget.employee.role,
+      officeBoyId: _selectedOfficeBoy!.id,
+      officeBoyName: _selectedOfficeBoy!.name,
+      items: items,
+      description: _descriptionController.text.trim(),
+      type: _selectedType,
+      status: OrderStatus.pending,
+      createdAt: DateTime.now(),
+      price: _priceController.text.isNotEmpty
+          ? double.tryParse(_priceController.text)
+          : null,
+      organizationId: widget.organization.id,
+      notes: _notesController.text.trim().isNotEmpty
+          ? _notesController.text.trim()
+          : null,
+      isSpecificallyAssigned: true,
+      specificallyAssignedOfficeBoyId: _selectedOfficeBoy!.id,
+    );
+
+    // Create order in Firestore
+    final docRef = await FirebaseFirestore.instance
+        .collection('orders')
+        .add(order.toFirestore());
+
+    // ✅ SEND NOTIFICATION TO OFFICE BOY
+    await NotificationService().notifyOfficeBoyNewOrder(
+      officeBoyId: _selectedOfficeBoy!.id,
+      orderId: docRef.id,
+      orderType: _selectedType == OrderType.internal ? 'Internal' : 'External',
+      employeeName: widget.employee.name,
+      itemCount: items.length,
+    );
+
+    // ✅ NOTIFY ADMIN IF EMPLOYEE IS NOT ADMIN
+    if (widget.employee.role != UserRole.admin) {
+      await NotificationService().notifyAdminNewOrder(
+        organizationId: widget.organization.id,
+        employeeName: widget.employee.name,
+        orderType: _selectedType == OrderType.internal ? 'Internal' : 'External',
+        itemCount: items.length,
+      );
+    }
+
+    widget.onOrderCreated(order.copyWith(id: docRef.id));
+    Navigator.pop(context);
+  } catch (e) {
+    showErrorToast(context, 'Failed to place order: $e');
+  } finally {
+    setState(() {
+      _isSubmitting = false;
+    });
+  }
+}
 }
 
 // Custom painter for animated particles background

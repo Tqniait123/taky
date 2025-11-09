@@ -1,6 +1,7 @@
 // lib/main.dart
 import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 // import 'package:firebase_core/firebase_core.dart';
 // import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +18,13 @@ import 'package:taqy/core/translations/codegen_loader.g.dart';
 import 'package:taqy/firebase_options.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+// Background message handler
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  print('📬 Background message: ${message.notification?.title}');
+}
 
 // @pragma('vm:entry-point')
 // Future<void> fcmBackgroundHandler(RemoteMessage message) async {
@@ -60,19 +68,19 @@ Future<void> main() async {
 
   // 3. Initialize the dependency injection container AFTER Supabase
   await initLocator(sharedPreferences);
-  
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Initialize FCM
   // FcmService fcmService = FcmService(preferences: sl());
   // await fcmService.initNotifications();
-  // FirebaseMessaging.onBackgroundMessage(fcmBackgroundHandler);
+
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  
 
   await ColorManager().initialize();
 
   Bloc.observer = MyBlocObserver();
-
 
   // Set status bar color globally
   SystemChrome.setSystemUIOverlayStyle(

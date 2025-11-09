@@ -5,6 +5,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:taqy/core/notifications/notification_service.dart';
 import 'package:taqy/core/translations/locale_keys.g.dart';
 import 'package:taqy/features/all/auth/data/repositories/auth_repo.dart';
 import 'package:taqy/features/all/auth/domain/entities/user.dart';
@@ -54,7 +55,9 @@ class AuthCubit extends Cubit<AuthState> {
       // Handle image uploads if not skipping
       if (!skipImageUpload) {
         if (profileImage != null) {
-          final uploadResult = await _authRepository.uploadProfileImage(profileImage.path);
+          final uploadResult = await _authRepository.uploadProfileImage(
+            profileImage.path,
+          );
           final result = uploadResult.fold((failure) {
             if (!isClosed) emit(AuthState.error(failure.message));
             return null;
@@ -65,7 +68,9 @@ class AuthCubit extends Cubit<AuthState> {
         }
 
         if (role == UserRole.admin && organizationLogo != null) {
-          final uploadResult = await _authRepository.uploadOrganizationLogo(organizationLogo.path);
+          final uploadResult = await _authRepository.uploadOrganizationLogo(
+            organizationLogo.path,
+          );
           final result = uploadResult.fold((failure) {
             if (!isClosed) emit(AuthState.error(failure.message));
             return null;
@@ -76,13 +81,19 @@ class AuthCubit extends Cubit<AuthState> {
         }
       } else {
         // Use placeholder URLs for testing
-        profileImageUrl = profileImage != null ? 'https://via.placeholder.com/150' : null;
-        orgLogoUrl = organizationLogo != null ? 'https://via.placeholder.com/300' : null;
+        profileImageUrl = profileImage != null
+            ? 'https://via.placeholder.com/150'
+            : null;
+        orgLogoUrl = organizationLogo != null
+            ? 'https://via.placeholder.com/300'
+            : null;
       }
 
       // For non-admin users, verify organization code exists
       if (role != UserRole.admin && organizationCode != null) {
-        final checkResult = await _authRepository.checkOrganizationCodeExists(organizationCode);
+        final checkResult = await _authRepository.checkOrganizationCodeExists(
+          organizationCode,
+        );
         checkResult.fold(
           (failure) {
             if (!isClosed) emit(AuthState.error(failure.message));
@@ -112,7 +123,10 @@ class AuthCubit extends Cubit<AuthState> {
       );
 
       if (!isClosed) {
-        result.fold((failure) => emit(AuthState.error(failure.message)), (user) => emit(AuthState.authenticated(user)));
+        result.fold(
+          (failure) => emit(AuthState.error(failure.message)),
+          (user) => emit(AuthState.authenticated(user)),
+        );
       }
     } catch (e) {
       if (!isClosed) {
@@ -126,10 +140,22 @@ class AuthCubit extends Cubit<AuthState> {
     emit(const AuthState.loading());
 
     try {
-      final result = await _authRepository.signIn(email: email, password: password);
+      final result = await _authRepository.signIn(
+        email: email,
+        password: password,
+      );
 
       if (!isClosed) {
-        result.fold((failure) => emit(AuthState.error(failure.message)), (user) => emit(AuthState.authenticated(user)));
+        result.fold((failure) => emit(AuthState.error(failure.message)), (
+          user,
+        ) async {
+          await NotificationService().initialize(
+            userId: user.id,
+            organizationId: user.organizationId,
+            role: user.role,
+          );
+          emit(AuthState.authenticated(user));
+        });
       }
     } catch (e) {
       if (!isClosed) {
@@ -146,10 +172,12 @@ class AuthCubit extends Cubit<AuthState> {
       final result = await _authRepository.signOut();
 
       if (!isClosed) {
-        result.fold(
-          (failure) => emit(AuthState.error(failure.message)),
-          (_) => emit(const AuthState.unauthenticated()),
-        );
+        result.fold((failure) => emit(AuthState.error(failure.message)), (
+          _,
+        ) async {
+          await NotificationService().cleanup();
+          emit(const AuthState.unauthenticated());
+        });
       }
     } catch (e) {
       if (!isClosed) {

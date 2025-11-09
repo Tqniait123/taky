@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 import 'package:taqy/config/routes/routes.dart';
 import 'package:taqy/core/helpers/cache_helper.dart';
+import 'package:taqy/core/notifications/notification_service.dart';
 import 'package:taqy/core/services/firebase_service.dart';
 import 'package:taqy/core/static/app_assets.dart';
 import 'package:taqy/core/theme/colors.dart';
@@ -351,31 +352,38 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
       showErrorToast(context, 'Failed to reject order: $e');
     }
   }
+Future<void> _transferOrder(
+  OfficeOrder order,
+  String newOfficeBoyId,
+  String newOfficeBoyName,
+) async {
+  try {
+    final updatedOrder = order.copyWith(
+      isSpecificallyAssigned: true,
+      specificallyAssignedOfficeBoyId: newOfficeBoyId,
+      officeBoyId: '',
+      officeBoyName: '',
+    );
 
-  Future<void> _transferOrder(
-    OfficeOrder order,
-    String newOfficeBoyId,
-    String newOfficeBoyName,
-  ) async {
-    try {
-      final updatedOrder = order.copyWith(
-        isSpecificallyAssigned: true,
-        specificallyAssignedOfficeBoyId: newOfficeBoyId,
-        officeBoyId: '',
-        officeBoyName: '',
-      );
+    await _firebaseService.updateDocument(
+      'orders',
+      order.id,
+      updatedOrder.toFirestore(),
+    );
 
-      await _firebaseService.updateDocument(
-        'orders',
-        order.id,
-        updatedOrder.toFirestore(),
-      );
+    // ✅ SEND NOTIFICATION TO NEW OFFICE BOY
+    await NotificationService().notifyOrderTransferred(
+      newOfficeBoyId: newOfficeBoyId,
+      orderId: order.id,
+      employeeName: order.employeeName,
+      itemCount: order.items.length,
+    );
 
-      showSuccessToast(context, 'Order transferred to $newOfficeBoyName');
-    } catch (e) {
-      showErrorToast(context, 'Failed to transfer order: $e');
-    }
+    showSuccessToast(context, 'Order transferred to $newOfficeBoyName');
+  } catch (e) {
+    showErrorToast(context, 'Failed to transfer order: $e');
   }
+}
 
   void _showTransferBottomSheet(OfficeOrder order) {
     if (otherOfficeBoys.isEmpty) {
@@ -818,35 +826,45 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
     );
   }
 
-  Future<void> _updateOrderWithNotes(
-    OfficeOrder order,
-    OrderStatus status, {
-    double? finalPrice,
-    String? notes,
-  }) async {
-    try {
-      final updateData = <String, dynamic>{
-        'status': status.toString().split('.').last,
-        'updatedAt': Timestamp.fromDate(DateTime.now()),
-      };
+ Future<void> _updateOrderWithNotes(
+  OfficeOrder order,
+  OrderStatus status, {
+  double? finalPrice,
+  String? notes,
+}) async {
+  try {
+    final updateData = <String, dynamic>{
+      'status': status.toString().split('.').last,
+      'updatedAt': Timestamp.fromDate(DateTime.now()),
+    };
 
-      if (status == OrderStatus.completed) {
-        updateData['completedAt'] = Timestamp.fromDate(DateTime.now());
-        if (finalPrice != null && order.type == OrderType.external) {
-          updateData['final_price'] = finalPrice;
-        }
+    if (status == OrderStatus.completed) {
+      updateData['completedAt'] = Timestamp.fromDate(DateTime.now());
+      if (finalPrice != null && order.type == OrderType.external) {
+        updateData['final_price'] = finalPrice;
       }
-
-      if (notes != null && notes.isNotEmpty) {
-        updateData['notes'] = notes;
-      }
-
-      await _firebaseService.updateDocument('orders', order.id, updateData);
-      showSuccessToast(context, 'Order ${status.toString().split('.').last}!');
-    } catch (e) {
-      showErrorToast(context, 'Failed to update order: $e');
     }
+
+    if (notes != null && notes.isNotEmpty) {
+      updateData['notes'] = notes;
+    }
+
+    await _firebaseService.updateDocument('orders', order.id, updateData);
+
+    // ✅ SEND NOTIFICATION TO EMPLOYEE
+    String statusString = status.toString().split('.').last;
+    await NotificationService().notifyEmployeeOrderUpdate(
+      employeeId: order.employeeId,
+      orderId: order.id,
+      status: statusString,
+      officeBoyName: currentUser!.name,
+    );
+
+    showSuccessToast(context, 'Order ${status.toString().split('.').last}!');
+  } catch (e) {
+    showErrorToast(context, 'Failed to update order: $e');
   }
+}
 
   void _showStatusChangeBottomSheet(OfficeOrder order, OrderStatus newStatus) {
     final TextEditingController notesController = TextEditingController();

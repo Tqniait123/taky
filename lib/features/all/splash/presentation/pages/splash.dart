@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:taqy/config/routes/routes.dart';
+import 'package:taqy/core/notifications/notification_service.dart';
 import 'package:taqy/core/services/di.dart';
 import 'package:taqy/core/static/app_assets.dart';
 import 'package:taqy/core/theme/colors.dart';
@@ -18,7 +19,8 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with TickerProviderStateMixin {
   late AnimationController _logoController;
   late AnimationController _textController;
   late AnimationController _shimmerController;
@@ -60,25 +62,39 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
   void _initializeAnimations() {
     // Logo Animation Controller
-    _logoController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200));
+    _logoController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
 
     // Text Animation Controller
-    _textController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
+    _textController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
 
     // Shimmer Animation Controller
-    _shimmerController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500));
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
 
     // Background Animation Controller
-    _backgroundController = AnimationController(vsync: this, duration: const Duration(milliseconds: 2000));
+    _backgroundController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    );
 
     // Pulse Animation Controller
-    _pulseController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000));
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
 
     // Logo Animations
-    _logoScale = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _logoController, curve: Curves.elasticOut));
+    _logoScale = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _logoController, curve: Curves.elasticOut),
+    );
 
     _logoRotation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
@@ -95,15 +111,14 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     );
 
     // Text Animations
-    _textFadeIn = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _textController, curve: Curves.easeInOut));
+    _textFadeIn = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _textController, curve: Curves.easeInOut),
+    );
 
-    _textSlideIn = Tween<Offset>(
-      begin: const Offset(0.0, 0.5),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _textController, curve: Curves.easeOutBack));
+    _textSlideIn =
+        Tween<Offset>(begin: const Offset(0.0, 0.5), end: Offset.zero).animate(
+          CurvedAnimation(parent: _textController, curve: Curves.easeOutBack),
+        );
 
     _taglineOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
@@ -113,25 +128,25 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     );
 
     // Background Animations
-    _backgroundGradient = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _backgroundController, curve: Curves.easeInOut));
+    _backgroundGradient = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _backgroundController, curve: Curves.easeInOut),
+    );
 
-    _shimmerAnimation = Tween<double>(
-      begin: -1.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _shimmerController, curve: Curves.easeInOut));
+    _shimmerAnimation = Tween<double>(begin: -1.0, end: 1.0).animate(
+      CurvedAnimation(parent: _shimmerController, curve: Curves.easeInOut),
+    );
 
     // Pulse Animation
-    _pulseAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.1,
-    ).animate(CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut));
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
   }
 
   // Safe animation helper methods
-  void _safeRepeatAnimation(AnimationController controller, {bool reverse = false}) {
+  void _safeRepeatAnimation(
+    AnimationController controller, {
+    bool reverse = false,
+  }) {
     if (mounted && !_isDisposed && !controller.isAnimating) {
       try {
         controller.repeat(reverse: reverse);
@@ -199,7 +214,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     }
   }
 
-  void _checkAuthStatus() {
+  void _checkAuthStatus() async {
     try {
       if (!mounted || _isDisposed || _hasNavigated) return;
 
@@ -209,6 +224,11 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
       if (currentUser != null) {
         // User is logged in, navigate to appropriate dashboard
+        await NotificationService().initialize(
+          userId: currentUser.id,
+          organizationId: currentUser.organizationId,
+          role: currentUser.role,
+        );
         _navigateBasedOnRole(UserRole.fromStr(currentUser.role.toString()));
       } else {
         // User is not logged in, navigate to login
@@ -244,9 +264,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       error: (failure) {
         // Show error message and navigate to login
         if (mounted && !_isDisposed) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(failure), backgroundColor: AppColors.error));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(failure), backgroundColor: AppColors.error),
+          );
         }
         _navigateToLogin();
       },
@@ -275,7 +295,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
           break;
         case UserRole.officeBoy:
           // context.go(Routes.officeBoyDashboard);
-          context.go(Routes.layoutOfficeBoy); // Fallback until office boy route is ready
+          context.go(
+            Routes.layoutOfficeBoy,
+          ); // Fallback until office boy route is ready
           break;
       }
     } catch (e) {
@@ -344,7 +366,11 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [AppColors.primary, AppColors.primary.withOpacity(0.8), AppColors.primary.withOpacity(0.9)],
+                    colors: [
+                      AppColors.primary,
+                      AppColors.primary.withOpacity(0.8),
+                      AppColors.primary.withOpacity(0.9),
+                    ],
                     stops: [0.0, _backgroundGradient.value * 0.6, 1.0],
                   ),
                 ),
@@ -392,7 +418,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   }
 
   Widget _buildBackgroundParticles() {
-    return Positioned.fill(child: CustomPaint(painter: ParticlesPainter(_backgroundGradient.value)));
+    return Positioned.fill(
+      child: CustomPaint(painter: ParticlesPainter(_backgroundGradient.value)),
+    );
   }
 
   Widget _buildAnimatedLogo() {
@@ -410,9 +438,17 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                 height: 120,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  boxShadow: [BoxShadow(color: Colors.white.withOpacity(0.3), blurRadius: 20, spreadRadius: 5)],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.white.withOpacity(0.3),
+                      blurRadius: 20,
+                      spreadRadius: 5,
+                    ),
+                  ],
                 ),
-                child: ClipOval(child: Image.asset(AppImages.logo, fit: BoxFit.cover)),
+                child: ClipOval(
+                  child: Image.asset(AppImages.logo, fit: BoxFit.cover),
+                ),
               ),
             ),
           ),
@@ -432,12 +468,21 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: const [Colors.white, Colors.white70, Colors.white],
-              stops: [_shimmerAnimation.value - 0.3, _shimmerAnimation.value, _shimmerAnimation.value + 0.3],
+              stops: [
+                _shimmerAnimation.value - 0.3,
+                _shimmerAnimation.value,
+                _shimmerAnimation.value + 0.3,
+              ],
             ).createShader(bounds);
           },
           child: const Text(
             'TaQy',
-            style: TextStyle(fontSize: 42, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 2),
+            style: TextStyle(
+              fontSize: 42,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              letterSpacing: 2,
+            ),
           ),
         ),
       ),
@@ -448,12 +493,13 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     return FadeTransition(
       opacity: _taglineOpacity,
       child: SlideTransition(
-        position: Tween<Offset>(begin: const Offset(0.0, 0.3), end: Offset.zero).animate(
-          CurvedAnimation(
-            parent: _textController,
-            curve: const Interval(0.6, 1.0, curve: Curves.easeOut),
-          ),
-        ),
+        position: Tween<Offset>(begin: const Offset(0.0, 0.3), end: Offset.zero)
+            .animate(
+              CurvedAnimation(
+                parent: _textController,
+                curve: const Interval(0.6, 1.0, curve: Curves.easeOut),
+              ),
+            ),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
           decoration: BoxDecoration(
@@ -463,7 +509,12 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
           ),
           child: const Text(
             'test',
-            style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.w300, letterSpacing: 0.5),
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.white,
+              fontWeight: FontWeight.w300,
+              letterSpacing: 0.5,
+            ),
           ),
         ),
       ),
@@ -479,14 +530,20 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
             width: 30,
             height: 30,
             child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white.withOpacity(0.8)),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                Colors.white.withOpacity(0.8),
+              ),
               strokeWidth: 2,
             ),
           ),
           const SizedBox(height: 16),
           Text(
             LocaleKeys.loading.tr(),
-            style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14, fontWeight: FontWeight.w300),
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.8),
+              fontSize: 14,
+              fontWeight: FontWeight.w300,
+            ),
           ),
         ],
       ),
@@ -504,12 +561,20 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
           children: [
             Text(
               'Powered By Tqnia Team',
-              style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12, fontWeight: FontWeight.w300),
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.6),
+                fontSize: 12,
+                fontWeight: FontWeight.w300,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               'TaQy v1.0.0',
-              style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14, fontWeight: FontWeight.w400),
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.8),
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+              ),
             ),
           ],
         ),
@@ -533,7 +598,8 @@ class ParticlesPainter extends CustomPainter {
     // Draw animated particles
     for (int i = 0; i < 20; i++) {
       final double x = (size.width * 0.1 * i) % size.width;
-      final double y = (size.height * 0.15 * i + animationValue * 100) % size.height;
+      final double y =
+          (size.height * 0.15 * i + animationValue * 100) % size.height;
       final double radius = (i % 3 + 1) * 2.0;
 
       canvas.drawCircle(Offset(x, y), radius, paint);
@@ -541,7 +607,8 @@ class ParticlesPainter extends CustomPainter {
 
     // Draw some larger floating elements
     for (int i = 0; i < 5; i++) {
-      final double x = (size.width * 0.3 * i + animationValue * 50) % size.width;
+      final double x =
+          (size.width * 0.3 * i + animationValue * 50) % size.width;
       final double y = (size.height * 0.4 * i) % size.height;
       final double radius = (i % 2 + 1) * 1.5;
 

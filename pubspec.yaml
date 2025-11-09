@@ -72,6 +72,9 @@ dependencies:
   firebase_messaging: ^16.0.0
   bloc: ^9.0.0
   lottie: ^3.3.1
+  googleapis_auth: ^2.0.0
+  http: ^1.5.0
+  flutter_local_notifications: ^19.5.0
 
 dev_dependencies:
   flutter_test:
@@ -105,6 +108,8 @@ flutter:
     - assets/images/lottie/
     - assets/images/photos/
     - assets/fonts/
+    - assets/service_account.json
+    - assets/
 
   fonts:
     - family: Almarai

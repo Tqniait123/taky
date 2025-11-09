@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:taqy/core/notifications/notification_service.dart';
 import 'package:taqy/core/utils/dialogs/error_toast.dart';
 import 'package:taqy/core/utils/widgets/app_images.dart';
 import 'package:taqy/features/employee/data/models/order_model.dart';
@@ -149,21 +150,16 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
   }
 
  void _submitResponse() async {
-  // Message is now optional - no validation required
-  
   setState(() => _isLoading = true);
 
   try {
-    // If edit option is selected, pass data back to trigger edit sheet
     if (_selectedAction == OrderStatus.pending) {
       setState(() => _isLoading = false);
       
-      // Get unavailable items
       final unavailableItems = widget.order.items
           .where((item) => item.status == ItemStatus.notAvailable)
           .toList();
       
-      // Return data to parent to open edit sheet
       widget.onEditRequested(
         widget.order, 
         unavailableItems, 
@@ -172,12 +168,27 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
       return;
     }
 
-    // For continue or cancel actions, process normally
+    // Update order status
     await widget.onResponse(
       widget.order.id,
       _responseController.text.trim(),
       _selectedAction,
     );
+
+    // ✅ SEND NOTIFICATION TO OFFICE BOY
+    if (_selectedAction == OrderStatus.inProgress) {
+      // Employee chose to continue with available items
+      await NotificationService().notifyOfficeBoyNewOrder(
+        officeBoyId: widget.order.officeBoyId,
+        orderId: widget.order.id,
+        orderType: widget.order.type == OrderType.internal ? 'Internal' : 'External',
+        employeeName: widget.order.employeeName,
+        itemCount: widget.order.items
+            .where((item) => item.status == ItemStatus.available)
+            .length,
+      );
+    }
+
     Navigator.pop(context);
   } catch (e) {
     showErrorToast(context, 'Failed to submit response: $e');
@@ -185,7 +196,6 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
     setState(() => _isLoading = false);
   }
 }
-
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
