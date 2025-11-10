@@ -229,6 +229,10 @@ class _SplashScreenState extends State<SplashScreen>
           organizationId: currentUser.organizationId,
           role: currentUser.role,
         );
+        debugPrint(
+          '✅ Notifications initialized early for user: ${currentUser.id} role: ${currentUser.role}',
+        );
+
         _navigateBasedOnRole(UserRole.fromStr(currentUser.role.toString()));
       } else {
         // User is not logged in, navigate to login
@@ -251,11 +255,20 @@ class _SplashScreenState extends State<SplashScreen>
     }
 
     state.maybeWhen(
-      authenticated: (user) {
+      authenticated: (user) async {
         // Initialize FCM for authenticated user
         // FCMNotificationService().initialize();
 
         // Navigate based on user role
+
+        await NotificationService().initialize(
+          userId: user.id,
+          organizationId: user.organizationId,
+          role: user.role,
+        );
+        debugPrint(
+          '✅ Notifications initialized early for user: ${user.id} role: ${user.role}',
+        );
         _navigateBasedOnRole(user.role);
       },
       unauthenticated: () {
@@ -392,11 +405,10 @@ class _SplashScreenState extends State<SplashScreen>
                           // App name with shimmer effect
                           _buildAnimatedTitle(),
 
-                          const SizedBox(height: 15),
+                          // const SizedBox(height: 15),
 
                           // Tagline with fade in
-                          _buildAnimatedTagline(),
-
+                          // _buildAnimatedTagline(),
                           const SizedBox(height: 50),
 
                           // Loading indicator
@@ -489,37 +501,37 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 
-  Widget _buildAnimatedTagline() {
-    return FadeTransition(
-      opacity: _taglineOpacity,
-      child: SlideTransition(
-        position: Tween<Offset>(begin: const Offset(0.0, 0.3), end: Offset.zero)
-            .animate(
-              CurvedAnimation(
-                parent: _textController,
-                curve: const Interval(0.6, 1.0, curve: Curves.easeOut),
-              ),
-            ),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.3)),
-          ),
-          child: const Text(
-            'test',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.white,
-              fontWeight: FontWeight.w300,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  // Widget _buildAnimatedTagline() {
+  //   return FadeTransition(
+  //     opacity: _taglineOpacity,
+  //     child: SlideTransition(
+  //       position: Tween<Offset>(begin: const Offset(0.0, 0.3), end: Offset.zero)
+  //           .animate(
+  //             CurvedAnimation(
+  //               parent: _textController,
+  //               curve: const Interval(0.6, 1.0, curve: Curves.easeOut),
+  //             ),
+  //           ),
+  //       child: Container(
+  //         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+  //         decoration: BoxDecoration(
+  //           color: Colors.white.withOpacity(0.1),
+  //           borderRadius: BorderRadius.circular(20),
+  //           border: Border.all(color: Colors.white.withOpacity(0.3)),
+  //         ),
+  //         child: const Text(
+  //           'test',
+  //           style: TextStyle(
+  //             fontSize: 16,
+  //             color: Colors.white,
+  //             fontWeight: FontWeight.w300,
+  //             letterSpacing: 0.5,
+  //           ),
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildLoadingIndicator() {
     return FadeTransition(

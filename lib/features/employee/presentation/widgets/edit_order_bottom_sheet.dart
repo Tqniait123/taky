@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:taqy/core/notifications/notification_service.dart';
 import 'package:taqy/core/utils/dialogs/error_toast.dart';
 import 'package:taqy/core/utils/widgets/app_images.dart';
 import 'package:taqy/features/employee/data/models/order_model.dart';
@@ -1490,8 +1491,20 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
       widget.onOrderUpdated(updatedOrder);
 
       if (isResponseEdit) {
+          await NotificationService().notifyOfficeBoyOrderResubmitted(
+        officeBoyId: updatedOrder.officeBoyId,
+        orderId: updatedOrder.id,
+        employeeName: widget.order.employeeName,
+        itemCount: items.length,
+      );
         showSuccessToast(context, 'Order updated and sent for processing!');
       } else {
+         await NotificationService().notifyOfficeBoyOrderEdited(
+        officeBoyId: updatedOrder.officeBoyId,
+        orderId: updatedOrder.id,
+        employeeName: widget.order.employeeName,
+        itemCount: items.length,
+      );
         showSuccessToast(context, 'Order updated successfully!');
       }
 

@@ -76,7 +76,6 @@ Future<void> main() async {
   // await fcmService.initNotifications();
 
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  
 
   await ColorManager().initialize();
 

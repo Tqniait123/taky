@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 import 'package:taqy/config/routes/routes.dart';
 import 'package:taqy/core/helpers/cache_helper.dart';
+import 'package:taqy/core/notifications/notification_service.dart';
 import 'package:taqy/core/services/firebase_service.dart';
 import 'package:taqy/core/static/app_assets.dart';
 import 'package:taqy/core/theme/colors.dart';
@@ -3743,7 +3744,25 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
     );
 
     // Add to Firestore
-    await _firebaseService.addDocument('orders', newOrder.toFirestore());
+  final docRef =  await _firebaseService.addDocument('orders', newOrder.toFirestore());
+
+    await NotificationService().notifyOfficeBoyReorder(
+    officeBoyId: availableOfficeBoys.first.id,
+    orderId: docRef.id,
+    employeeName: currentUser!.name,
+    itemCount: itemsToProcess.length,
+    originalOrderId: originalOrder.id,
+  );
+
+  // ✅ NOTIFY ADMIN (if employee is not admin)
+  if (currentUser!.role != UserRole.admin) {
+    await NotificationService().notifyAdminNewOrder(
+      organizationId: currentUser!.organizationId,
+      employeeName: currentUser!.name,
+      orderType: originalOrder.type == OrderType.internal ? 'Internal' : 'External',
+      itemCount: itemsToProcess.length,
+    );
+  }
   }
 
   Widget _buildAnimatedTodaysOrders() {

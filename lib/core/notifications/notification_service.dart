@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -9,8 +10,7 @@ import 'package:googleapis_auth/auth_io.dart';
 import 'package:http/http.dart' as http;
 import 'package:taqy/features/all/auth/domain/entities/user.dart';
 
-/// Free notification service without Cloud Functions
-/// Sends notifications directly from the app
+/// Enhanced notification service with comprehensive notification support
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
@@ -18,7 +18,7 @@ class NotificationService {
 
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FlutterLocalNotificationsPlugin _localNotifications = 
+  final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
   String? _fcmToken;
@@ -35,10 +35,8 @@ class NotificationService {
       _currentUserId = userId;
       _currentOrganizationId = organizationId;
 
-      // Initialize local notifications
       await _initializeLocalNotifications();
 
-      // Request permission
       final settings = await _messaging.requestPermission(
         alert: true,
         badge: true,
@@ -46,32 +44,23 @@ class NotificationService {
       );
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-        // Get FCM token
         _fcmToken = await _messaging.getToken();
         debugPrint('📱 FCM Token: $_fcmToken');
 
         if (_fcmToken != null) {
-          // Save token to Firestore
           await _saveTokenToFirestore(userId, organizationId, role);
-
-          // Subscribe to role-based topics
           await _subscribeToTopics(organizationId, role);
         }
 
-        // Listen for token refresh
         _messaging.onTokenRefresh.listen((newToken) {
           _fcmToken = newToken;
           _saveTokenToFirestore(userId, organizationId, role);
         });
       }
 
-      // Handle foreground notifications
       FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
-
-      // Handle background/terminated notifications
       FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
 
-      // Handle notification when app was terminated
       final initialMessage = await _messaging.getInitialMessage();
       if (initialMessage != null) {
         _handleNotificationTap(initialMessage);
@@ -81,9 +70,10 @@ class NotificationService {
     }
   }
 
-  /// Initialize local notifications for foreground display
   Future<void> _initializeLocalNotifications() async {
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
@@ -98,7 +88,6 @@ class NotificationService {
     await _localNotifications.initialize(
       initSettings,
       onDidReceiveNotificationResponse: (details) {
-        // Handle notification tap
         if (details.payload != null) {
           final data = jsonDecode(details.payload!);
           _navigateToScreen(data);
@@ -106,7 +95,6 @@ class NotificationService {
       },
     );
 
-    // Create Android notification channel
     const androidChannel = AndroidNotificationChannel(
       'high_importance_channel',
       'High Importance Notifications',
@@ -118,11 +106,11 @@ class NotificationService {
 
     await _localNotifications
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.createNotificationChannel(androidChannel);
   }
 
-  /// Save FCM token to Firestore
   Future<void> _saveTokenToFirestore(
     String userId,
     String organizationId,
@@ -143,26 +131,21 @@ class NotificationService {
     }
   }
 
-  /// Subscribe to role-based topics
   Future<void> _subscribeToTopics(String organizationId, UserRole role) async {
     try {
-      // Subscribe to organization topic
       await _messaging.subscribeToTopic('org_$organizationId');
-      
-      // Subscribe to role-specific topic
       await _messaging.subscribeToTopic('${role}_$organizationId');
-      
-      debugPrint('✅ Subscribed to topics: org_$organizationId, ${role}_$organizationId');
+      debugPrint(
+        '✅ Subscribed to topics: org_$organizationId, ${role}_$organizationId',
+      );
     } catch (e) {
       debugPrint('❌ Topic subscription error: $e');
     }
   }
 
-  /// Handle foreground notifications - SHOW LOCAL NOTIFICATION
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
     debugPrint('📬 Foreground notification: ${message.notification?.title}');
-    
-    // Show local notification when app is in foreground
+
     await _showLocalNotification(
       title: message.notification?.title ?? 'New Notification',
       body: message.notification?.body ?? '',
@@ -170,7 +153,6 @@ class NotificationService {
     );
   }
 
-  /// Show local notification
   Future<void> _showLocalNotification({
     required String title,
     required String body,
@@ -207,24 +189,15 @@ class NotificationService {
     );
   }
 
-  /// Handle notification tap
   void _handleNotificationTap(RemoteMessage message) {
     debugPrint('👆 Notification tapped: ${message.data}');
     _navigateToScreen(message.data);
   }
 
-  /// Navigate to screen based on notification data
   void _navigateToScreen(Map<String, dynamic> data) {
-    // TODO: Implement navigation logic based on data['screen'] and data['type']
-    // Example: 
-    // final screen = data['screen'];
-    // if (screen == 'order_details') {
-    //   Navigator.pushNamed(context, '/order_details', arguments: data['orderId']);
-    // }
     debugPrint('Navigate to: ${data['screen']}');
   }
 
-  /// Send notification to specific user
   Future<void> sendNotificationToUser({
     required String targetUserId,
     required String title,
@@ -232,8 +205,10 @@ class NotificationService {
     Map<String, dynamic>? data,
   }) async {
     try {
-      // Get target user's FCM token
-      final userDoc = await _firestore.collection('users').doc(targetUserId).get();
+      final userDoc = await _firestore
+          .collection('users')
+          .doc(targetUserId)
+          .get();
       final fcmToken = userDoc.data()?['fcmToken'] as String?;
 
       if (fcmToken == null) {
@@ -252,7 +227,6 @@ class NotificationService {
     }
   }
 
-  /// Send notification to topic (role-based)
   Future<void> sendNotificationToTopic({
     required String topic,
     required String title,
@@ -271,94 +245,89 @@ class NotificationService {
     }
   }
 
-  /// Core FCM notification sending method
- /// Core FCM notification sending method - FIXED
-Future<void> _sendFCMNotification({
-  String? token,
-  String? topic,
-  required String title,
-  required String body,
-  Map<String, dynamic>? data,
-}) async {
-  try {
-    // Load service account
-    final serviceAccountJson = await rootBundle.loadString(
-      'assets/service_account.json',
-    );
-    final serviceAccountData = jsonDecode(serviceAccountJson) as Map<String, dynamic>;
+  Future<void> _sendFCMNotification({
+    String? token,
+    String? topic,
+    required String title,
+    required String body,
+    Map<String, dynamic>? data,
+  }) async {
+    try {
+      final serviceAccountJson = await rootBundle.loadString(
+        'assets/service_account.json',
+      );
+      final serviceAccountData =
+          jsonDecode(serviceAccountJson) as Map<String, dynamic>;
 
-    // Get access token
-    final scopes = ['https://www.googleapis.com/auth/firebase.messaging'];
-    final credentials = ServiceAccountCredentials.fromJson(serviceAccountData);
-    final client = await clientViaServiceAccount(credentials, scopes);
-    final accessToken = client.credentials.accessToken.data;
+      final scopes = ['https://www.googleapis.com/auth/firebase.messaging'];
+      final credentials = ServiceAccountCredentials.fromJson(
+        serviceAccountData,
+      );
+      final client = await clientViaServiceAccount(credentials, scopes);
+      final accessToken = client.credentials.accessToken.data;
 
-    // Build payload - FIXED STRUCTURE
-    final projectId = serviceAccountData['project_id'] as String;
-    final Map<String, dynamic> message = {
-      'notification': {
-        'title': title,
-        'body': body,
-      },
-      'android': {
-        'priority': 'high', // ✅ Priority at android level, NOT in notification
-        'notification': {
-          'channel_id': 'high_importance_channel',
-          'sound': 'default',
-          // ❌ REMOVED: 'priority': 'high' - This was causing the error
-        },
-      },
-      'apns': {
-        'headers': {'apns-priority': '10'},
-        'payload': {
-          'aps': {
+      final projectId = serviceAccountData['project_id'] as String;
+      final Map<String, dynamic> message = {
+        'notification': {'title': title, 'body': body},
+        'android': {
+          'priority': 'high',
+          'notification': {
+            'channel_id': 'high_importance_channel',
             'sound': 'default',
-            'badge': 1,
-            'alert': {
-              'title': title,
-              'body': body,
+          },
+        },
+        'apns': {
+          'headers': {'apns-priority': '10'},
+          'payload': {
+            'aps': {
+              'sound': 'default',
+              'badge': 1,
+              'alert': {'title': title, 'body': body},
             },
           },
         },
-      },
-    };
+      };
 
-    // Add token or topic
-    if (token != null) {
-      message['token'] = token;
-    } else if (topic != null) {
-      message['topic'] = topic;
+      if (token != null) {
+        message['token'] = token;
+      } else if (topic != null) {
+        message['topic'] = topic;
+      }
+
+      if (data != null) {
+        message['data'] = data.map(
+          (key, value) => MapEntry(key, value.toString()),
+        );
+      }
+
+      final response = await http.post(
+        Uri.parse(
+          'https://fcm.googleapis.com/v1/projects/$projectId/messages:send',
+        ),
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'message': message}),
+      );
+
+      if (response.statusCode == 200) {
+        debugPrint('✅ Notification sent successfully');
+      } else {
+        debugPrint(
+          '❌ Failed to send notification: ${response.statusCode} - ${response.body}',
+        );
+      }
+
+      client.close();
+    } catch (e) {
+      debugPrint('❌ FCM notification error: $e');
     }
-
-    // Add custom data
-    if (data != null) {
-      message['data'] = data.map((key, value) => MapEntry(key, value.toString()));
-    }
-
-    // Send request
-    final response = await http.post(
-      Uri.parse('https://fcm.googleapis.com/v1/projects/$projectId/messages:send'),
-      headers: {
-        'Authorization': 'Bearer $accessToken',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({'message': message}),
-    );
-
-    if (response.statusCode == 200) {
-      debugPrint('✅ Notification sent successfully');
-      debugPrint('Response: ${response.body}');
-    } else {
-      debugPrint('❌ Failed to send notification: ${response.statusCode} - ${response.body}');
-    }
-
-    client.close();
-  } catch (e) {
-    debugPrint('❌ FCM notification error: $e');
   }
-}
 
-  /// Send order notification to office boy
+  // ============== EMPLOYEE NOTIFICATIONS ==============
+
+  /// Send notification when employee creates a new order
   Future<void> notifyOfficeBoyNewOrder({
     required String officeBoyId,
     required String orderId,
@@ -377,71 +346,293 @@ Future<void> _sendFCMNotification({
         'screen': 'order_details',
       },
     );
-    log('Notification sent to office boy $officeBoyId for order $orderId');
+    log('✅ New order notification sent to office boy $officeBoyId');
   }
 
-  /// Send order status update to employee
-  Future<void> notifyEmployeeOrderUpdate({
-    required String employeeId,
-    required String orderId,
-    required String status,
-    required String officeBoyName,
-  }) async {
-    String title = '';
-    String body = '';
-
-    switch (status) {
-      case 'inProgress':
-        title = '🚀 Order In Progress';
-        body = '$officeBoyName started processing your order';
-        break;
-      case 'completed':
-        title = '✅ Order Completed';
-        body = '$officeBoyName completed your order';
-        break;
-      case 'cancelled':
-        title = '❌ Order Cancelled';
-        body = 'Your order was cancelled';
-        break;
-      case 'needsResponse':
-        title = '⚠️ Action Required';
-        body = 'Some items are unavailable. Please respond.';
-        break;
-    }
-
-    await sendNotificationToUser(
-      targetUserId: employeeId,
-      title: title,
-      body: body,
-      data: {
-        'type': 'order_update',
-        'orderId': orderId,
-        'status': status,
-        'screen': 'order_details',
-      },
-    );
-  }
-
-  /// Send order transfer notification
-  Future<void> notifyOrderTransferred({
-    required String newOfficeBoyId,
+  /// Send notification when employee edits their order
+  Future<void> notifyOfficeBoyOrderEdited({
+    required String officeBoyId,
     required String orderId,
     required String employeeName,
     required int itemCount,
   }) async {
     await sendNotificationToUser(
+      targetUserId: officeBoyId,
+      title: '✏️ Order Updated',
+      body: '$employeeName modified their order ($itemCount items)',
+      data: {
+        'type': 'order_edited',
+        'orderId': orderId,
+        'screen': 'order_details',
+      },
+    );
+    log('✅ Order edit notification sent to office boy $officeBoyId');
+  }
+
+  /// Send notification when employee responds to unavailable items
+  Future<void> notifyOfficeBoyEmployeeResponse({
+    required String officeBoyId,
+    required String orderId,
+    required String employeeName,
+    required String responseType, // 'continue' or 'cancel'
+  }) async {
+    final title = responseType == 'continue'
+        ? '✅ Employee Accepted Available Items'
+        : '❌ Employee Cancelled Order';
+    final body = responseType == 'continue'
+        ? '$employeeName wants to continue with available items'
+        : '$employeeName cancelled the order';
+
+    await sendNotificationToUser(
+      targetUserId: officeBoyId,
+      title: title,
+      body: body,
+      data: {
+        'type': 'employee_response',
+        'orderId': orderId,
+        'responseType': responseType,
+        'screen': 'order_details',
+      },
+    );
+    log('✅ Employee response notification sent to office boy $officeBoyId');
+  }
+
+  /// Send notification when employee edits order after response request
+  Future<void> notifyOfficeBoyOrderResubmitted({
+    required String officeBoyId,
+    required String orderId,
+    required String employeeName,
+    required int itemCount,
+  }) async {
+    await sendNotificationToUser(
+      targetUserId: officeBoyId,
+      title: '🔄 Order Resubmitted',
+      body:
+          '$employeeName updated and resubmitted their order ($itemCount items)',
+      data: {
+        'type': 'order_resubmitted',
+        'orderId': orderId,
+        'screen': 'order_details',
+      },
+    );
+    log('✅ Order resubmission notification sent to office boy $officeBoyId');
+  }
+
+  /// Send notification when employee reorders from history
+  Future<void> notifyOfficeBoyReorder({
+    required String officeBoyId,
+    required String orderId,
+    required String employeeName,
+    required int itemCount,
+    required String originalOrderId,
+  }) async {
+    await sendNotificationToUser(
+      targetUserId: officeBoyId,
+      title: '🔁 Reorder Created',
+      body: '$employeeName reordered $itemCount item(s)',
+      data: {
+        'type': 'reorder',
+        'orderId': orderId,
+        'originalOrderId': originalOrderId,
+        'screen': 'order_details',
+      },
+    );
+    log('✅ Reorder notification sent to office boy $officeBoyId');
+  }
+
+  // ============== OFFICE BOY NOTIFICATIONS ==============
+
+  /// Send notification when office boy transfers order to another office boy
+  Future<void> notifyOrderTransferredToOfficeBoy({
+    required String newOfficeBoyId,
+    required String orderId,
+    required String employeeName,
+    required int itemCount,
+    required String fromOfficeBoyName,
+  }) async {
+    await sendNotificationToUser(
       targetUserId: newOfficeBoyId,
       title: '🔄 Order Transferred to You',
-      body: '$employeeName\'s order ($itemCount items) was assigned to you',
+      body:
+          '$fromOfficeBoyName transferred $employeeName\'s order ($itemCount items) to you',
+      data: {
+        'type': 'order_transferred_received',
+        'orderId': orderId,
+        'screen': 'order_details',
+      },
+    );
+    log('✅ Transfer notification sent to new office boy $newOfficeBoyId');
+  }
+
+  /// Notify employee/admin when their order is transferred
+  Future<void> notifyUserOrderTransferred({
+    required String userId,
+    required String orderId,
+    required String fromOfficeBoyName,
+    required String toOfficeBoyName,
+    required bool isAdmin,
+  }) async {
+    final title = isAdmin ? '🔄 Your Order Reassigned' : '🔄 Order Reassigned';
+    final body = isAdmin
+        ? 'Your order was transferred from $fromOfficeBoyName to $toOfficeBoyName'
+        : 'Your order was transferred from $fromOfficeBoyName to $toOfficeBoyName';
+
+    await sendNotificationToUser(
+      targetUserId: userId,
+      title: title,
+      body: body,
       data: {
         'type': 'order_transferred',
         'orderId': orderId,
         'screen': 'order_details',
       },
     );
+    log(
+      '✅ Transfer notification sent to ${isAdmin ? 'admin' : 'employee'} $userId',
+    );
   }
 
-  /// Send admin notification for new orders
+  /// Send notification when office boy accepts order
+  Future<void> notifyUserOrderAccepted({
+    required String userId,
+    required String orderId,
+    required String officeBoyName,
+    required bool isAdmin,
+  }) async {
+    final title = isAdmin ? '✅ Your Order Accepted' : '✅ Order Accepted';
+    final body = isAdmin
+        ? '$officeBoyName accepted your order'
+        : '$officeBoyName accepted your order';
+
+    await sendNotificationToUser(
+      targetUserId: userId,
+      title: title,
+      body: body,
+      data: {
+        'type': 'order_accepted',
+        'orderId': orderId,
+        'screen': 'order_details',
+      },
+    );
+    log(
+      '✅ Order accepted notification sent to ${isAdmin ? 'admin' : 'employee'} $userId',
+    );
+  }
+
+  /// Send notification when office boy starts processing order
+  Future<void> notifyEmployeeOrderInProgress({
+    required String employeeId,
+    required String orderId,
+    required String officeBoyName,
+  }) async {
+    await sendNotificationToUser(
+      targetUserId: employeeId,
+      title: '🚀 Order In Progress',
+      body: '$officeBoyName started processing your order',
+      data: {
+        'type': 'order_in_progress',
+        'orderId': orderId,
+        'screen': 'order_details',
+      },
+    );
+    log('✅ In progress notification sent to employee $employeeId');
+  }
+
+  /// Send notification when office boy marks items as available/unavailable
+  Future<void> notifyEmployeeItemsStatusUpdated({
+    required String employeeId,
+    required String orderId,
+    required String officeBoyName,
+    required int availableCount,
+    required int unavailableCount,
+  }) async {
+    final body = unavailableCount > 0
+        ? '$officeBoyName found $availableCount available and $unavailableCount unavailable items'
+        : '$officeBoyName confirmed all items are available';
+
+    await sendNotificationToUser(
+      targetUserId: employeeId,
+      title: '📋 Items Status Updated',
+      body: body,
+      data: {
+        'type': 'items_status_updated',
+        'orderId': orderId,
+        'screen': 'order_details',
+      },
+    );
+    log('✅ Items status notification sent to employee $employeeId');
+  }
+
+  /// Send notification when office boy requests response for unavailable items
+  Future<void> notifyEmployeeResponseNeeded({
+    required String employeeId,
+    required String orderId,
+    required String officeBoyName,
+    required int unavailableCount,
+  }) async {
+    await sendNotificationToUser(
+      targetUserId: employeeId,
+      title: '⚠️ Action Required',
+      body:
+          '$unavailableCount item(s) unavailable. Please respond to continue.',
+      data: {
+        'type': 'response_needed',
+        'orderId': orderId,
+        'screen': 'order_response',
+      },
+    );
+    log('✅ Response needed notification sent to employee $employeeId');
+  }
+
+  /// Send notification when office boy completes order
+  Future<void> notifyEmployeeOrderCompleted({
+    required String employeeId,
+    required String orderId,
+    required String officeBoyName,
+    double? finalPrice,
+  }) async {
+    final priceText = finalPrice != null
+        ? ' (EGP ${finalPrice.toStringAsFixed(0)})'
+        : '';
+
+    await sendNotificationToUser(
+      targetUserId: employeeId,
+      title: '✅ Order Completed',
+      body: '$officeBoyName completed your order$priceText',
+      data: {
+        'type': 'order_completed',
+        'orderId': orderId,
+        'screen': 'order_details',
+      },
+    );
+    log('✅ Completion notification sent to employee $employeeId');
+  }
+
+  /// Send notification when office boy cancels order
+  Future<void> notifyEmployeeOrderCancelled({
+    required String employeeId,
+    required String orderId,
+    required String officeBoyName,
+    String? reason,
+  }) async {
+    final reasonText = reason != null && reason.isNotEmpty ? ': $reason' : '';
+
+    await sendNotificationToUser(
+      targetUserId: employeeId,
+      title: '❌ Order Cancelled',
+      body: '$officeBoyName cancelled your order$reasonText',
+      data: {
+        'type': 'order_cancelled',
+        'orderId': orderId,
+        'screen': 'order_details',
+      },
+    );
+    log('✅ Cancellation notification sent to employee $employeeId');
+  }
+
+  // ============== ADMIN NOTIFICATIONS ==============
+
+  /// Send notification to admin when new order is created
   Future<void> notifyAdminNewOrder({
     required String organizationId,
     required String employeeName,
@@ -458,17 +649,71 @@ Future<void> _sendFCMNotification({
         'screen': 'orders',
       },
     );
+    log('✅ New order notification sent to admin');
+  }
+
+  Future<void> notifyAdminOrderInProgress({
+    required String organizationId,
+
+
+    required String orderId,
+    required String officeBoyName,
+  }) async {
+    await sendNotificationToUser(
+      targetUserId: organizationId,
+      title: '🚀 Order In Progress',
+      body: '$officeBoyName started processing your order',
+      data: {
+        'type': 'order_in_progress',
+        'orderId': orderId,
+        'screen': 'order_details',
+      },
+    );
+    log('✅ In progress notification sent to employee $organizationId');
+  }
+
+  /// Send notification to admin when order is completed
+  Future<void> notifyAdminOrderCompleted({
+    required String organizationId,
+    required String employeeName,
+    required String officeBoyName,
+    double? finalPrice,
+  }) async {
+    final priceText = finalPrice != null
+        ? ' (EGP ${finalPrice.toStringAsFixed(0)})'
+        : '';
+
+    await sendNotificationToTopic(
+      topic: 'admin_$organizationId',
+      title: '✅ Order Completed',
+      body: '$officeBoyName completed $employeeName\'s order$priceText',
+      data: {'type': 'admin_order_completed', 'screen': 'orders'},
+    );
+    log('✅ Completion notification sent to admin');
+  }
+
+  /// Send notification to admin when order is cancelled
+  Future<void> notifyAdminOrderCancelled({
+    required String organizationId,
+    required String employeeName,
+    required String officeBoyName,
+  }) async {
+    await sendNotificationToTopic(
+      topic: 'admin_$organizationId',
+      title: '❌ Order Cancelled',
+      body: '$officeBoyName cancelled $employeeName\'s order',
+      data: {'type': 'admin_order_cancelled', 'screen': 'orders'},
+    );
+    log('✅ Cancellation notification sent to admin');
   }
 
   /// Cleanup on logout
   Future<void> cleanup() async {
     try {
       if (_currentOrganizationId != null) {
-        // Unsubscribe from topics
         await _messaging.unsubscribeFromTopic('org_$_currentOrganizationId');
       }
 
-      // Clear token from Firestore
       if (_currentUserId != null) {
         await _firestore.collection('users').doc(_currentUserId).update({
           'fcmToken': FieldValue.delete(),

@@ -178,14 +178,28 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
     // ✅ SEND NOTIFICATION TO OFFICE BOY
     if (_selectedAction == OrderStatus.inProgress) {
       // Employee chose to continue with available items
-      await NotificationService().notifyOfficeBoyNewOrder(
+      // await NotificationService().notifyOfficeBoyNewOrder(
+      //   officeBoyId: widget.order.officeBoyId,
+      //   orderId: widget.order.id,
+      //   orderType: widget.order.type == OrderType.internal ? 'Internal' : 'External',
+      //   employeeName: widget.order.employeeName,
+      //   itemCount: widget.order.items
+      //       .where((item) => item.status == ItemStatus.available)
+      //       .length,
+      // );
+        await NotificationService().notifyOfficeBoyEmployeeResponse(
         officeBoyId: widget.order.officeBoyId,
         orderId: widget.order.id,
-        orderType: widget.order.type == OrderType.internal ? 'Internal' : 'External',
         employeeName: widget.order.employeeName,
-        itemCount: widget.order.items
-            .where((item) => item.status == ItemStatus.available)
-            .length,
+        responseType: 'continue',
+      );
+    }else if (_selectedAction == OrderStatus.cancelled) {
+      // Employee chose to cancel
+      await NotificationService().notifyOfficeBoyEmployeeResponse(
+        officeBoyId: widget.order.officeBoyId,
+        orderId: widget.order.id,
+        employeeName: widget.order.employeeName,
+        responseType: 'cancel',
       );
     }
 

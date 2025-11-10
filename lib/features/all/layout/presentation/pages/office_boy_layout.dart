@@ -239,71 +239,67 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
   }
 
   void _loadOrders() {
-  FirebaseFirestore.instance
-      .collection('orders')
-      .where('organizationId', isEqualTo: currentUser!.organizationId)
-      .snapshots()
-      .listen(
-        (snapshot) {
-          if (mounted) {
-            setState(() {
-              final allOrders = snapshot.docs
-                  .map((doc) => OfficeOrder.fromFirestore(doc))
-                  .toList();
+    FirebaseFirestore.instance
+        .collection('orders')
+        .where('organizationId', isEqualTo: currentUser!.organizationId)
+        .snapshots()
+        .listen(
+          (snapshot) {
+            if (mounted) {
+              setState(() {
+                final allOrders = snapshot.docs
+                    .map((doc) => OfficeOrder.fromFirestore(doc))
+                    .toList();
 
-              // Get current date for filtering
-              final now = DateTime.now();
-              final today = DateTime(now.year, now.month, now.day);
+                // Get current date for filtering
+                final now = DateTime.now();
+                final today = DateTime(now.year, now.month, now.day);
 
-              // Get TODAY'S orders for current user (replace userOrders with todayOrders)
-              myOrders = allOrders
-                  .where(
-                    (order) {
-                      // First check if it's today's order
-                      final orderDate = DateTime(
-                        order.createdAt.year,
-                        order.createdAt.month,
-                        order.createdAt.day,
-                      );
-                      final isToday = orderDate.isAtSameMomentAs(today);
-                      
-                      // Then check if it belongs to current user
-                      final isMyOrder = order.officeBoyId == currentUser!.id ||
-                          (order.isSpecificallyAssigned &&
-                              order.specificallyAssignedOfficeBoyId ==
-                                  currentUser!.id);
-                      
-                      return isToday && isMyOrder;
-                    },
-                  )
-                  .toList()
-                ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+                // Get TODAY'S orders for current user (replace userOrders with todayOrders)
+                myOrders = allOrders.where((order) {
+                  // First check if it's today's order
+                  final orderDate = DateTime(
+                    order.createdAt.year,
+                    order.createdAt.month,
+                    order.createdAt.day,
+                  );
+                  final isToday = orderDate.isAtSameMomentAs(today);
 
-              // Available orders (unchanged)
-              availableOrders = allOrders.where((order) {
-                if (order.status != OrderStatus.pending) return false;
-                if (order.isSpecificallyAssigned) {
-                  return order.specificallyAssignedOfficeBoyId ==
-                          currentUser!.id &&
-                      order.officeBoyId != currentUser!.id;
-                }
-                return order.officeBoyId != currentUser!.id;
-              }).toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+                  // Then check if it belongs to current user
+                  final isMyOrder =
+                      order.officeBoyId == currentUser!.id ||
+                      (order.isSpecificallyAssigned &&
+                          order.specificallyAssignedOfficeBoyId ==
+                              currentUser!.id);
 
-              isLoading = false;
-            });
-          }
-        },
-        onError: (error) {
-          if (mounted) {
-            setState(() {
-              errorMessage = error.toString();
-              isLoading = false;
-            });
-          }
-        },
-      );
-}
+                  return isToday && isMyOrder;
+                }).toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+                // Available orders (unchanged)
+                availableOrders = allOrders.where((order) {
+                  if (order.status != OrderStatus.pending) return false;
+                  if (order.isSpecificallyAssigned) {
+                    return order.specificallyAssignedOfficeBoyId ==
+                            currentUser!.id &&
+                        order.officeBoyId != currentUser!.id;
+                  }
+                  return order.officeBoyId != currentUser!.id;
+                }).toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+                isLoading = false;
+              });
+            }
+          },
+          onError: (error) {
+            if (mounted) {
+              setState(() {
+                errorMessage = error.toString();
+                isLoading = false;
+              });
+            }
+          },
+        );
+  }
 
   Future<void> _acceptOrder(OfficeOrder order) async {
     try {
@@ -326,6 +322,15 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         'orders',
         order.id,
         updatedOrder.toFirestore(),
+      );
+
+      final bool isOrderFromAdmin = order.employeeRole == UserRole.admin;
+
+      await NotificationService().notifyUserOrderAccepted(
+        userId: order.employeeId,
+        orderId: order.id,
+        officeBoyName: currentUser!.name,
+        isAdmin: isOrderFromAdmin,
       );
 
       showSuccessToast(context, 'Order accepted successfully!');
@@ -352,38 +357,49 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
       showErrorToast(context, 'Failed to reject order: $e');
     }
   }
-Future<void> _transferOrder(
-  OfficeOrder order,
-  String newOfficeBoyId,
-  String newOfficeBoyName,
-) async {
-  try {
-    final updatedOrder = order.copyWith(
-      isSpecificallyAssigned: true,
-      specificallyAssignedOfficeBoyId: newOfficeBoyId,
-      officeBoyId: '',
-      officeBoyName: '',
-    );
 
-    await _firebaseService.updateDocument(
-      'orders',
-      order.id,
-      updatedOrder.toFirestore(),
-    );
+  Future<void> _transferOrder(
+    OfficeOrder order,
+    String newOfficeBoyId,
+    String newOfficeBoyName,
+  ) async {
+    try {
+      final updatedOrder = order.copyWith(
+        isSpecificallyAssigned: true,
+        specificallyAssignedOfficeBoyId: newOfficeBoyId,
+        officeBoyId: '',
+        officeBoyName: '',
+      );
 
-    // ✅ SEND NOTIFICATION TO NEW OFFICE BOY
-    await NotificationService().notifyOrderTransferred(
-      newOfficeBoyId: newOfficeBoyId,
-      orderId: order.id,
-      employeeName: order.employeeName,
-      itemCount: order.items.length,
-    );
+      await _firebaseService.updateDocument(
+        'orders',
+        order.id,
+        updatedOrder.toFirestore(),
+      );
 
-    showSuccessToast(context, 'Order transferred to $newOfficeBoyName');
-  } catch (e) {
-    showErrorToast(context, 'Failed to transfer order: $e');
+      // ✅ NOTIFY NEW OFFICE BOY
+      await NotificationService().notifyOrderTransferredToOfficeBoy(
+        newOfficeBoyId: newOfficeBoyId,
+        orderId: order.id,
+        employeeName: order.employeeName,
+        itemCount: order.items.length,
+        fromOfficeBoyName: currentUser!.name,
+      );
+
+      // ✅ NOTIFY EMPLOYEE
+      await NotificationService().notifyUserOrderTransferred(
+        userId: order.employeeId,
+        orderId: order.id,
+        fromOfficeBoyName: currentUser!.name,
+        toOfficeBoyName: newOfficeBoyName,
+        isAdmin: order.employeeRole == UserRole.admin,
+      );
+
+      showSuccessToast(context, 'Order transferred to $newOfficeBoyName');
+    } catch (e) {
+      showErrorToast(context, 'Failed to transfer order: $e');
+    }
   }
-}
 
   void _showTransferBottomSheet(OfficeOrder order) {
     if (otherOfficeBoys.isEmpty) {
@@ -615,6 +631,25 @@ Future<void> _transferOrder(
             .toString()
             .split('.')
             .last;
+
+        final unavailableCount = updatedItems
+            .where((item) => item.status == ItemStatus.notAvailable)
+            .length;
+
+        await NotificationService().notifyEmployeeResponseNeeded(
+          employeeId: order.employeeId,
+          orderId: order.id,
+          officeBoyName: currentUser!.name,
+          unavailableCount: unavailableCount,
+        );
+      } else if (allItemsProcessed && !hasUnavailableItems) {
+        await NotificationService().notifyEmployeeItemsStatusUpdated(
+          employeeId: order.employeeId,
+          orderId: order.id,
+          officeBoyName: currentUser!.name,
+          availableCount: updatedItems.length,
+          unavailableCount: 0,
+        );
       }
 
       await _firebaseService.updateDocument('orders', order.id, updateData);
@@ -826,45 +861,80 @@ Future<void> _transferOrder(
     );
   }
 
- Future<void> _updateOrderWithNotes(
-  OfficeOrder order,
-  OrderStatus status, {
-  double? finalPrice,
-  String? notes,
-}) async {
-  try {
-    final updateData = <String, dynamic>{
-      'status': status.toString().split('.').last,
-      'updatedAt': Timestamp.fromDate(DateTime.now()),
-    };
+  Future<void> _updateOrderWithNotes(
+    OfficeOrder order,
+    OrderStatus status, {
+    double? finalPrice,
+    String? notes,
+  }) async {
+    try {
+      final updateData = <String, dynamic>{
+        'status': status.toString().split('.').last,
+        'updatedAt': Timestamp.fromDate(DateTime.now()),
+      };
 
-    if (status == OrderStatus.completed) {
-      updateData['completedAt'] = Timestamp.fromDate(DateTime.now());
-      if (finalPrice != null && order.type == OrderType.external) {
-        updateData['final_price'] = finalPrice;
+      if (status == OrderStatus.completed) {
+        updateData['completedAt'] = Timestamp.fromDate(DateTime.now());
+        if (finalPrice != null && order.type == OrderType.external) {
+          updateData['final_price'] = finalPrice;
+        }
+
+        await NotificationService().notifyEmployeeOrderCompleted(
+          employeeId: order.employeeId,
+          orderId: order.id,
+          officeBoyName: currentUser!.name,
+          finalPrice: finalPrice,
+        );
+
+        // ✅ NOTIFY ADMIN
+        await NotificationService().notifyAdminOrderCompleted(
+          organizationId: order.organizationId,
+          employeeName: order.employeeName,
+          officeBoyName: currentUser!.name,
+          finalPrice: finalPrice,
+        );
+      } else if (status == OrderStatus.cancelled) {
+        // ✅ NOTIFY EMPLOYEE - ORDER CANCELLED
+        await NotificationService().notifyEmployeeOrderCancelled(
+          employeeId: order.employeeId,
+          orderId: order.id,
+          officeBoyName: currentUser!.name,
+          reason: notes,
+        );
+
+        // ✅ NOTIFY ADMIN
+        await NotificationService().notifyAdminOrderCancelled(
+          organizationId: order.organizationId,
+          employeeName: order.employeeName,
+          officeBoyName: currentUser!.name,
+        );
+      } else if (status == OrderStatus.inProgress) {
+        // ✅ NOTIFY EMPLOYEE - ORDER RESUMED
+        await NotificationService().notifyEmployeeOrderInProgress(
+          employeeId: order.employeeId,
+          orderId: order.id,
+          officeBoyName: currentUser!.name,
+        );
+
+        // ✅ NOTIFY ADMIN
+        await NotificationService().notifyAdminOrderInProgress(
+          organizationId: order.organizationId,
+          orderId: order.id,
+          officeBoyName: currentUser!.name,
+        );
       }
+
+      if (notes != null && notes.isNotEmpty) {
+        updateData['notes'] = notes;
+      }
+
+      await _firebaseService.updateDocument('orders', order.id, updateData);
+
+      showSuccessToast(context, 'Order ${status.toString().split('.').last}!');
+    } catch (e) {
+      showErrorToast(context, 'Failed to update order: $e');
     }
-
-    if (notes != null && notes.isNotEmpty) {
-      updateData['notes'] = notes;
-    }
-
-    await _firebaseService.updateDocument('orders', order.id, updateData);
-
-    // ✅ SEND NOTIFICATION TO EMPLOYEE
-    String statusString = status.toString().split('.').last;
-    await NotificationService().notifyEmployeeOrderUpdate(
-      employeeId: order.employeeId,
-      orderId: order.id,
-      status: statusString,
-      officeBoyName: currentUser!.name,
-    );
-
-    showSuccessToast(context, 'Order ${status.toString().split('.').last}!');
-  } catch (e) {
-    showErrorToast(context, 'Failed to update order: $e');
   }
-}
 
   void _showStatusChangeBottomSheet(OfficeOrder order, OrderStatus newStatus) {
     final TextEditingController notesController = TextEditingController();
@@ -1489,8 +1559,8 @@ Future<void> _transferOrder(
     final bool canTransfer =
         order.status == OrderStatus.pending &&
         order.isSpecificallyAssigned &&
-        order.specificallyAssignedOfficeBoyId == currentUser!.id&&
-      otherOfficeBoys.isNotEmpty;
+        order.specificallyAssignedOfficeBoyId == currentUser!.id &&
+        otherOfficeBoys.isNotEmpty;
 
     showModalBottomSheet(
       context: context,
@@ -2886,36 +2956,72 @@ Future<void> _transferOrder(
                                 SizedBox(height: 6),
                                 Row(
                                   children: [
-                                    Container(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: organization!.secondaryColorValue
-                                            .withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            Icons.person,
-                                            size: 14,
-                                            color: Colors.grey[700],
+                                    if (order.isFromAdmin)
+                                      Container(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.orange.withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
                                           ),
-                                          SizedBox(width: 4),
-                                          Text(
-                                            order.employeeName,
-                                            style: TextStyle(
-                                              color: Colors.grey[700],
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.admin_panel_settings,
+                                              size: 14,
+                                              color: Colors.orange,
                                             ),
+                                            SizedBox(width: 4),
+                                            Text(
+                                              'Boss',
+                                              style: TextStyle(
+                                                color: Colors.orange,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      )
+                                    else
+                                      Container(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: organization!
+                                              .secondaryColorValue
+                                              .withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
                                           ),
-                                        ],
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.person,
+                                              size: 14,
+                                              color: Colors.grey[700],
+                                            ),
+                                            SizedBox(width: 4),
+                                            Text(
+                                              order.employeeName,
+                                              style: TextStyle(
+                                                color: Colors.grey[700],
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
                                     if (order.price != null) ...[
                                       Spacer(),
                                       Container(
