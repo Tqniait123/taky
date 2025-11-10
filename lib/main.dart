@@ -96,7 +96,7 @@ Future<void> main() async {
     EasyLocalization(
       path: 'assets/translations',
       supportedLocales: const [
-        // Locales.arabic,
+        Locales.arabic,
         Locales.english,
         // Locales.french,
         // Locales.dutch,
