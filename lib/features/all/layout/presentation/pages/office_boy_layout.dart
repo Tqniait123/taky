@@ -307,7 +307,9 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
           order.specificallyAssignedOfficeBoyId != currentUser!.id) {
         showErrorToast(
           context,
-          'This order is specifically assigned to another office boy',
+          _currentLocale == 'ar'
+              ? 'الطلب ده معاد لأوفيس بوي تاني'
+              : 'This order is specifically assigned to another office boy',
         );
         return;
       }
@@ -331,11 +333,22 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         orderId: order.id,
         officeBoyName: currentUser!.name,
         isAdmin: isOrderFromAdmin,
+        isArabic: _currentLocale == 'ar',
       );
 
-      showSuccessToast(context, 'Order accepted successfully!');
+      showSuccessToast(
+        context,
+        _currentLocale == 'ar'
+            ? 'تم قبول الطلب بنجاح!'
+            : 'Order accepted successfully!',
+      );
     } catch (e) {
-      showErrorToast(context, 'Failed to accept order: $e');
+      showErrorToast(
+        context,
+        _currentLocale == 'ar'
+            ? 'فشل في قبول الطلب: $e'
+            : 'Failed to accept order: $e',
+      );
     }
   }
 
@@ -352,9 +365,19 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         updatedOrder.toFirestore(),
       );
 
-      showSuccessToast(context, 'Order rejected and made available for others');
+      showSuccessToast(
+        context,
+        _currentLocale == 'ar'
+            ? 'تم رفض الطلب وإتاحته للآخرين'
+            : 'Order rejected and made available for others',
+      );
     } catch (e) {
-      showErrorToast(context, 'Failed to reject order: $e');
+      showErrorToast(
+        context,
+        _currentLocale == 'ar'
+            ? 'فشل في رفض الطلب: $e'
+            : 'Failed to reject order: $e',
+      );
     }
   }
 
@@ -384,6 +407,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         employeeName: order.employeeName,
         itemCount: order.items.length,
         fromOfficeBoyName: currentUser!.name,
+        isArabic: _currentLocale == 'ar',
       );
 
       // ✅ NOTIFY EMPLOYEE
@@ -393,17 +417,33 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         fromOfficeBoyName: currentUser!.name,
         toOfficeBoyName: newOfficeBoyName,
         isAdmin: order.employeeRole == UserRole.admin,
+        isArabic: _currentLocale == 'ar',
       );
 
-      showSuccessToast(context, 'Order transferred to $newOfficeBoyName');
+      showSuccessToast(
+        context,
+        _currentLocale == 'ar'
+            ? 'تم تحويل الطلب لـ $newOfficeBoyName'
+            : 'Order transferred to $newOfficeBoyName',
+      );
     } catch (e) {
-      showErrorToast(context, 'Failed to transfer order: $e');
+      showErrorToast(
+        context,
+        _currentLocale == 'ar'
+            ? 'فشل في تحويل الطلب: $e'
+            : 'Failed to transfer order: $e',
+      );
     }
   }
 
   void _showTransferBottomSheet(OfficeOrder order) {
     if (otherOfficeBoys.isEmpty) {
-      showErrorToast(context, 'No other office boys available for transfer');
+      showErrorToast(
+        context,
+        _currentLocale == 'ar'
+            ? 'مفيش أوفيس بويز تانيين متاحين للتحويل'
+            : 'No other office boys available for transfer',
+      );
       return;
     }
 
@@ -415,13 +455,17 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
   }
 
   Widget _buildTransferBottomSheetContent(OfficeOrder order) {
+    final locale = Localizations.localeOf(context).languageCode;
+
     return Column(
       children: [
         // Header
         _buildGlassBottomSheetHeader(
           icon: Assets.imagesSvgsEdit,
-          title: 'Transfer Order',
-          subtitle: 'Select an office boy to transfer this order',
+          title: locale == 'ar' ? 'تحويل الطلب' : 'Transfer Order',
+          subtitle: locale == 'ar'
+              ? 'اختار اوفيس بوي تحول ليه الطلب'
+              : 'Select an office boy to transfer this order',
         ),
 
         // Office Boys List
@@ -489,14 +533,17 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
     OfficeOrder order,
     OfficeUserModel newOfficeBoy,
   ) {
+    final locale = Localizations.localeOf(context).languageCode;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         _buildGlassBottomSheetHeader(
           icon: Assets.imagesSvgsEdit,
-          title: 'Transfer Order?',
-          subtitle:
-              'This order will be specifically assigned to ${newOfficeBoy.name}. They will need to accept it.',
+          title: locale == 'ar' ? 'تحويل الطلب؟' : 'Transfer Order?',
+          subtitle: locale == 'ar'
+              ? 'الطلب ده هيتبعت لـ ${newOfficeBoy.name}. هيحتاج يقبله.'
+              : 'This order will be specifically assigned to ${newOfficeBoy.name}. They will need to accept it.',
         ),
 
         SizedBox(height: 24),
@@ -508,7 +555,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
             children: [
               Expanded(
                 child: _buildGlassButton(
-                  text: 'Cancel',
+                  text: locale == 'ar' ? 'إلغاء' : 'Cancel',
                   onPressed: () => Navigator.pop(context),
                   isSecondary: true,
                 ),
@@ -517,7 +564,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
               Expanded(
                 flex: 2,
                 child: _buildGlassButton(
-                  text: 'Transfer Order',
+                  text: locale == 'ar' ? 'تحويل الطلب' : 'Transfer Order',
                   onPressed: () {
                     Navigator.pop(context);
                     _transferOrder(order, newOfficeBoy.id, newOfficeBoy.name);
@@ -548,14 +595,17 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
   }
 
   Widget _buildSpecificallyAssignedContent(OfficeOrder order) {
+    final locale = Localizations.localeOf(context).languageCode;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         _buildGlassBottomSheetHeader(
           icon: Assets.imagesSvgsShoppingCart,
-          title: 'Order Assignment',
-          subtitle:
-              'This order was specifically assigned to you. Do you want to accept or reject it?',
+          title: locale == 'ar' ? 'توكيل المهمة' : 'Order Assignment',
+          subtitle: locale == 'ar'
+              ? 'الطلب ده معاد ليك بالتحديد. عايز تقبله ولا ترفضه؟'
+              : 'This order was specifically assigned to you. Do you want to accept or reject it?',
         ),
 
         SizedBox(height: 24),
@@ -567,7 +617,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
             children: [
               Expanded(
                 child: _buildGlassButton(
-                  text: 'Reject',
+                  text: locale == 'ar' ? 'رفض' : 'Reject',
                   onPressed: () {
                     Navigator.pop(context);
                     _rejectSpecificallyAssignedOrder(order);
@@ -581,7 +631,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
               Expanded(
                 flex: 2,
                 child: _buildGlassButton(
-                  text: 'Accept Order',
+                  text: locale == 'ar' ? 'قبول الطلب' : 'Accept Order',
                   onPressed: () {
                     Navigator.pop(context);
                     _acceptOrder(order);
@@ -641,6 +691,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
           orderId: order.id,
           officeBoyName: currentUser!.name,
           unavailableCount: unavailableCount,
+          isArabic: _currentLocale == 'ar',
         );
       } else if (allItemsProcessed && !hasUnavailableItems) {
         await NotificationService().notifyEmployeeItemsStatusUpdated(
@@ -649,13 +700,24 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
           officeBoyName: currentUser!.name,
           availableCount: updatedItems.length,
           unavailableCount: 0,
+          isArabic: _currentLocale == 'ar',
         );
       }
 
       await _firebaseService.updateDocument('orders', order.id, updateData);
-      showSuccessToast(context, 'Item status updated successfully');
+      showSuccessToast(
+        context,
+        _currentLocale == 'ar'
+            ? 'تم تحديث حالة الصنف بنجاح'
+            : 'Item status updated successfully',
+      );
     } catch (e) {
-      showErrorToast(context, 'Failed to update item status: $e');
+      showErrorToast(
+        context,
+        _currentLocale == 'ar'
+            ? 'فشل في تحديث حالة الصنف: $e'
+            : 'Failed to update item status: $e',
+      );
     }
   }
 
@@ -694,6 +756,8 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
     ItemStatus selectedStatus,
     Function(ItemStatus) onStatusChanged,
   ) {
+    final locale = Localizations.localeOf(context).languageCode;
+
     return SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -701,7 +765,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         children: [
           _buildGlassBottomSheetHeader(
             icon: Assets.imagesSvgsEdit,
-            title: 'Update Item Status',
+            title: locale == 'ar' ? 'تحديث حالة الصنف' : 'Update Item Status',
             subtitle: item.name,
           ),
 
@@ -713,7 +777,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Item Status',
+                  locale == 'ar' ? 'حالة الصنف' : 'Item Status',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -810,8 +874,12 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
 
                 _buildGlassTextField(
                   controller: notesController,
-                  label: 'Notes (optional)',
-                  hint: 'Add notes about availability...',
+                  label: locale == 'ar'
+                      ? 'ملاحظات (اختياري)'
+                      : 'Notes (optional)',
+                  hint: locale == 'ar'
+                      ? 'ضيف ملاحظات عن التوفر...'
+                      : 'Add notes about availability...',
                   icon: Assets.imagesSvgsNote,
                 ),
 
@@ -821,7 +889,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                   children: [
                     Expanded(
                       child: _buildGlassButton(
-                        text: 'Cancel',
+                        text: locale == 'ar' ? 'إلغاء' : 'Cancel',
                         onPressed: () => Navigator.pop(context),
                         isSecondary: true,
                       ),
@@ -830,7 +898,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                     Expanded(
                       flex: 2,
                       child: _buildGlassButton(
-                        text: 'Update Status',
+                        text: locale == 'ar' ? 'تحديث الحالة' : 'Update Status',
                         onPressed: () async {
                           Navigator.pop(context);
                           await _updateItemStatus(
@@ -884,6 +952,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
           orderId: order.id,
           officeBoyName: currentUser!.name,
           finalPrice: finalPrice,
+          isArabic: _currentLocale == 'ar',
         );
 
         // ✅ NOTIFY ADMIN
@@ -892,6 +961,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
           employeeName: order.employeeName,
           officeBoyName: currentUser!.name,
           finalPrice: finalPrice,
+          isArabic: _currentLocale == 'ar',
         );
       } else if (status == OrderStatus.cancelled) {
         // ✅ NOTIFY EMPLOYEE - ORDER CANCELLED
@@ -900,6 +970,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
           orderId: order.id,
           officeBoyName: currentUser!.name,
           reason: notes,
+          isArabic: _currentLocale == 'ar',
         );
 
         // ✅ NOTIFY ADMIN
@@ -907,6 +978,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
           organizationId: order.organizationId,
           employeeName: order.employeeName,
           officeBoyName: currentUser!.name,
+          isArabic: _currentLocale == 'ar',
         );
       } else if (status == OrderStatus.inProgress) {
         // ✅ NOTIFY EMPLOYEE - ORDER RESUMED
@@ -914,6 +986,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
           employeeId: order.employeeId,
           orderId: order.id,
           officeBoyName: currentUser!.name,
+          isArabic: _currentLocale == 'ar',
         );
 
         // ✅ NOTIFY ADMIN
@@ -921,6 +994,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
           organizationId: order.organizationId,
           orderId: order.id,
           officeBoyName: currentUser!.name,
+          isArabic: _currentLocale == 'ar',
         );
       }
 
@@ -930,9 +1004,19 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
 
       await _firebaseService.updateDocument('orders', order.id, updateData);
 
-      showSuccessToast(context, 'Order ${status.toString().split('.').last}!');
+      showSuccessToast(
+        context,
+        _currentLocale == 'ar'
+            ? 'تم ${_getOrderStatusText(status)} الطلب!'
+            : 'Order ${status.toString().split('.').last}!',
+      );
     } catch (e) {
-      showErrorToast(context, 'Failed to update order: $e');
+      showErrorToast(
+        context,
+        _currentLocale == 'ar'
+            ? 'فشل في تحديث الطلب: $e'
+            : 'Failed to update order: $e',
+      );
     }
   }
 
@@ -958,6 +1042,8 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
     bool isCancellation,
     TextEditingController notesController,
   ) {
+    final locale = Localizations.localeOf(context).languageCode;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -965,9 +1051,12 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
           icon: isCancellation
               ? Assets.imagesSvgsCancell
               : Assets.imagesSvgsShoppingCart,
-          title: '${newStatus.toString().split('.').last.toUpperCase()} Order',
-          subtitle:
-              'Are you sure you want to ${newStatus.toString().split('.').last} this order?',
+          title: locale == 'ar'
+              ? '${_getOrderStatusText(newStatus)} الطلب'
+              : '${newStatus.toString().split('.').last.toUpperCase()} Order',
+          subtitle: locale == 'ar'
+              ? 'متأكد إنك عايز ${_getOrderStatusActionText(newStatus)} الطلب ده؟'
+              : 'Are you sure you want to ${newStatus.toString().split('.').last} this order?',
         ),
 
         SizedBox(height: 24),
@@ -978,8 +1067,12 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
             children: [
               _buildGlassTextField(
                 controller: notesController,
-                label: 'Add notes (optional)',
-                hint: 'Reason for ${newStatus.toString().split('.').last}...',
+                label: locale == 'ar'
+                    ? 'ضيف ملاحظات (اختياري)'
+                    : 'Add notes (optional)',
+                hint: locale == 'ar'
+                    ? 'سبب ${_getOrderStatusActionText(newStatus)}...'
+                    : 'Reason for ${newStatus.toString().split('.').last}...',
                 icon: Assets.imagesSvgsNote,
               ),
 
@@ -989,7 +1082,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                 children: [
                   Expanded(
                     child: _buildGlassButton(
-                      text: 'Cancel',
+                      text: locale == 'ar' ? 'إلغاء' : 'Cancel',
                       onPressed: () => Navigator.pop(context),
                       isSecondary: true,
                     ),
@@ -998,7 +1091,9 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                   Expanded(
                     flex: 2,
                     child: _buildGlassButton(
-                      text: newStatus.toString().split('.').last.toUpperCase(),
+                      text: locale == 'ar'
+                          ? _getOrderStatusActionText(newStatus)
+                          : newStatus.toString().split('.').last.toUpperCase(),
                       onPressed: () async {
                         Navigator.pop(context);
                         await _updateOrderWithNotes(
@@ -1058,14 +1153,18 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
     TextEditingController notesController,
     GlobalKey<FormState> formKey,
   ) {
+    final locale = Localizations.localeOf(context).languageCode;
+
     return SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildGlassBottomSheetHeader(
             icon: Assets.imagesSvgsComplete,
-            title: 'Complete Order',
-            subtitle: 'Mark this order as completed?',
+            title: locale == 'ar' ? 'إكمال الطلب' : 'Complete Order',
+            subtitle: locale == 'ar'
+                ? 'تعمل الطلب ده كمكتمل؟'
+                : 'Mark this order as completed?',
           ),
 
           SizedBox(height: 24),
@@ -1076,16 +1175,24 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                 if (order.type == OrderType.external) ...[
                   _buildGlassTextField(
                     controller: priceController,
-                    label: 'Final Price (EGP) *',
-                    hint: 'Enter the actual price',
+                    label: locale == 'ar'
+                        ? 'السعر النهائي (ج.م) *'
+                        : 'Final Price (EGP) *',
+                    hint: locale == 'ar'
+                        ? 'ادخل السعر الفعلي'
+                        : 'Enter the actual price',
                     icon: Assets.imagesSvgsWallet,
                     keyboardType: TextInputType.number,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter the final price';
+                        return locale == 'ar'
+                            ? 'يلزم تدخل السعر النهائي'
+                            : 'Please enter the final price';
                       }
                       if (double.tryParse(value) == null) {
-                        return 'Please enter a valid number';
+                        return locale == 'ar'
+                            ? 'يلزم تدخل رقم صحيح'
+                            : 'Please enter a valid number';
                       }
                       return null;
                     },
@@ -1096,7 +1203,9 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         Text(
-                          'Budget: EGP ${order.price!.toStringAsFixed(0)}',
+                          locale == 'ar'
+                              ? 'الميزانية: ج.م ${order.price!.toStringAsFixed(0)}'
+                              : 'Budget: EGP ${order.price!.toStringAsFixed(0)}',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.white.withOpacity(0.7),
@@ -1110,8 +1219,12 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
 
                 _buildGlassTextField(
                   controller: notesController,
-                  label: 'Completion notes (optional)',
-                  hint: 'Any additional details...',
+                  label: locale == 'ar'
+                      ? 'ملاحظات الإكمال (اختياري)'
+                      : 'Completion notes (optional)',
+                  hint: locale == 'ar'
+                      ? 'أي تفاصيل إضافية...'
+                      : 'Any additional details...',
                   icon: Assets.imagesSvgsNote,
                   maxLines: 2,
                 ),
@@ -1122,7 +1235,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                   children: [
                     Expanded(
                       child: _buildGlassButton(
-                        text: 'Cancel',
+                        text: locale == 'ar' ? 'إلغاء' : 'Cancel',
                         onPressed: () => Navigator.pop(context),
                         isSecondary: true,
                       ),
@@ -1131,7 +1244,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                     Expanded(
                       flex: 2,
                       child: _buildGlassButton(
-                        text: 'Complete Order',
+                        text: locale == 'ar' ? 'إكمال الطلب' : 'Complete Order',
                         onPressed: () async {
                           if (!formKey.currentState!.validate()) {
                             return;
@@ -1147,7 +1260,9 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                             } catch (e) {
                               showErrorToast(
                                 context,
-                                'Please enter a valid price',
+                                locale == 'ar'
+                                    ? 'يلزم تدخل سعر صحيح'
+                                    : 'Please enter a valid price',
                               );
                               return;
                             }
@@ -1481,15 +1596,53 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
   }
 
   String _getItemStatusText(ItemStatus status) {
+    final locale = Localizations.localeOf(context).languageCode;
+
     switch (status) {
       case ItemStatus.pending:
-        return 'Checking...';
+        return locale == 'ar' ? 'قيد الفحص...' : 'Checking...';
       case ItemStatus.available:
-        return 'Available';
+        return locale == 'ar' ? 'متاح' : 'Available';
       case ItemStatus.notAvailable:
-        return 'Not Available';
+        return locale == 'ar' ? 'مش متاح' : 'Not Available';
     }
   }
+
+  String _getOrderStatusText(OrderStatus status) {
+    final locale = Localizations.localeOf(context).languageCode;
+
+    switch (status) {
+      case OrderStatus.pending:
+        return locale == 'ar' ? 'قيد الانتظار' : 'Pending';
+      case OrderStatus.inProgress:
+        return locale == 'ar' ? 'قيد التنفيذ' : 'In Progress';
+      case OrderStatus.completed:
+        return locale == 'ar' ? 'مكتمل' : 'Completed';
+      case OrderStatus.cancelled:
+        return locale == 'ar' ? 'ملغي' : 'Cancelled';
+      case OrderStatus.needsResponse:
+        return locale == 'ar' ? 'محتاج رد' : 'Needs Response';
+    }
+  }
+
+  String _getOrderStatusActionText(OrderStatus status) {
+    final locale = Localizations.localeOf(context).languageCode;
+
+    switch (status) {
+      case OrderStatus.pending:
+        return locale == 'ar' ? 'انتظار' : 'Pending';
+      case OrderStatus.inProgress:
+        return locale == 'ar' ? 'بدء التنفيذ' : 'Start Progress';
+      case OrderStatus.completed:
+        return locale == 'ar' ? 'إكمال' : 'Complete';
+      case OrderStatus.cancelled:
+        return locale == 'ar' ? 'إلغاء' : 'Cancel';
+      case OrderStatus.needsResponse:
+        return locale == 'ar' ? 'طلب رد' : 'Request Response';
+    }
+  }
+
+  String get _currentLocale => Localizations.localeOf(context).languageCode;
 
   void _showProfileBottomSheet() {
     Navigator.of(context).push(
@@ -1589,7 +1742,12 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         context.go(Routes.login);
       }
     } catch (e) {
-      showErrorToast(context, 'Failed to logout: $e');
+      showErrorToast(
+        context,
+        _currentLocale == 'ar'
+            ? 'فشل في تسجيل الخروج: $e'
+            : 'Failed to logout: $e',
+      );
     }
   }
 
@@ -1618,19 +1776,28 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
   }
 
   String _formatTime(DateTime dateTime) {
+    final locale = Localizations.localeOf(context).languageCode;
     final now = DateTime.now();
     final difference = now.difference(dateTime).abs();
 
     if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m ago';
+      return locale == 'ar'
+          ? 'منذ ${difference.inMinutes} دقيقة'
+          : '${difference.inMinutes}m ago';
     } else if (difference.inHours < 24) {
-      return '${difference.inHours}h ago';
+      return locale == 'ar'
+          ? 'منذ ${difference.inHours} ساعة'
+          : '${difference.inHours}h ago';
     } else {
-      return '${difference.inDays}d ago';
+      return locale == 'ar'
+          ? 'منذ ${difference.inDays} يوم'
+          : '${difference.inDays}d ago';
     }
   }
 
   Widget _buildAnimatedHeader() {
+    final locale = Localizations.localeOf(context).languageCode;
+
     return Container(
       height: MediaQuery.of(context).size.height * 0.5,
       decoration: BoxDecoration(
@@ -1788,7 +1955,9 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                         builder: (context, value, child) => Transform.translate(
                           offset: Offset(0, value),
                           child: Text(
-                            'Welcome, ${currentUser?.name ?? ''}',
+                            locale == 'ar'
+                                ? 'أهلاً وسهلاً، ${currentUser?.name ?? ""}'
+                                : 'Welcome, ${currentUser?.name ?? ''}',
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.8),
                               fontSize: 16,
@@ -1809,11 +1978,33 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
   }
 
   Widget _buildAnimatedNavigationBar() {
-    final navItems = [
-      {'title': 'Available', 'icon': Assets.imagesSvgsPending},
-      {'title': 'My Orders', 'icon': Assets.imagesSvgsOrder},
-      {'title': 'Statistics', 'icon': Icons.analytics},
-    ];
+    final locale = Localizations.localeOf(context).languageCode;
+
+    final navItems = (otherOfficeBoys.isNotEmpty)
+        ? [
+            {
+              'title': locale == 'ar' ? 'المتاحة' : 'Available',
+              'icon': Assets.imagesSvgsPending,
+            },
+            {
+              'title': locale == 'ar' ? 'طلباتي' : 'My Orders',
+              'icon': Assets.imagesSvgsOrder,
+            },
+            {
+              'title': locale == 'ar' ? 'الإحصائيات' : 'Statistics',
+              'icon': Icons.analytics,
+            },
+          ]
+        : [
+            {
+              'title': locale == 'ar' ? 'طلباتي' : 'My Orders',
+              'icon': Assets.imagesSvgsOrder,
+            },
+            {
+              'title': locale == 'ar' ? 'الإحصائيات' : 'Statistics',
+              'icon': Icons.analytics,
+            },
+          ];
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -1923,6 +2114,8 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
   }
 
   Widget _buildItemManagementSection(OfficeOrder order) {
+    final locale = Localizations.localeOf(context).languageCode;
+
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: EdgeInsets.all(16),
@@ -1949,7 +2142,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
               ),
               SizedBox(width: 12),
               Text(
-                'Item Availability Check',
+                locale == 'ar' ? 'فحص توفر العناصر' : 'Item Availability Check',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
@@ -2091,6 +2284,8 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
 
   @override
   Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context).languageCode;
+
     if (isLoading) {
       return Scaffold(
         backgroundColor: AppColors.background,
@@ -2133,18 +2328,23 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                   ),
                   SizedBox(height: 16),
                   Text(
-                    'Error loading data',
+                    locale == 'ar'
+                        ? 'خطأ في تحميل البيانات'
+                        : 'Error loading data',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 8),
-                  Text(errorMessage ?? 'Unknown error'),
+                  Text(
+                    errorMessage ??
+                        (locale == 'ar' ? 'خطأ غير معروف' : 'Unknown error'),
+                  ),
                   SizedBox(height: 16),
                   AnimatedContainer(
                     duration: Duration(milliseconds: 300),
                     curve: Curves.easeInOut,
                     child: ElevatedButton(
                       onPressed: _loadData,
-                      child: Text('Retry'),
+                      child: Text(locale == 'ar' ? 'إعادة المحاولة' : 'Retry'),
                     ),
                   ),
                 ],
@@ -2270,6 +2470,8 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
   }
 
   Widget _buildAvailableOrdersTab() {
+    final locale = Localizations.localeOf(context).languageCode;
+
     return Padding(
       padding: EdgeInsets.all(16),
       child: Column(
@@ -2279,7 +2481,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
             children: [
               Expanded(
                 child: _buildStatCard(
-                  'Available',
+                  locale == 'ar' ? 'المتاحة' : 'Available',
                   availableOrders.length.toString(),
                   Assets.imagesSvgsPending,
                   organization!.primaryColorValue,
@@ -2289,7 +2491,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
               SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  'My Active',
+                  locale == 'ar' ? 'النشطة عندي' : 'My Active',
                   myOrders
                       .where((o) => o.status != OrderStatus.completed)
                       .length
@@ -2304,7 +2506,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
           SizedBox(height: 24),
           if (availableOrders.isEmpty)
             _buildAnimatedEmptyState(
-              'No available orders',
+              locale == 'ar' ? 'مفيش طلبات متاحة' : 'No available orders',
               Assets.imagesSvgsEdit,
             )
           else
@@ -2317,6 +2519,8 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
   }
 
   Widget _buildMyOrdersTab() {
+    final locale = Localizations.localeOf(context).languageCode;
+
     final todayMyOrders = myOrders
         .where(
           (o) =>
@@ -2368,7 +2572,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                       ),
                       SizedBox(height: 8),
                       Text(
-                        'EGP ${todayBudgetPrice.toStringAsFixed(0)}',
+                        '${locale == 'ar' ? 'ج.م' : 'EGP'} ${todayBudgetPrice.toStringAsFixed(0)}',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -2376,7 +2580,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                         ),
                       ),
                       Text(
-                        'Today\'s Budget',
+                        locale == 'ar' ? 'ميزانية النهاردة' : 'Today\'s Budget',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.white.withOpacity(0.9),
@@ -2415,7 +2619,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
 
                       SizedBox(height: 8),
                       Text(
-                        'EGP ${todayFinalPrice.toStringAsFixed(0)}',
+                        '${locale == 'ar' ? 'ج.م' : 'EGP'} ${todayFinalPrice.toStringAsFixed(0)}',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -2423,7 +2627,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                         ),
                       ),
                       Text(
-                        'Today\'s Spent',
+                        locale == 'ar' ? 'المصروف النهاردة' : 'Today\'s Spent',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.white.withOpacity(0.9),
@@ -2440,7 +2644,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
             children: [
               Expanded(
                 child: _buildStatCard(
-                  'In Progress',
+                  locale == 'ar' ? 'قيد التنفيذ' : 'In Progress',
                   myOrders
                       .where((o) => o.status == OrderStatus.inProgress)
                       .length
@@ -2453,7 +2657,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
               SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  'Completed',
+                  locale == 'ar' ? 'المكتملة' : 'Completed',
                   myOrders
                       .where((o) => o.status == OrderStatus.completed)
                       .length
@@ -2467,7 +2671,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
           ),
           SizedBox(height: 24),
           Text(
-            'My Orders',
+            locale == 'ar' ? 'طلباتي' : 'My Orders',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -2477,7 +2681,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
           SizedBox(height: 16),
           if (myOrders.isEmpty)
             _buildAnimatedEmptyState(
-              'No orders assigned',
+              locale == 'ar' ? 'مفيش طلبات معادة ليك' : 'No orders assigned',
               Assets.imagesSvgsShoppingCart,
             )
           else
@@ -2498,6 +2702,8 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
   }
 
   Widget _buildStatsTab() {
+    final locale = Localizations.localeOf(context).languageCode;
+
     final totalOrders = myOrders.length;
     final completedOrders = myOrders
         .where((o) => o.status == OrderStatus.completed)
@@ -2535,7 +2741,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'My Statistics',
+            locale == 'ar' ? 'إحصائياتي' : 'My Statistics',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -2572,7 +2778,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                       ),
                       SizedBox(height: 8),
                       Text(
-                        'EGP ${todayBudgetPrice.toStringAsFixed(0)}',
+                        '${locale == 'ar' ? 'ج.م' : 'EGP'} ${todayBudgetPrice.toStringAsFixed(0)}',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -2580,7 +2786,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                         ),
                       ),
                       Text(
-                        'Today\'s Budget',
+                        locale == 'ar' ? 'ميزانية النهاردة' : 'Today\'s Budget',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.white.withOpacity(0.9),
@@ -2618,7 +2824,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                       ),
                       SizedBox(height: 8),
                       Text(
-                        'EGP ${todayFinalPrice.toStringAsFixed(0)}',
+                        '${locale == 'ar' ? 'ج.م' : 'EGP'} ${todayFinalPrice.toStringAsFixed(0)}',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -2626,7 +2832,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                         ),
                       ),
                       Text(
-                        'Today\'s Spent',
+                        locale == 'ar' ? 'المصروف النهاردة' : 'Today\'s Spent',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.white.withOpacity(0.9),
@@ -2649,42 +2855,42 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
             physics: NeverScrollableScrollPhysics(),
             children: [
               _buildStatCard(
-                'Total Orders',
+                locale == 'ar' ? 'إجمالي الطلبات' : 'Total Orders',
                 totalOrders.toString(),
                 Assets.imagesSvgsOrder,
                 organization!.primaryColorValue,
                 organization!.secondaryColorValue,
               ),
               _buildStatCard(
-                'Today\'s Orders',
+                locale == 'ar' ? 'طلبات النهاردة' : 'Today\'s Orders',
                 todayOrders.length.toString(),
                 Assets.imagesSvgsCalendar,
                 organization!.primaryColorValue,
                 organization!.secondaryColorValue,
               ),
               _buildStatCard(
-                'Completed',
+                locale == 'ar' ? 'المكتملة' : 'Completed',
                 completedOrders.toString(),
                 Assets.imagesSvgsComplete,
                 organization!.primaryColorValue,
                 organization!.secondaryColorValue,
               ),
               _buildStatCard(
-                'In Progress',
+                locale == 'ar' ? 'قيد التنفيذ' : 'In Progress',
                 inProgressOrders.toString(),
                 Assets.imagesSvgsPending,
                 organization!.primaryColorValue,
                 organization!.secondaryColorValue,
               ),
               _buildStatCard(
-                'Needs Response',
+                locale == 'ar' ? 'محتاجة رد' : 'Needs Response',
                 needsResponseOrders.toString(),
                 Assets.imagesSvgsNote,
                 organization!.primaryColorValue,
                 organization!.secondaryColorValue,
               ),
               _buildStatCard(
-                'Cancelled',
+                locale == 'ar' ? 'الملغية' : 'Cancelled',
                 cancelledOrders.toString(),
                 Assets.imagesSvgsCancell,
                 organization!.primaryColorValue,
@@ -2699,6 +2905,8 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
   }
 
   Widget _buildAvailableOrderCard(OfficeOrder order, int index) {
+    final locale = Localizations.localeOf(context).languageCode;
+
     final isSpecificallyAssignedToMe =
         order.isSpecificallyAssigned &&
         order.specificallyAssignedOfficeBoyId == currentUser!.id;
@@ -2780,7 +2988,9 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                             Icon(Icons.star, size: 14, color: Colors.orange),
                             SizedBox(width: 6),
                             Text(
-                              'Specifically Assigned to You',
+                              locale == 'ar'
+                                  ? 'معادة ليك بالتحديد'
+                                  : 'Specifically Assigned to You',
                               style: TextStyle(
                                 color: Colors.orange[800],
                                 fontSize: 11,
@@ -2812,8 +3022,8 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                             ),
                             child: Text(
                               order.type == OrderType.internal
-                                  ? 'Internal'
-                                  : 'External',
+                                  ? (locale == 'ar' ? 'داخلي' : 'Internal')
+                                  : (locale == 'ar' ? 'خارجي' : 'External'),
                               style: TextStyle(
                                 color: _getOrderTypeColor(order.type),
                                 fontSize: 11,
@@ -2846,7 +3056,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                                   ),
                                   SizedBox(width: 4),
                                   Text(
-                                    '${order.items.length} items',
+                                    '${order.items.length} ${locale == 'ar' ? 'عناصر' : 'items'}',
                                     style: TextStyle(
                                       color: Colors.grey[700],
                                       fontSize: 11,
@@ -2932,7 +3142,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                                 Text(
                                   order.items.length == 1
                                       ? order.items.first.name
-                                      : '${order.items.first.name} + ${order.items.length - 1} more',
+                                      : '${order.items.first.name} + ${order.items.length - 1} ${locale == 'ar' ? 'اكتر' : 'more'}',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
@@ -2978,7 +3188,9 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                                             ),
                                             SizedBox(width: 4),
                                             Text(
-                                              'Boss',
+                                              locale == 'ar'
+                                                  ? 'المدير'
+                                                  : 'Boss',
                                               style: TextStyle(
                                                 color: Colors.orange,
                                                 fontSize: 12,
@@ -3051,7 +3263,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
 
                                             SizedBox(width: 4),
                                             Text(
-                                              'EGP ${order.price!.toStringAsFixed(0)}',
+                                              '${locale == 'ar' ? 'ج.م' : 'EGP'} ${order.price!.toStringAsFixed(0)}',
                                               style: TextStyle(
                                                 color: Colors.green[700],
                                                 fontWeight: FontWeight.bold,
@@ -3101,8 +3313,12 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                               SizedBox(width: 8),
                               Text(
                                 isSpecificallyAssignedToMe
-                                    ? 'View Assignment'
-                                    : 'Accept Order',
+                                    ? (locale == 'ar'
+                                          ? 'شوف المهمة'
+                                          : 'View Assignment')
+                                    : (locale == 'ar'
+                                          ? 'قبول الطلب'
+                                          : 'Accept Order'),
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 15,
@@ -3132,7 +3348,9 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                               ),
                               SizedBox(height: 12),
                               Text(
-                                'This order is specifically assigned\nto another office boy',
+                                locale == 'ar'
+                                    ? 'الطلب ده معاد لأوفيس بوي تاني'
+                                    : 'This order is specifically assigned\nto another office boy',
                                 style: TextStyle(
                                   color: Colors.grey[600],
                                   fontStyle: FontStyle.italic,
@@ -3155,6 +3373,8 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
   }
 
   Widget _buildMyOrderCard(OfficeOrder order, int index) {
+    final locale = Localizations.localeOf(context).languageCode;
+
     final bool canTransfer =
         order.status == OrderStatus.pending &&
         order.isSpecificallyAssigned &&
@@ -3222,7 +3442,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                           ),
                         ),
                         child: Text(
-                          order.status.toString().split('.').last.toUpperCase(),
+                          _getOrderStatusText(order.status).toUpperCase(),
                           style: TextStyle(
                             color: _getOrderStatusColor(order.status),
                             fontSize: 10,
@@ -3250,8 +3470,8 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                         ),
                         child: Text(
                           order.type == OrderType.internal
-                              ? 'Internal'
-                              : 'External',
+                              ? (locale == 'ar' ? 'داخلي' : 'Internal')
+                              : (locale == 'ar' ? 'خارجي' : 'External'),
                           style: TextStyle(
                             color: _getOrderTypeColor(order.type),
                             fontSize: 10,
@@ -3289,7 +3509,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                               ),
                               SizedBox(width: 4),
                               Text(
-                                'Can Transfer',
+                                locale == 'ar' ? 'تقدر تحولها' : 'Can Transfer',
                                 style: TextStyle(
                                   color: Colors.orange[800],
                                   fontSize: 10,
@@ -3350,7 +3570,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                             Text(
                               order.items.length == 1
                                   ? order.items.first.name
-                                  : '${order.items.first.name} + ${order.items.length - 1} more',
+                                  : '${order.items.first.name} + ${order.items.length - 1} ${locale == 'ar' ? 'اكتر' : 'more'}',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
@@ -3394,7 +3614,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                                         ),
                                         SizedBox(width: 4),
                                         Text(
-                                          'Boss',
+                                          locale == 'ar' ? 'المدير' : 'Boss',
                                           style: TextStyle(
                                             color: Colors.orange,
                                             fontSize: 12,
@@ -3456,7 +3676,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                                             ),
                                           ),
                                           child: Text(
-                                            'Budget: ${order.price!.toStringAsFixed(0)}',
+                                            '${locale == 'ar' ? 'الميزانية' : 'Budget'}: ${order.price!.toStringAsFixed(0)}',
                                             style: TextStyle(
                                               color: Colors.green[700],
                                               fontSize: 10,
@@ -3483,7 +3703,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                                             ),
                                           ),
                                           child: Text(
-                                            'Spent: ${order.finalPrice!.toStringAsFixed(0)}',
+                                            '${locale == 'ar' ? 'المصروف' : 'Spent'}: ${order.finalPrice!.toStringAsFixed(0)}',
                                             style: TextStyle(
                                               color: Colors.green[700],
                                               fontSize: 11,
@@ -3552,6 +3772,8 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
   }
 
   Widget _buildQuickStatusActions(OfficeOrder order) {
+    final locale = Localizations.localeOf(context).languageCode;
+
     final bool canTransfer =
         order.status == OrderStatus.pending &&
         order.isSpecificallyAssigned &&
@@ -3576,7 +3798,11 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                 child: ElevatedButton.icon(
                   onPressed: () => _showTransferBottomSheet(order),
                   icon: Icon(Icons.swap_horiz, size: 18),
-                  label: Text('Transfer to Another Office Boy'),
+                  label: Text(
+                    locale == 'ar'
+                        ? 'حولها لأوفيس بوي تاني'
+                        : 'Transfer to Another Office Boy',
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange,
                     foregroundColor: Colors.white,
@@ -3603,7 +3829,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                       color: Colors.red[700],
                       height: 18,
                     ),
-                    label: Text('Cancel'),
+                    label: Text(locale == 'ar' ? 'إلغاء' : 'Cancel'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red[50],
                       foregroundColor: Colors.red[700],
@@ -3624,7 +3850,9 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                       OrderStatus.inProgress,
                     ),
                     icon: Icon(Icons.delivery_dining_rounded, size: 18),
-                    label: Text('Accept & Start'),
+                    label: Text(
+                      locale == 'ar' ? 'اقبل وابدا' : 'Accept & Start',
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       foregroundColor: Colors.white,
@@ -3649,7 +3877,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                       color: Colors.red[700],
                       height: 18,
                     ),
-                    label: Text('Cancel'),
+                    label: Text(locale == 'ar' ? 'إلغاء' : 'Cancel'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red[50],
                       foregroundColor: Colors.red[700],
@@ -3671,7 +3899,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                       color: Colors.white,
                       height: 18,
                     ),
-                    label: Text('Complete'),
+                    label: Text(locale == 'ar' ? 'إكمال' : 'Complete'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       foregroundColor: Colors.white,

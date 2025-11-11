@@ -608,7 +608,80 @@
   "noEmailAppFound": "No email app found on your device",
   "errorOpeningEmailApp": "Error opening email app",
   "verificationEmailResent": "Verification email sent successfully",
-  "errorResendingEmail": "Error resending email"
-
+  "errorResendingEmail": "Error resending email",
+ "admin": {
+    "dashboard": "Admin Dashboard",
+    "overview": "Overview",
+    "orders": "Orders",
+    "employees": "Employees",
+    "officeBoys": "Office Boys",
+     "employeeResponseWithColon": "Employee Response: {response}",
+     "currencyWithPrice": "EGP {price}",
+    
+    "filters": {
+      "all": "All",
+      "pending": "Pending",
+      "inProgress": "In Progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "filterOrders": "Filter Orders",
+       "needResponse": "Need Response"
+    },
+    
+    "users": {
+      "employees": "Employees",
+      "officeBoys": "Office Boys",
+      "totalEmployees": "total employees",
+      "totalOfficeBoys": "total office boys",
+      "active": "Active",
+      "noEmployees": "No employees found",
+      "noOfficeBoys": "No office boys found",
+      "inactive": "Inactive"
+    },
+    
+    "orders": {
+      "noOrders": "No orders found",
+      "items": "Items",
+      "order": "Order",
+      "employeeResponse": "Employee Response",
+      "deliveries": "Deliveries"
+    },
+    
+    "stats": {
+      "totalOrders": "Total Orders",
+      "todayOrders": "Today's Orders",
+      "employees": "Employees",
+      "officeBoys": "Office Boys",
+      "internalOrders": "Internal Orders",
+      "externalOrders": "External Orders",
+      "pending": "Pending",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+      
+    },
+    
+    "messages": {
+      "switchedToEmployee": "Switched to Employee View",
+      "switchedToAdmin": "Switched to Admin View",
+      "settingsUpdated": "Settings updated successfully!",
+      "settingsFailed": "Failed to update settings: {error}",
+      "errorLoading": "Error loading data"
+    },
+    
+    "time": {
+      "minutes": "m",
+      "hours": "h",
+      "days": "d",
+      "ago": "ago"
+    },
+    "itemsCount": "Items ({count})",
+    "employee": "Employee",
+    "officeBoy": "Office Boy",
+    "response": "Response",
+    "description": "Description",
+    "notes": "Notes",
+    "price": "Price",
+    "finalPrice": "Final Price"
+  }
 
 }

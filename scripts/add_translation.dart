@@ -27,6 +27,7 @@ void main(List<String> args) {
 void addTranslation(String filePath, String key, String value) {
   final file = File(filePath);
   
+  
   if (!file.existsSync()) {
     print('Error: File not found: $filePath');
     exit(1);

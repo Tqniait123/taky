@@ -1,4 +1,3 @@
-// lib/features/all/auth/presentation/pages/login_screen.dart
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -13,6 +12,7 @@ import 'package:taqy/features/all/auth/domain/entities/user.dart';
 import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
 import 'package:taqy/features/all/auth/presentation/widgets/animated_button.dart';
 import 'package:taqy/features/all/auth/presentation/widgets/auth_text_field.dart';
+import 'package:taqy/features/all/auth/presentation/widgets/language_drop_down.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -82,8 +82,7 @@ class _LoginScreenState extends State<LoginScreen>
                   // Navigate to dashboard based on user role
                   switch (user.role) {
                     case UserRole.admin:
-                      // context.go(Routes.adminDashboard);
-                      context.go(Routes.layoutAdmin); // Fallback
+                      context.go(Routes.layoutAdmin);
                       break;
                     case UserRole.employee:
                       context.go(Routes.layoutEmployee);
@@ -119,8 +118,15 @@ class _LoginScreenState extends State<LoginScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Language Dropdown at the top
+                            const SizedBox(height: 16),
+                            Align(
+                              alignment: Alignment.topRight,
+                              child: CompactLanguageDropdown(),
+                            ),
+
                             // Header
-                            const SizedBox(height: 40),
+                            const SizedBox(height: 16),
                             Center(
                               child: Container(
                                 padding: const EdgeInsets.all(24),
@@ -283,37 +289,6 @@ class _LoginScreenState extends State<LoginScreen>
                               ),
                             ),
 
-                            // const SizedBox(height: 32),
-
-                            // Divider
-                            // Row(
-                            //   children: [
-                            //     Expanded(
-                            //       child: Container(
-                            //         height: 1,
-                            //         color: AppColors.outline,
-                            //       ),
-                            //     ),
-                            //     Padding(
-                            //       padding: const EdgeInsets.symmetric(
-                            //         horizontal: 16,
-                            //       ),
-                            //       child: Text(
-                            //         LocaleKeys.or.tr(),
-                            //         style: TextStyle(
-                            //           color: AppColors.onSurfaceVariant,
-                            //           fontWeight: FontWeight.w500,
-                            //         ),
-                            //       ),
-                            //     ),
-                            //     Expanded(
-                            //       child: Container(
-                            //         height: 1,
-                            //         color: AppColors.outline,
-                            //       ),
-                            //     ),
-                            //   ],
-                            // ),
                             const SizedBox(height: 16),
 
                             // Sign Up Link
@@ -328,7 +303,6 @@ class _LoginScreenState extends State<LoginScreen>
                                       fontSize: 16,
                                     ),
                                   ),
-                                  // SizedBox(width: 16),
                                   TextButton(
                                     onPressed: () {
                                       if (mounted && !_isDisposed) {

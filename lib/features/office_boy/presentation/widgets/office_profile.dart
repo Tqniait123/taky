@@ -9,6 +9,7 @@ import 'package:taqy/core/services/firebase_service.dart';
 import 'package:taqy/core/theme/colors.dart';
 import 'package:taqy/core/utils/dialogs/error_toast.dart';
 import 'package:taqy/core/utils/widgets/app_images.dart';
+import 'package:taqy/features/admin/presentation/widgets/language_layout_drop_down.dart';
 import 'package:taqy/features/office_boy/data/models/office_organization.dart';
 import 'package:taqy/features/office_boy/data/models/office_user_model.dart';
 
@@ -142,6 +143,7 @@ class _OfficeBoyProfileBottomSheetState
 
   @override
   Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context).languageCode;
     return AnimatedBuilder(
       animation: Listenable.merge([
         _slideController,
@@ -199,7 +201,7 @@ class _OfficeBoyProfileBottomSheetState
                               width: 1,
                             ),
                           ),
-                          child: _buildContent(),
+                          child: _buildContent(locale),
                         ),
                       ),
                     ),
@@ -213,9 +215,12 @@ class _OfficeBoyProfileBottomSheetState
     );
   }
 
-  Future<void> _updateProfile() async {
+  Future<void> _updateProfile(String locale) async {
     if (_nameController.text.trim().isEmpty) {
-      showErrorToast(context, 'Name cannot be empty');
+      showErrorToast(
+        context,
+        locale == 'ar' ? 'لا يمكن ان يكون الاسم فارغ' : 'Name cannot be empty',
+      );
       return;
     }
 
@@ -245,25 +250,35 @@ class _OfficeBoyProfileBottomSheetState
 
       widget.onProfileUpdated(updatedUser);
 
-      showSuccessToast(context, 'Profile updated successfully!');
+      showSuccessToast(
+        context,
+        locale == 'ar'
+            ? 'تم تحديث الملف الشخصي بنجاح'
+            : 'Profile updated successfully!',
+      );
 
       Navigator.pop(context);
     } catch (e) {
-      showErrorToast(context, 'Failed to update profile: $e');
+      showErrorToast(
+        context,
+        locale == 'ar'
+            ? 'فشل تحديث الملف الشخصي'
+            : 'Failed to update profile: $e',
+      );
     } finally {
       setState(() => _isSaving = false);
     }
   }
 
-  void _showLogoutConfirmation() {
+  void _showLogoutConfirmation(String locale) {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => _buildGlassDialog(),
+      builder: (context) => _buildGlassDialog(locale),
     );
   }
 
-  Widget _buildGlassDialog() {
+  Widget _buildGlassDialog(String locale) {
     return AnimatedBuilder(
       animation: _fadeController,
       builder: (context, child) => BackdropFilter(
@@ -333,7 +348,7 @@ class _OfficeBoyProfileBottomSheetState
 
                 // Title
                 Text(
-                  'Confirm Logout',
+                  locale == 'ar' ? 'تسجيل الخروج' : 'Confirm Logout',
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -344,7 +359,9 @@ class _OfficeBoyProfileBottomSheetState
 
                 // Message
                 Text(
-                  'Are you sure you want to logout?\nYou will be redirected to the login screen.',
+                  locale == 'ar'
+                      ? 'هل أنت متأكد من تسجيل الخروج؟\n سيتم تحويلك إلى صفحة تسجيل الدخول.'
+                      : 'Are you sure you want to logout?\nYou will be redirected to the login screen.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 16,
@@ -379,7 +396,7 @@ class _OfficeBoyProfileBottomSheetState
                             onTap: () => Navigator.pop(context),
                             child: Center(
                               child: Text(
-                                'Cancel',
+                                locale == 'ar' ? 'الغاء' : 'Cancel',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
@@ -421,7 +438,7 @@ class _OfficeBoyProfileBottomSheetState
                             },
                             child: Center(
                               child: Text(
-                                'Logout',
+                                locale == 'ar' ? 'تسجيل الخروج' : 'Logout',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
@@ -474,10 +491,10 @@ class _OfficeBoyProfileBottomSheetState
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(String locale) {
     return Column(
       children: [
-        _buildGlassHeader(),
+        _buildGlassHeader(locale),
         Expanded(
           child: SingleChildScrollView(
             physics: BouncingScrollPhysics(),
@@ -488,20 +505,29 @@ class _OfficeBoyProfileBottomSheetState
                 SizedBox(height: 20),
                 _buildProfileAvatar(),
                 SizedBox(height: 32),
-                _buildUserInfoCard(),
+                _buildUserInfoCard(locale),
+                SizedBox(height: 24),
+                LanguageLayoutDropdown(
+                  primaryColor: widget.organization.primaryColorValue,
+                  secondaryColor: widget.organization.secondaryColorValue,
+                ),
                 SizedBox(height: 24),
                 _buildGlassTextField(
                   controller: _nameController,
-                  label: 'Full Name',
-                  hint: 'Enter your full name',
+                  label: locale == 'ar' ? 'الاسم كامل' : 'Full Name',
+                  hint: locale == 'ar'
+                      ? 'ادخل الاسم كامل'
+                      : 'Enter your full name',
                   icon: Assets.imagesSvgsUser,
                   delay: 0,
                 ),
                 SizedBox(height: 24),
                 _buildGlassTextField(
                   controller: _phoneController,
-                  label: 'Phone Number',
-                  hint: 'Enter your phone number',
+                  label: locale == 'ar' ? 'رقم الهاتف' : 'Phone Number',
+                  hint: locale == 'ar'
+                      ? 'ادخل رقم الهاتف'
+                      : 'Enter your phone number',
                   icon: Assets.imagesSvgsPhone,
                   delay: 100,
                   keyboardType: TextInputType.phone,
@@ -511,12 +537,12 @@ class _OfficeBoyProfileBottomSheetState
             ),
           ),
         ),
-        _buildGlassBottomActions(),
+        _buildGlassBottomActions(locale),
       ],
     );
   }
 
-  Widget _buildGlassHeader() {
+  Widget _buildGlassHeader(String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 800),
@@ -579,7 +605,7 @@ class _OfficeBoyProfileBottomSheetState
                     child: AnimatedBuilder(
                       animation: _shimmerController,
                       builder: (context, child) => Text(
-                        'Profile',
+                        locale == 'ar' ? 'الملف الشخصي' : 'Profile',
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
@@ -724,7 +750,7 @@ class _OfficeBoyProfileBottomSheetState
     );
   }
 
-  Widget _buildUserInfoCard() {
+  Widget _buildUserInfoCard(String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 800),
@@ -759,7 +785,7 @@ class _OfficeBoyProfileBottomSheetState
                 children: [
                   // Section title with gradient
                   Text(
-                    'Account Information',
+                    locale == 'ar' ? 'معلومات الحساب' : 'Account Information',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -780,7 +806,12 @@ class _OfficeBoyProfileBottomSheetState
                     100,
                   ),
                   SizedBox(height: 16),
-                  _buildEmailRow(Assets.imagesSvgsMail, widget.user.email, 200),
+                  _buildEmailRow(
+                    Assets.imagesSvgsMail,
+                    widget.user.email,
+                    200,
+                    locale,
+                  ),
                 ],
               ),
             ),
@@ -834,7 +865,7 @@ class _OfficeBoyProfileBottomSheetState
     );
   }
 
-  Widget _buildEmailRow(String icon, String email, int delay) {
+  Widget _buildEmailRow(String icon, String email, int delay, String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 600 + delay),
@@ -865,10 +896,12 @@ class _OfficeBoyProfileBottomSheetState
             Expanded(
               child: GestureDetector(
                 onTap: () {
-                  _showFullEmailDialog(email);
+                  _showFullEmailDialog(email, locale);
                 },
                 child: Tooltip(
-                  message: 'Tap to view full email',
+                  message: locale == 'ar'
+                      ? 'اظهار البريد الالكتروني الكامل'
+                      : 'Tap to view full email',
                   child: Container(
                     padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                     decoration: BoxDecoration(
@@ -931,7 +964,7 @@ class _OfficeBoyProfileBottomSheetState
     }
   }
 
-  void _showFullEmailDialog(String email) {
+  void _showFullEmailDialog(String email, String locale) {
     showDialog(
       context: context,
       builder: (context) => BackdropFilter(
@@ -986,7 +1019,7 @@ class _OfficeBoyProfileBottomSheetState
 
                 // Title
                 Text(
-                  'Email Address',
+                  locale == 'ar' ? 'البريد الالكتروني' : 'Email Address',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -1045,7 +1078,7 @@ class _OfficeBoyProfileBottomSheetState
                     child: InkWell(
                       borderRadius: BorderRadius.circular(12),
                       onTap: () {
-                        _copyToClipboard(email);
+                        _copyToClipboard(email, context, locale);
                         Navigator.pop(context);
                       },
                       child: Row(
@@ -1058,7 +1091,9 @@ class _OfficeBoyProfileBottomSheetState
                           ),
                           SizedBox(width: 8),
                           Text(
-                            'Copy Email',
+                            locale == 'ar'
+                                ? 'نسخ البريد الالكتروني'
+                                : 'Copy Email',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,
@@ -1096,7 +1131,7 @@ class _OfficeBoyProfileBottomSheetState
                       onTap: () => Navigator.pop(context),
                       child: Center(
                         child: Text(
-                          'Close',
+                          locale == 'ar' ? 'اغلاق' : 'Close',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 16,
@@ -1115,9 +1150,14 @@ class _OfficeBoyProfileBottomSheetState
     );
   }
 
-  void _copyToClipboard(String text) {
+  void _copyToClipboard(String text, BuildContext context, String locale) {
     Clipboard.setData(ClipboardData(text: text));
-    showSuccessToast(context, 'Email copied to clipboard!');
+    showSuccessToast(
+      context,
+      locale == 'ar'
+          ? 'تم نسخ البريد الالكتروني'
+          : 'Email copied to clipboard!',
+    );
   }
 
   Widget _buildGlassTextField({
@@ -1213,7 +1253,7 @@ class _OfficeBoyProfileBottomSheetState
     );
   }
 
-  Widget _buildGlassBottomActions() {
+  Widget _buildGlassBottomActions(String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 1200),
@@ -1269,7 +1309,9 @@ class _OfficeBoyProfileBottomSheetState
                         color: Colors.transparent,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(16),
-                          onTap: _isSaving ? null : _updateProfile,
+                          onTap: _isSaving
+                              ? null
+                              : () => _updateProfile(locale),
                           child: Container(
                             alignment: Alignment.center,
                             child: _isSaving
@@ -1286,7 +1328,9 @@ class _OfficeBoyProfileBottomSheetState
                                       ),
                                       SizedBox(width: 12),
                                       Text(
-                                        'Updating...',
+                                        locale == 'ar'
+                                            ? 'تحديث...'
+                                            : 'Updating...',
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 16,
@@ -1296,7 +1340,9 @@ class _OfficeBoyProfileBottomSheetState
                                     ],
                                   )
                                 : Text(
-                                    'Update Profile',
+                                    locale == 'ar'
+                                        ? 'تحديث الملف الشخصي'
+                                        : 'Update Profile',
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 16,
@@ -1327,12 +1373,12 @@ class _OfficeBoyProfileBottomSheetState
                             ? null
                             : () {
                                 Navigator.pop(context);
-                                _showLogoutConfirmation();
+                                _showLogoutConfirmation(locale);
                               },
                         child: Container(
                           alignment: Alignment.center,
                           child: Text(
-                            'Logout',
+                            locale == 'ar' ? 'تسجيل الخروج' : 'Logout',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:lottie/lottie.dart';
@@ -8,6 +9,7 @@ import 'package:taqy/core/helpers/cache_helper.dart';
 import 'package:taqy/core/services/firebase_service.dart';
 import 'package:taqy/core/static/app_assets.dart';
 import 'package:taqy/core/theme/colors.dart';
+import 'package:taqy/core/translations/locale_keys.g.dart';
 import 'package:taqy/core/utils/dialogs/error_toast.dart';
 import 'package:taqy/core/utils/widgets/app_images.dart';
 import 'package:taqy/features/admin/data/models/app_user.dart';
@@ -320,9 +322,15 @@ class _AdminLayoutState extends State<AdminLayout>
                   organization!.secondaryColorValue,
                 );
 
-                showSuccessToast(context, 'Settings updated successfully!');
+                showSuccessToast(
+                  context,
+                  'admin.messages.settingsUpdated'.tr(),
+                );
               } catch (e) {
-                showErrorToast(context, 'Failed to update settings: $e');
+                showErrorToast(
+                  context,
+                  'admin.messages.settingsFailed'.tr(args: [e.toString()]),
+                );
               }
             },
             // onLogout: () => _handleLogout(context),
@@ -478,7 +486,9 @@ class _AdminLayoutState extends State<AdminLayout>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
+                      title == 'Employees'
+                          ? 'admin.users.employees'.tr()
+                          : 'admin.users.officeBoys'.tr(),
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -486,7 +496,7 @@ class _AdminLayoutState extends State<AdminLayout>
                       ),
                     ),
                     Text(
-                      '${users.length} total ${title.toLowerCase()}',
+                      '${users.length} ${title == 'Employees' ? 'admin.users.totalEmployees'.tr() : 'admin.users.totalOfficeBoys'.tr()}',
                       style: TextStyle(
                         color: AppColors.onSurfaceVariant,
                         fontSize: 14,
@@ -510,7 +520,7 @@ class _AdminLayoutState extends State<AdminLayout>
                     // ],
                   ),
                   child: Text(
-                    '${users.where((u) => u.isActive).length} Active',
+                    '${users.where((u) => u.isActive).length} ${'admin.users.active'.tr()}',
                     style: TextStyle(
                       color: color,
                       fontSize: 12,
@@ -559,7 +569,9 @@ class _AdminLayoutState extends State<AdminLayout>
 
     showSuccessToast(
       context,
-      isEmployeeView ? 'Switched to Employee View' : 'Switched to Admin View',
+      isEmployeeView
+          ? 'admin.messages.switchedToEmployee'.tr()
+          : 'admin.messages.switchedToAdmin'.tr(),
     );
   }
 
@@ -749,7 +761,7 @@ class _AdminLayoutState extends State<AdminLayout>
         );
       }
     }
-
+    final locale = Localizations.localeOf(context).languageCode;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: RefreshIndicator(
@@ -786,7 +798,7 @@ class _AdminLayoutState extends State<AdminLayout>
                         top: _isHeaderCollapsed ? -50 : 0,
                         left: 0,
                         right: 0,
-                        child: _buildAnimatedHeader(),
+                        child: _buildAnimatedHeader(locale),
                       ),
                       Column(
                         children: [
@@ -813,7 +825,7 @@ class _AdminLayoutState extends State<AdminLayout>
                             child: Column(
                               children: [
                                 SizedBox(height: 16),
-                                _buildSelectedContent(),
+                                _buildSelectedContent(locale),
                               ],
                             ),
                           ),
@@ -855,48 +867,48 @@ class _AdminLayoutState extends State<AdminLayout>
 
     final statData = [
       {
-        'title': 'Total Orders',
+        'title': 'admin.stats.totalOrders'.tr(),
         'value': totalOrders.toString(),
         'icon': Assets.imagesSvgsOrder,
       },
       {
-        'title': 'Today\'s Orders',
+        'title': 'admin.stats.todayOrders'.tr(),
         'value': todayOrders.toString(),
         'icon': Assets.imagesSvgsCalendar,
       },
       {
-        'title': 'Employees',
+        'title': 'admin.stats.employees'.tr(),
         'value': employees.length.toString(),
         'icon': Assets.imagesSvgsUsers,
       },
       {
-        'title': 'Office Boys',
+        'title': 'admin.stats.officeBoys'.tr(),
         'value': officeBoys.length.toString(),
         'iconData': Icons.delivery_dining,
       },
       {
-        'title': 'Internal Orders',
+        'title': 'admin.stats.internalOrders'.tr(),
         'value': internalOrders.toString(),
         'icon': Assets.imagesSvgsCoffee,
       },
       {
-        'title': 'External Orders',
+        'title': 'admin.stats.externalOrders'.tr(),
         'value': externalOrders.toString(),
         'icon': Assets.imagesSvgsMoney,
       },
       {
-        'title': 'Pending',
+        'title': 'admin.stats.pending'.tr(),
         'value': pendingOrders.toString(),
         'icon': Assets.imagesSvgsPending,
       },
       {
-        'title': 'Completed',
+        'title': 'admin.stats.completed'.tr(),
         'value': completedOrders.toString(),
         'icon': Assets.imagesSvgsComplete,
         'isComplete': true,
       },
       {
-        'title': 'Cancelled',
+        'title': 'admin.stats.cancelled'.tr(),
         'value': orders
             .where((o) => o.status == OrderStatus.cancelled)
             .length
@@ -943,7 +955,7 @@ class _AdminLayoutState extends State<AdminLayout>
     );
   }
 
-  Widget _buildAnimatedHeader() {
+  Widget _buildAnimatedHeader(String locale) {
     return Container(
       height: MediaQuery.of(context).size.height * 0.5,
       decoration: BoxDecoration(
@@ -1135,7 +1147,7 @@ class _AdminLayoutState extends State<AdminLayout>
                         builder: (context, value, child) => Transform.translate(
                           offset: Offset(0, value),
                           child: Text(
-                            'Admin Dashboard',
+                            LocaleKeys.admin_dashboard.tr(),
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.8),
                               fontSize: 16,
@@ -1144,7 +1156,7 @@ class _AdminLayoutState extends State<AdminLayout>
                         ),
                       ),
 
-                      _buildAnimatedNavigationBar(),
+                      _buildAnimatedNavigationBar(locale),
                     ],
                   ),
                 ),
@@ -1156,12 +1168,24 @@ class _AdminLayoutState extends State<AdminLayout>
     );
   }
 
-  Widget _buildAnimatedNavigationBar() {
+  Widget _buildAnimatedNavigationBar(String locale) {
     final navItems = [
-      {'title': 'Overview', 'icon': Assets.imagesSvgsOverview},
-      {'title': 'Orders', 'icon': Assets.imagesSvgsOrder},
-      {'title': 'Employees', 'icon': Assets.imagesSvgsUsers},
-      {'title': 'Office Boys', 'icon': Icons.delivery_dining},
+      {
+        'title': locale == 'en' ? 'Overview' : "لوحة التحكم",
+        'icon': Assets.imagesSvgsOverview,
+      },
+      {
+        'title': locale == 'en' ? 'Orders' : "الطلبات",
+        'icon': Assets.imagesSvgsOrder,
+      },
+      {
+        'title': locale == 'en' ? 'Employees' : "الموظفين",
+        'icon': Assets.imagesSvgsUsers,
+      },
+      {
+        'title': locale == 'en' ? 'Office Boys' : "العاملين",
+        'icon': Icons.delivery_dining,
+      },
     ];
 
     return TweenAnimationBuilder<double>(
@@ -1274,7 +1298,7 @@ class _AdminLayoutState extends State<AdminLayout>
     );
   }
 
-  Widget _buildSelectedContent() {
+  Widget _buildSelectedContent(String locale) {
     return AnimatedSwitcher(
       duration: Duration(milliseconds: 600),
       transitionBuilder: (Widget child, Animation<double> animation) {
@@ -1291,27 +1315,27 @@ class _AdminLayoutState extends State<AdminLayout>
       },
       child: Container(
         key: ValueKey(_selectedIndex),
-        child: _getSelectedContent(),
+        child: _getSelectedContent(locale),
       ),
     );
   }
 
-  Widget _getSelectedContent() {
+  Widget _getSelectedContent(String locale) {
     switch (_selectedIndex) {
       case 0:
         return _buildAnimatedOverviewTab();
       case 1:
-        return _buildAnimatedOrdersTab();
+        return _buildAnimatedOrdersTab(locale);
       case 2:
-        return _buildAnimatedEmployeesTab();
+        return _buildAnimatedEmployeesTab(locale);
       case 3:
-        return _buildAnimatedOfficeBoysTab();
+        return _buildAnimatedOfficeBoysTab(locale);
       default:
         return _buildAnimatedOverviewTab();
     }
   }
 
-  Widget _buildAnimatedOrdersTab() {
+  Widget _buildAnimatedOrdersTab(String locale) {
     return Column(
       children: [
         AnimatedContainer(
@@ -1335,7 +1359,7 @@ class _AdminLayoutState extends State<AdminLayout>
                       top: 16,
                     ),
                     child: Text(
-                      'Filter Orders',
+                      locale == 'ar' ? 'تصفية الطلبات' : 'Filter Orders',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -1359,27 +1383,27 @@ class _AdminLayoutState extends State<AdminLayout>
                     child: Row(
                       children: [
                         _buildAnimatedFilterChip(
-                          'All',
+                          'admin.filters.all'.tr(),
                           selectedFilter == null,
                           0,
                         ),
                         _buildAnimatedFilterChip(
-                          'Pending',
+                          'admin.filters.pending'.tr(),
                           selectedFilter == OrderStatus.pending,
                           1,
                         ),
                         _buildAnimatedFilterChip(
-                          'In Progress',
+                          'admin.filters.inProgress'.tr(),
                           selectedFilter == OrderStatus.inProgress,
                           2,
                         ),
                         _buildAnimatedFilterChip(
-                          'Completed',
+                          'admin.filters.completed'.tr(),
                           selectedFilter == OrderStatus.completed,
                           3,
                         ),
                         _buildAnimatedFilterChip(
-                          'Cancelled',
+                          'admin.filters.cancelled'.tr(),
                           selectedFilter == OrderStatus.cancelled,
                           4,
                         ),
@@ -1394,7 +1418,7 @@ class _AdminLayoutState extends State<AdminLayout>
 
         filteredOrders.isEmpty
             ? _buildAnimatedEmptyState('No orders found', Icons.search_off)
-            : _buildAnimatedOrdersList(),
+            : _buildAnimatedOrdersList(locale),
       ],
     );
   }
@@ -1411,21 +1435,21 @@ class _AdminLayoutState extends State<AdminLayout>
           child: GestureDetector(
             onTap: () {
               setState(() {
-                if (label == 'All') {
+                if (label == 'admin.filters.all'.tr()) {
                   selectedFilter = null;
-                } else if (label == 'Pending') {
+                } else if (label == 'admin.filters.pending'.tr()) {
                   selectedFilter = selectedFilter == OrderStatus.pending
                       ? null
                       : OrderStatus.pending;
-                } else if (label == 'In Progress') {
+                } else if (label == 'admin.filters.inProgress'.tr()) {
                   selectedFilter = selectedFilter == OrderStatus.inProgress
                       ? null
                       : OrderStatus.inProgress;
-                } else if (label == 'Completed') {
+                } else if (label == 'admin.filters.completed'.tr()) {
                   selectedFilter = selectedFilter == OrderStatus.completed
                       ? null
                       : OrderStatus.completed;
-                } else if (label == 'Cancelled') {
+                } else if (label == 'admin.filters.cancelled'.tr()) {
                   selectedFilter = selectedFilter == OrderStatus.cancelled
                       ? null
                       : OrderStatus.cancelled;
@@ -1552,7 +1576,7 @@ class _AdminLayoutState extends State<AdminLayout>
     );
   }
 
-  Widget _buildAnimatedOrdersList() {
+  Widget _buildAnimatedOrdersList(String locale) {
     return ListView.builder(
       padding: EdgeInsets.all(16),
       shrinkWrap: true,
@@ -1565,14 +1589,18 @@ class _AdminLayoutState extends State<AdminLayout>
           curve: Curves.easeOutCubic,
           builder: (context, value, child) => Transform.translate(
             offset: Offset(50 * (1 - value), 0),
-            child: _buildDetailedOrderCard(filteredOrders[index], index),
+            child: _buildDetailedOrderCard(
+              filteredOrders[index],
+              index,
+              locale,
+            ),
           ),
         );
       },
     );
   }
 
-  Widget _buildAnimatedEmployeesTab() {
+  Widget _buildAnimatedEmployeesTab(String locale) {
     return Column(
       children: [
         _buildAnimatedUserHeader(
@@ -1582,12 +1610,12 @@ class _AdminLayoutState extends State<AdminLayout>
         ),
         employees.isEmpty
             ? _buildAnimatedEmptyState('No employees found', Icons.people)
-            : _buildAnimatedUsersList(employees),
+            : _buildAnimatedUsersList(employees, locale),
       ],
     );
   }
 
-  Widget _buildAnimatedOfficeBoysTab() {
+  Widget _buildAnimatedOfficeBoysTab(String locale) {
     return Column(
       children: [
         _buildAnimatedUserHeader(
@@ -1600,12 +1628,12 @@ class _AdminLayoutState extends State<AdminLayout>
                 'No office boys found',
                 Icons.delivery_dining,
               )
-            : _buildAnimatedUsersList(officeBoys),
+            : _buildAnimatedUsersList(officeBoys, locale),
       ],
     );
   }
 
-  Widget _buildAnimatedUsersList(List<AdminAppUser> users) {
+  Widget _buildAnimatedUsersList(List<AdminAppUser> users, String locale) {
     return ListView.builder(
       padding: EdgeInsets.all(16),
       itemCount: users.length,
@@ -1618,14 +1646,14 @@ class _AdminLayoutState extends State<AdminLayout>
           curve: Curves.elasticOut,
           builder: (context, value, child) => Transform.scale(
             scale: value,
-            child: _buildAnimatedUserCard(users[index], index),
+            child: _buildAnimatedUserCard(users[index], index, locale),
           ),
         );
       },
     );
   }
 
-  Widget _buildAnimatedUserCard(AdminAppUser user, int index) {
+  Widget _buildAnimatedUserCard(AdminAppUser user, int index, String locale) {
     final userOrders = orders
         .where(
           (order) =>
@@ -1771,7 +1799,7 @@ class _AdminLayoutState extends State<AdminLayout>
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                'Inactive',
+                                locale == 'ar' ? 'غير نشط' : 'Inactive',
                                 style: TextStyle(
                                   color: AppColors.error,
                                   fontSize: 10,
@@ -1899,7 +1927,13 @@ class _AdminLayoutState extends State<AdminLayout>
                       ),
                     ),
                     Text(
-                      user.role == UserRole.employee ? 'Orders' : 'Deliveries',
+                      user.role == UserRole.employee
+                          ? locale == 'ar'
+                                ? 'الطلبات'
+                                : 'Orders'
+                          : locale == 'ar'
+                          ? 'التسليمات'
+                          : 'Deliveries',
                       style: TextStyle(
                         color: AppColors.onSurfaceVariant,
                         fontSize: 12,
@@ -1907,7 +1941,9 @@ class _AdminLayoutState extends State<AdminLayout>
                     ),
                     SizedBox(height: 4),
                     Text(
-                      '$completedOrders completed',
+                      locale == 'ar'
+                          ? '$completedOrders مكتملة'
+                          : '$completedOrders completed',
                       style: TextStyle(
                         color: AppColors.success,
                         fontSize: 10,
@@ -1924,7 +1960,7 @@ class _AdminLayoutState extends State<AdminLayout>
     );
   }
 
-  Widget _buildDetailedOrderCard(AdminOrder order, int index) {
+  Widget _buildDetailedOrderCard(AdminOrder order, int index, String locale) {
     final displayPrice = order.finalPrice ?? order.price;
     final hasPriceChange =
         order.finalPrice != null &&
@@ -1971,7 +2007,9 @@ class _AdminLayoutState extends State<AdminLayout>
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Order #${order.id.substring(0, 8)}',
+                    locale == 'ar'
+                        ? 'طلب #${order.id.substring(0, 8)}'
+                        : 'Order #${order.id.substring(0, 8)}',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -2014,7 +2052,9 @@ class _AdminLayoutState extends State<AdminLayout>
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Items (${order.items.length}):',
+                          'admin.itemsCount'.tr(
+                            namedArgs: {'count': order.items.length.toString()},
+                          ),
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -2184,7 +2224,7 @@ class _AdminLayoutState extends State<AdminLayout>
                   ),
                   SizedBox(width: 8),
                   Text(
-                    _formatTime(order.createdAt),
+                    _formatTime(order.createdAt, locale),
                     style: TextStyle(
                       color: AppColors.onSurfaceVariant,
                       fontSize: 12,
@@ -2252,7 +2292,11 @@ class _AdminLayoutState extends State<AdminLayout>
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Employee Response: ${order.employeeResponse}',
+                          'admin.employeeResponseWithColon'.tr(
+                            namedArgs: {
+                              'response': order.employeeResponse ?? '',
+                            },
+                          ),
                           style: TextStyle(
                             color: Colors.grey[600],
                             fontSize: 12,
@@ -2280,16 +2324,22 @@ class _AdminLayoutState extends State<AdminLayout>
     }
   }
 
-  String _formatTime(DateTime dateTime) {
+  String _formatTime(DateTime dateTime, String locale) {
     final now = DateTime.now();
     final difference = now.difference(dateTime).abs();
 
     if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m ago';
+      return locale == 'ar'
+          ? ' ${'admin.time.ago'.tr()} ${difference.inMinutes}${'admin.time.minutes'.tr()}'
+          : '${difference.inMinutes}${'admin.time.minutes'.tr()} ${'admin.time.ago'.tr()}';
     } else if (difference.inHours < 24) {
-      return '${difference.inHours}h ago';
+      return locale == 'ar'
+          ? ' ${'admin.time.ago'.tr()} ${difference.inHours}${'admin.time.hours'.tr()}'
+          : '${difference.inHours}${'admin.time.hours'.tr()} ${'admin.time.ago'.tr()}';
     } else {
-      return '${difference.inDays}d ago';
+      return locale == 'ar'
+          ? ' ${'admin.time.ago'.tr()} ${difference.inDays}${'admin.time.days'.tr()}'
+          : '${difference.inDays}${'admin.time.days'.tr()} ${'admin.time.ago'.tr()}';
     }
   }
 
@@ -2309,7 +2359,9 @@ class _AdminLayoutState extends State<AdminLayout>
           children: [
             if (hasPriceChange) ...[
               Text(
-                'EGP ${originalPrice!.toStringAsFixed(0)}',
+                'admin.currencyWithPrice'.tr(
+                  namedArgs: {'price': originalPrice!.toStringAsFixed(0)},
+                ),
                 style: TextStyle(
                   color: AppColors.onSurfaceVariant,
                   fontSize: 12,
@@ -2322,7 +2374,9 @@ class _AdminLayoutState extends State<AdminLayout>
                 builder: (context, child) => Transform.scale(
                   scale: _pulseAnimation.value,
                   child: Text(
-                    'EGP ${displayPrice.toStringAsFixed(0)}',
+                    'admin.currencyWithPrice'.tr(
+                      namedArgs: {'price': displayPrice.toStringAsFixed(0)},
+                    ),
                     style: TextStyle(
                       color: AppColors.success,
                       fontWeight: FontWeight.bold,
@@ -2337,7 +2391,9 @@ class _AdminLayoutState extends State<AdminLayout>
                 builder: (context, child) => Transform.scale(
                   scale: _pulseAnimation.value,
                   child: Text(
-                    'EGP ${displayPrice.toStringAsFixed(0)}',
+                    'admin.currencyWithPrice'.tr(
+                      namedArgs: {'price': displayPrice.toStringAsFixed(0)},
+                    ),
                     style: TextStyle(
                       color: AppColors.success,
                       fontWeight: FontWeight.bold,
@@ -2360,23 +2416,23 @@ class _AdminLayoutState extends State<AdminLayout>
     switch (status) {
       case OrderStatus.pending:
         color = Colors.orange;
-        text = 'Pending';
+        text = 'admin.filters.pending'.tr();
         break;
       case OrderStatus.inProgress:
         color = Colors.blue;
-        text = 'In Progress';
+        text = 'admin.filters.inProgress'.tr();
         break;
       case OrderStatus.completed:
         color = AppColors.success;
-        text = 'Completed';
+        text = 'admin.filters.completed'.tr();
         break;
       case OrderStatus.cancelled:
         color = AppColors.error;
-        text = 'Cancelled';
+        text = 'admin.filters.cancelled'.tr();
         break;
       case OrderStatus.needsResponse:
         color = Colors.purple;
-        text = 'Need Response';
+        text = 'admin.filters.needResponse'.tr();
         break;
     }
 

@@ -608,5 +608,79 @@
   "noEmailAppFound": "لم يتم العثور على تطبيق بريد إلكتروني على جهازك",
   "errorOpeningEmailApp": "خطأ في فتح تطبيق البريد الإلكتروني",
   "verificationEmailResent": "تم إرسال بريد التحقق بنجاح",
-  "errorResendingEmail": "خطأ في إعادة إرسال البريد الإلكتروني"
+  "errorResendingEmail": "خطأ في إعادة إرسال البريد الإلكتروني",
+   "admin": {
+    "dashboard": "لوحة التحكم",
+    "overview": "نظرة عامة",
+    "orders": "الطلبات",
+    "employees": "الموظفين",
+    "officeBoys": "العاملين",
+     "employeeResponseWithColon": "رد الموظف: {response}",
+      "currencyWithPrice": "ج.م {price}",
+    
+    "filters": {
+      "all": "الكل",
+      "pending": "قيد الانتظار",
+      "inProgress": "قيد التنفيذ",
+      "completed": "مكتمل",
+      "cancelled": "ملغي",
+      "filterOrders": "تصفية الطلبات",
+      "needResponse": "محتاج رد"
+    },
+    
+    "users": {
+      "employees": "الموظفين",
+      "officeBoys": "العاملين",
+      "totalEmployees": "إجمالي الموظفين",
+      "totalOfficeBoys": "إجمالي العاملين",
+      "active": "نشط",
+      "noEmployees": "مافيش موظفين",
+      "noOfficeBoys": "مافيش عاملين",
+      "inactive": "مش نشط"
+    },
+    
+    "orders": {
+      "noOrders": "مافيش طلبات",
+      "items": "المنتجات",
+      "order": "طلب",
+      "employeeResponse": "رد الموظف",
+      "deliveries": "التوصيلات"
+    },
+    
+    "stats": {
+      "totalOrders": "إجمالي الطلبات",
+      "todayOrders": "طلبات النهاردة",
+      "employees": "الموظفين",
+      "officeBoys": "العاملين",
+      "internalOrders": "طلبات داخلية",
+      "externalOrders": "طلبات خارجية",
+      "pending": "قيد الانتظار",
+      "completed": "مكتمل",
+      "cancelled": "ملغي"
+    },
+    
+    "messages": {
+      "switchedToEmployee": "انتقلت لواجهة الموظف",
+      "switchedToAdmin": "انتقلت لواجهة الأدمن",
+      "settingsUpdated": "تم تحديث الإعدادات بنجاح!",
+      "settingsFailed": "فشل تحديث الإعدادات: {error}",
+      "errorLoading": "خطأ في تحميل البيانات"
+    },
+    
+    "time": {
+      "minutes": "د",
+      "hours": "س",
+      "days": "ي",
+      "ago": "منذ"
+    }
+
+    ,"itemsCount": "المنتجات ({count})",
+    "employee": "موظف",
+    "officeBoy": "عامل",
+    "response": "رد",
+    "description": "وصف",
+    "notes": "ملاحظات",
+    "price": "السعر",
+    "finalPrice": "السعر النهائي"
+  }
 }

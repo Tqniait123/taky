@@ -427,6 +427,7 @@ class _ModernColorPickerState extends State<ModernColorPicker>
 
   @override
   Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context).languageCode;
     return AnimatedBuilder(
       animation: _scaleAnimation,
       builder: (context, child) {
@@ -489,7 +490,7 @@ class _ModernColorPickerState extends State<ModernColorPicker>
                     if (_showCustomInput) const SizedBox(height: 16),
 
                     // Color Grid with better organization
-                    _buildColorGrid(),
+                    _buildColorGrid(locale),
                   ],
                 ),
               ),
@@ -646,7 +647,7 @@ class _ModernColorPickerState extends State<ModernColorPicker>
     );
   }
 
-  Widget _buildColorGrid() {
+  Widget _buildColorGrid(String locale) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -654,7 +655,9 @@ class _ModernColorPickerState extends State<ModernColorPicker>
         Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: Text(
-            'Choose from curated colors',
+            locale == 'ar'
+                ? 'اختر من الألوان الموجودة'
+                : 'Choose from curated colors',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color:
                   widget.hintColor ??

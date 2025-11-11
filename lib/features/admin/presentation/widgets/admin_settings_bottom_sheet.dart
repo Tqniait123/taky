@@ -11,6 +11,7 @@ import 'package:taqy/core/theme/colors.dart';
 import 'package:taqy/core/utils/dialogs/error_toast.dart';
 import 'package:taqy/core/utils/widgets/app_images.dart';
 import 'package:taqy/features/admin/data/models/organization.dart';
+import 'package:taqy/features/admin/presentation/widgets/language_layout_drop_down.dart';
 import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
 import 'package:taqy/features/all/auth/presentation/widgets/color_picker_widget.dart';
 
@@ -147,6 +148,7 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
 
   @override
   Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context).languageCode;
     return AnimatedBuilder(
       animation: Listenable.merge([
         _slideController,
@@ -204,7 +206,7 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
                               width: 1,
                             ),
                           ),
-                          child: _buildContent(),
+                          child: _buildContent(locale),
                         ),
                       ),
                     ),
@@ -249,10 +251,10 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(String locale) {
     return Column(
       children: [
-        _buildGlassHeader(),
+        _buildGlassHeader(locale),
         Expanded(
           child: SingleChildScrollView(
             physics: BouncingScrollPhysics(),
@@ -261,36 +263,45 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(height: 20),
+                LanguageLayoutDropdown(
+                  primaryColor: _primaryColor,
+                  secondaryColor: _secondaryColor,
+                ),
+                SizedBox(height: 24),
                 _buildGlassTextField(
                   controller: _nameController,
-                  label: 'Company Name',
-                  hint: 'Enter company name',
+                  label: locale == 'ar' ? 'اسم الشركة' : 'Company Name',
+                  hint: locale == 'ar'
+                      ? 'ادخل اسم الشركة'
+                      : 'Enter company name',
                   icon: Assets.imagesSvgsCompany,
                   delay: 0,
                 ),
                 SizedBox(height: 24),
                 _buildGlassTextField(
                   controller: _codeController,
-                  label: 'Company Code',
-                  hint: 'Enter unique company code',
+                  label: locale == 'ar' ? 'كود الشركة' : 'Company Code',
+                  hint: locale == 'ar'
+                      ? 'ادخل كود الشركة'
+                      : 'Enter unique company code',
                   icon: Assets.imagesSvgsCode,
                   delay: 100,
                 ),
                 SizedBox(height: 32),
-                _buildBrandColorsSection(),
+                _buildBrandColorsSection(locale),
                 SizedBox(height: 32),
-                _buildAnimatedPreview(),
+                _buildAnimatedPreview(locale),
                 SizedBox(height: 32),
               ],
             ),
           ),
         ),
-        _buildGlassBottomActions(),
+        _buildGlassBottomActions(locale),
       ],
     );
   }
 
-  Widget _buildGlassHeader() {
+  Widget _buildGlassHeader(String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 800),
@@ -354,7 +365,7 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
                     child: AnimatedBuilder(
                       animation: _shimmerController,
                       builder: (context, child) => Text(
-                        'Settings',
+                        locale == 'ar' ? 'الاعدادات' : 'Settings',
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
@@ -517,7 +528,7 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
     );
   }
 
-  Widget _buildBrandColorsSection() {
+  Widget _buildBrandColorsSection(String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 800),
@@ -552,7 +563,7 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
                 children: [
                   // Section title with gradient
                   Text(
-                    'Brand Colors',
+                    locale == 'ar' ? 'ألوان العلامة التجارية' : 'Brand Colors',
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -564,7 +575,7 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
 
                   // Primary color picker
                   _buildGlassColorPicker(
-                    'Primary Color',
+                    locale == 'ar' ? 'اللون الاساسي' : 'Primary Color',
                     _primaryColor,
                     (color) => setState(() => _primaryColor = color),
                     0,
@@ -573,7 +584,7 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
 
                   // Secondary color picker
                   _buildGlassColorPicker(
-                    'Secondary Color',
+                    locale == 'ar' ? 'اللون الثانوي' : 'Secondary Color',
                     _secondaryColor,
                     (color) => setState(() => _secondaryColor = color),
                     100,
@@ -615,7 +626,7 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
     );
   }
 
-  Widget _buildAnimatedPreview() {
+  Widget _buildAnimatedPreview(String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 1000),
@@ -626,7 +637,7 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Live Preview',
+              locale == 'ar' ? 'معاينة متحركة' : 'Live Preview',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -697,7 +708,9 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
                         children: [
                           Text(
                             _nameController.text.isEmpty
-                                ? 'Your Company'
+                                ? locale == 'ar'
+                                      ? 'شركتك'
+                                      : 'Your Company'
                                 : _nameController.text,
                             style: TextStyle(
                               color: Colors.white,
@@ -708,7 +721,9 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
                           SizedBox(height: 4),
                           Text(
                             _codeController.text.isEmpty
-                                ? 'CODE'
+                                ? locale == 'ar'
+                                      ? 'كود الشركة'
+                                      : 'CODE'
                                 : _codeController.text.toUpperCase(),
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.8),
@@ -730,7 +745,7 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
     );
   }
 
-  Widget _buildGlassBottomActions() {
+  Widget _buildGlassBottomActions(String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 1200),
@@ -782,7 +797,9 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
                         color: Colors.transparent,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(16),
-                          onTap: _isSaving ? null : _saveSettings,
+                          onTap: _isSaving
+                              ? () {}
+                              : () => _saveSettings(locale),
                           child: Container(
                             alignment: Alignment.center,
                             child: _isSaving
@@ -799,7 +816,7 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
                                       ),
                                       SizedBox(width: 12),
                                       Text(
-                                        'Saving...',
+                                        locale == 'ar' ? 'حفظ...' : 'Saving...',
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 16,
@@ -809,7 +826,9 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
                                     ],
                                   )
                                 : Text(
-                                    'Save Changes',
+                                    locale == 'ar'
+                                        ? 'حفظ التغييرات'
+                                        : 'Save Changes',
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 16,
@@ -850,12 +869,12 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
                             ? null
                             : () {
                                 Navigator.pop(context);
-                                _showLogoutConfirmation();
+                                _showLogoutConfirmation(locale);
                               },
                         child: Container(
                           alignment: Alignment.center,
                           child: Text(
-                            'Logout',
+                            locale == 'ar' ? 'تسجيل الخروج' : 'Logout',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,
@@ -876,10 +895,15 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
     );
   }
 
-  void _saveSettings() async {
+  void _saveSettings(String locale) async {
     if (_nameController.text.trim().isEmpty ||
         _codeController.text.trim().isEmpty) {
-      showErrorToast(context, 'Please fill in all required fields');
+      showErrorToast(
+        context,
+        locale == 'ar'
+            ? 'الرجاء ملء جميع الحقول المطلوبة'
+            : 'Please fill in all required fields',
+      );
       return;
     }
 
@@ -907,10 +931,20 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
       );
 
       widget.onSettingsUpdated(updatedOrganization);
-      showSuccessToast(context, 'Settings saved successfully!');
+      showSuccessToast(
+        context,
+        locale == 'ar'
+            ? 'تم حفظ الإعدادات بنجاح'
+            : 'Settings saved successfully!',
+      );
       Navigator.pop(context);
     } catch (e) {
-      showErrorToast(context, 'Failed to save settings: $e');
+      showErrorToast(
+        context,
+        locale == 'ar'
+            ? 'فشل حفظ الإعدادات: $e'
+            : 'Failed to save settings: $e',
+      );
     } finally {
       setState(() {
         _isSaving = false;
@@ -918,15 +952,15 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
     }
   }
 
-  void _showLogoutConfirmation() {
+  void _showLogoutConfirmation(String locale) {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => _buildGlassDialog(),
+      builder: (context) => _buildGlassDialog(locale),
     );
   }
 
-  Widget _buildGlassDialog() {
+  Widget _buildGlassDialog(String locale) {
     return AnimatedBuilder(
       animation: _fadeController,
       builder: (context, child) => BackdropFilter(
@@ -996,7 +1030,7 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
 
                 // Title
                 Text(
-                  'Confirm Logout',
+                  locale == 'ar' ? 'تسجيل الخروج' : 'Confirm Logout',
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -1007,7 +1041,9 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
 
                 // Message
                 Text(
-                  'Are you sure you want to logout?\nYou will be redirected to the login screen.',
+                  locale == 'ar'
+                      ? 'هل أنت متأكد من تسجيل الخروج؟\n سيتم تحويلك إلى صفحة تسجيل الدخول.'
+                      : 'Are you sure you want to logout?\nYou will be redirected to the login screen.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 16,
@@ -1042,7 +1078,7 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
                             onTap: () => Navigator.pop(context),
                             child: Center(
                               child: Text(
-                                'Cancel',
+                                locale == 'ar' ? 'الغاء' : 'Cancel',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
@@ -1088,7 +1124,7 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
                             },
                             child: Center(
                               child: Text(
-                                'Logout',
+                                locale == 'ar' ? 'تسجيل الخروج' : 'Logout',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,

@@ -59,12 +59,17 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
   late Animation<double> _scaleAnimation;
   late Animation<double> _glowAnimation;
   late Animation<double> _particleAnimation;
-  // late Animation<double> _shimmerAnimation;
 
-  // Predefined items
-  final Map<OrderType, List<String>> _predefinedItems = {
-    OrderType.internal: ['Tea', 'Coffee', 'Water', 'Other'],
-    OrderType.external: ['Breakfast', 'Lunch', 'Drinks', 'Other'],
+  // Predefined items - localized
+  final Map<OrderType, Map<String, List<String>>> _predefinedItems = {
+    OrderType.internal: {
+      'en': ['Tea', 'Coffee', 'Water'],
+      'ar': ['شاي', 'قهوة', 'مياه'],
+    },
+    OrderType.external: {
+      'en': ['Breakfast', 'Lunch', 'Drinks'],
+      'ar': ['إفطار', 'غداء', 'مشروبات'],
+    },
   };
 
   @override
@@ -146,9 +151,6 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
       vsync: this,
       duration: const Duration(seconds: 3),
     );
-    // _shimmerAnimation = Tween<double>(begin: -1.0, end: 2.0).animate(
-    //   CurvedAnimation(parent: _shimmerController, curve: Curves.easeInOut),
-    // );
   }
 
   void _startAnimations() {
@@ -187,6 +189,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
 
   @override
   Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context).languageCode;
     return AnimatedBuilder(
       animation: Listenable.merge([
         _slideController,
@@ -244,7 +247,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                               width: 1,
                             ),
                           ),
-                          child: Form(key: _formKey, child: _buildContent()),
+                          child: Form(key: _formKey, child: _buildContent(locale)),
                         ),
                       ),
                     ),
@@ -289,10 +292,10 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(String locale) {
     return Column(
       children: [
-        _buildGlassHeader(),
+        _buildGlassHeader(locale),
         Expanded(
           child: SingleChildScrollView(
             physics: BouncingScrollPhysics(),
@@ -301,68 +304,75 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(height: 20),
-                _buildOrderTypeSelection(),
+                _buildOrderTypeSelection(locale),
                 SizedBox(height: 24),
-                _buildItemSelection(),
+                _buildItemSelection(locale),
                 SizedBox(height: 24),
-                _buildSelectedItemsDisplay(),
+                _buildSelectedItemsDisplay(locale),
                 SizedBox(height: 24),
-                _buildPredefinedItems(),
+                _buildPredefinedItems(locale),
                 SizedBox(height: 24),
                 _buildGlassTextField(
                   controller: _descriptionController,
-                  label: 'Description (Optional)',
-                  hint: 'Any specific details or preferences...',
+                  label: locale == 'ar' ? 'الوصف (اختياري)' : 'Description (Optional)',
+                  hint: locale == 'ar' ? 'أي تفاصيل أو تفضيلات محددة...' : 'Any specific details or preferences...',
                   icon: Assets.imagesSvgsOrder,
                   delay: 200,
                   maxLines: 3,
+                  locale: locale,
                 ),
                 if (_selectedType == OrderType.external) ...[
                   SizedBox(height: 24),
                   _buildGlassTextField(
                     controller: _priceController,
-                    label: 'Estimated Price (EGP)',
-                    hint: 'Enter estimated price',
+                    label: locale == 'ar' ? 'السعر المقدر (ج.م)' : 'Estimated Price (EGP)',
+                    hint: locale == 'ar' ? 'أدخل السعر المقدر' : 'Enter estimated price',
                     icon: Assets.imagesSvgsMoney,
                     delay: 300,
                     keyboardType: TextInputType.number,
                     validator: (value) {
                       if (_selectedType == OrderType.external &&
                           (value == null || value.trim().isEmpty)) {
-                        return 'Please enter estimated price for external orders';
+                        return locale == 'ar' 
+                            ? 'يرجى إدخال السعر المقدر للطلبات الخارجية'
+                            : 'Please enter estimated price for external orders';
                       }
                       if (value != null && value.isNotEmpty) {
                         final price = double.tryParse(value);
                         if (price == null || price <= 0) {
-                          return 'Please enter a valid price';
+                          return locale == 'ar' 
+                              ? 'يرجى إدخال سعر صحيح'
+                              : 'Please enter a valid price';
                         }
                       }
                       return null;
                     },
+                    locale: locale,
                   ),
                 ],
                 SizedBox(height: 24),
-                _buildOfficeBoySelection(),
+                _buildOfficeBoySelection(locale),
                 SizedBox(height: 24),
                 _buildGlassTextField(
                   controller: _notesController,
-                  label: 'Additional Notes (Optional)',
-                  hint: 'Any special instructions...',
+                  label: locale == 'ar' ? 'ملاحظات إضافية (اختياري)' : 'Additional Notes (Optional)',
+                  hint: locale == 'ar' ? 'أي تعليمات خاصة...' : 'Any special instructions...',
                   icon: Assets.imagesSvgsNote,
                   delay: 400,
                   maxLines: 2,
+                  locale: locale,
                 ),
                 SizedBox(height: 32),
               ],
             ),
           ),
         ),
-        _buildGlassBottomActions(),
+        _buildGlassBottomActions(locale),
       ],
     );
   }
 
-  Widget _buildGlassHeader() {
+  Widget _buildGlassHeader(String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 800),
@@ -430,7 +440,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                           builder: (context, child) => Row(
                             children: [
                               Text(
-                                'Edit Order',
+                                locale == 'ar' ? 'تعديل الطلب' : 'Edit Order',
                                 style: TextStyle(
                                   fontSize: 28,
                                   fontWeight: FontWeight.bold,
@@ -442,7 +452,9 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                           ),
                         ),
                         Text(
-                          'Order #${widget.order.id.substring(0, 8)}',
+                          locale == 'ar' 
+                              ? 'الطلب #${widget.order.id.substring(0, 8)}'
+                              : 'Order #${widget.order.id.substring(0, 8)}',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.white.withOpacity(0.7),
@@ -509,7 +521,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
     );
   }
 
-  Widget _buildOrderTypeSelection() {
+  Widget _buildOrderTypeSelection(String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 800),
@@ -543,7 +555,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Order Type',
+                    locale == 'ar' ? 'نوع الطلب' : 'Order Type',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -556,21 +568,23 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                     children: [
                       Expanded(
                         child: _buildGlassTypeCard(
-                          'Internal',
-                          'Tea, Coffee, Water',
+                          locale == 'ar' ? 'داخلي' : 'Internal',
+                          locale == 'ar' ? 'شاي، قهوة، مياه' : 'Tea, Coffee, Water',
                           Assets.imagesSvgsCompany,
                           OrderType.internal,
                           widget.organization.secondaryColorValue,
+                          locale: locale,
                         ),
                       ),
                       SizedBox(width: 16),
                       Expanded(
                         child: _buildGlassTypeCard(
-                          'External',
-                          'Food, Meals, Delivery',
+                          locale == 'ar' ? 'خارجي' : 'External',
+                          locale == 'ar' ? 'طعام، وجبات، توصيل' : 'Food, Meals, Delivery',
                           Assets.imagesSvgsShoppingCart,
                           OrderType.external,
                           widget.organization.secondaryColorValue,
+                          locale: locale,
                         ),
                       ),
                     ],
@@ -589,8 +603,9 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
     String subtitle,
     String icon,
     OrderType type,
-    Color color,
-  ) {
+    Color color, {
+    required String locale,
+  }) {
     final isSelected = _selectedType == type;
 
     return AnimatedBuilder(
@@ -685,7 +700,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
     );
   }
 
-  Widget _buildItemSelection() {
+  Widget _buildItemSelection(String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 600),
@@ -696,7 +711,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Add Custom Item',
+              locale == 'ar' ? 'إضافة عنصر مخصص' : 'Add Custom Item',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -741,7 +756,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                             fontWeight: FontWeight.w500,
                           ),
                           decoration: InputDecoration(
-                            hintText: 'Enter item name...',
+                            hintText: locale == 'ar' ? 'أدخل اسم العنصر...' : 'Enter item name...',
                             hintStyle: TextStyle(
                               color: Colors.white.withOpacity(0.6),
                               fontSize: 14,
@@ -810,7 +825,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
     );
   }
 
-  Widget _buildSelectedItemsDisplay() {
+  Widget _buildSelectedItemsDisplay(String locale) {
     if (_selectedItems.isEmpty) return SizedBox.shrink();
 
     return TweenAnimationBuilder<double>(
@@ -821,7 +836,6 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
         scale: value,
         child: Container(
           padding: EdgeInsets.all(20),
-
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
@@ -850,7 +864,9 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Selected Items (${_selectedItems.length})',
+                    locale == 'ar' 
+                        ? 'العناصر المحددة (${_selectedItems.length})'
+                        : 'Selected Items (${_selectedItems.length})',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -918,7 +934,9 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
     );
   }
 
-  Widget _buildPredefinedItems() {
+  Widget _buildPredefinedItems(String locale) {
+    final items = _predefinedItems[_selectedType]![locale]!;
+    
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 800),
@@ -953,7 +971,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Quick Select',
+                    locale == 'ar' ? 'اختيار سريع' : 'Quick Select',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -965,7 +983,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: _predefinedItems[_selectedType]!.map((item) {
+                    children: items.map((item) {
                       final isSelected = _selectedItems.contains(item);
                       return AnimatedBuilder(
                         animation: _glowController,
@@ -1055,7 +1073,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
     );
   }
 
-  Widget _buildOfficeBoySelection() {
+  Widget _buildOfficeBoySelection(String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 600 + 300),
@@ -1066,7 +1084,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Select Office Boy',
+              locale == 'ar' ? 'اختر عامل التوصيل' : 'Select Office Boy',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -1169,6 +1187,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
     required String hint,
     required String icon,
     required int delay,
+    required String locale,
     TextInputType? keyboardType,
     int? maxLines,
     String? Function(String?)? validator,
@@ -1259,7 +1278,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
     );
   }
 
-  Widget _buildGlassBottomActions() {
+  Widget _buildGlassBottomActions(String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 1200),
@@ -1319,8 +1338,15 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                               (_isSubmitting ||
                                   _isDeleting ||
                                   _selectedItems.isEmpty)
-                              ? null
-                              : _updateOrder,
+                              ? () {
+                                  showErrorToast(
+                                    context,
+                                    locale == 'ar' 
+                                        ? 'يرجى اختيار عنصر واحد على الأقل'
+                                        : 'Please select at least one item',
+                                  );
+                                }
+                              : () => _updateOrder(locale),
                           child: Container(
                             alignment: Alignment.center,
                             child: _isSubmitting
@@ -1337,7 +1363,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                                       ),
                                       SizedBox(width: 12),
                                       Text(
-                                        'Updating Order...',
+                                        locale == 'ar' ? 'جاري تحديث الطلب...' : 'Updating Order...',
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 16,
@@ -1347,7 +1373,9 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                                     ],
                                   )
                                 : Text(
-                                    'Update Order (${_selectedItems.length} items)',
+                                    locale == 'ar' 
+                                        ? 'تحديث الطلب (${_selectedItems.length} عناصر)'
+                                        : 'Update Order (${_selectedItems.length} items)',
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 16,
@@ -1393,7 +1421,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                           borderRadius: BorderRadius.circular(16),
                           onTap: _isSubmitting || _isDeleting
                               ? null
-                              : _showDeleteConfirmation,
+                              : () => _showDeleteConfirmation(locale),
                           child: Container(
                             alignment: Alignment.center,
                             child: _isDeleting
@@ -1410,7 +1438,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                                       ),
                                       SizedBox(width: 12),
                                       Text(
-                                        'Deleting Order...',
+                                        locale == 'ar' ? 'جاري حذف الطلب...' : 'Deleting Order...',
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 16,
@@ -1420,7 +1448,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                                     ],
                                   )
                                 : Text(
-                                    'Delete Order',
+                                    locale == 'ar' ? 'حذف الطلب' : 'Delete Order',
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 16,
@@ -1442,14 +1470,24 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
     );
   }
 
-  void _updateOrder() async {
+  void _updateOrder(String locale) async {
     if (_selectedItems.isEmpty) {
-      showErrorToast(context, 'Please select at least one item');
+      showErrorToast(
+        context, 
+        locale == 'ar' 
+            ? 'يرجى اختيار عنصر واحد على الأقل'
+            : 'Please select at least one item'
+      );
       return;
     }
 
     if (_selectedOfficeBoy == null) {
-      showErrorToast(context, 'Please select an office boy');
+      showErrorToast(
+        context, 
+        locale == 'ar' 
+            ? 'يرجى اختيار عامل التوصيل'
+            : 'Please select an office boy'
+      );
       return;
     }
 
@@ -1491,26 +1529,43 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
       widget.onOrderUpdated(updatedOrder);
 
       if (isResponseEdit) {
-          await NotificationService().notifyOfficeBoyOrderResubmitted(
-        officeBoyId: updatedOrder.officeBoyId,
-        orderId: updatedOrder.id,
-        employeeName: widget.order.employeeName,
-        itemCount: items.length,
-      );
-        showSuccessToast(context, 'Order updated and sent for processing!');
+        await NotificationService().notifyOfficeBoyOrderResubmitted(
+          officeBoyId: updatedOrder.officeBoyId,
+          orderId: updatedOrder.id,
+          employeeName: widget.order.employeeName,
+          itemCount: items.length,
+          isArabic: locale == 'ar',
+        );
+        showSuccessToast(
+          context,
+          locale == 'ar' 
+              ? 'تم تحديث الطلب وإرساله للمعالجة!'
+              : 'Order updated and sent for processing!'
+        );
       } else {
-         await NotificationService().notifyOfficeBoyOrderEdited(
-        officeBoyId: updatedOrder.officeBoyId,
-        orderId: updatedOrder.id,
-        employeeName: widget.order.employeeName,
-        itemCount: items.length,
-      );
-        showSuccessToast(context, 'Order updated successfully!');
+        await NotificationService().notifyOfficeBoyOrderEdited(
+          officeBoyId: updatedOrder.officeBoyId,
+          orderId: updatedOrder.id,
+          employeeName: widget.order.employeeName,
+          itemCount: items.length,
+          isArabic: locale == 'ar',
+        );
+        showSuccessToast(
+          context,
+          locale == 'ar' 
+              ? 'تم تحديث الطلب بنجاح!'
+              : 'Order updated successfully!'
+        );
       }
 
       Navigator.pop(context);
     } catch (e) {
-      showErrorToast(context, 'Failed to update order: $e');
+      showErrorToast(
+        context, 
+        locale == 'ar' 
+            ? 'فشل في تحديث الطلب: $e'
+            : 'Failed to update order: $e'
+      );
     } finally {
       setState(() {
         _isSubmitting = false;
@@ -1518,7 +1573,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
     }
   }
 
-  void _showDeleteConfirmation() {
+  void _showDeleteConfirmation(String locale) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -1580,7 +1635,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                   ),
                   SizedBox(height: 20),
                   Text(
-                    'Delete Order',
+                    locale == 'ar' ? 'حذف الطلب' : 'Delete Order',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -1590,7 +1645,9 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                   ),
                   SizedBox(height: 12),
                   Text(
-                    'Are you sure you want to delete this order? This action cannot be undone.',
+                    locale == 'ar' 
+                        ? 'هل أنت متأكد أنك تريد حذف هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء.'
+                        : 'Are you sure you want to delete this order? This action cannot be undone.',
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.white.withOpacity(0.8),
@@ -1624,7 +1681,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                               child: Container(
                                 alignment: Alignment.center,
                                 child: Text(
-                                  'Cancel',
+                                  locale == 'ar' ? 'إلغاء' : 'Cancel',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 16,
@@ -1665,12 +1722,12 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                               borderRadius: BorderRadius.circular(12),
                               onTap: () {
                                 Navigator.pop(context);
-                                _deleteOrder();
+                                _deleteOrder(locale);
                               },
                               child: Container(
                                 alignment: Alignment.center,
                                 child: Text(
-                                  'Delete',
+                                  locale == 'ar' ? 'حذف' : 'Delete',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 16,
@@ -1693,16 +1750,27 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
     );
   }
 
-  void _deleteOrder() async {
+  void _deleteOrder(String locale) async {
     setState(() {
       _isDeleting = true;
     });
 
     try {
       widget.onOrderDeleted(widget.order.id);
+      showSuccessToast(
+        context,
+        locale == 'ar' 
+            ? 'تم حذف الطلب بنجاح'
+            : 'Order deleted successfully!'
+      );
       Navigator.pop(context);
     } catch (e) {
-      showErrorToast(context, 'Failed to delete order: $e');
+      showErrorToast(
+        context, 
+        locale == 'ar' 
+            ? 'فشل في حذف الطلب: $e'
+            : 'Failed to delete order: $e'
+      );
     } finally {
       setState(() {
         _isDeleting = false;

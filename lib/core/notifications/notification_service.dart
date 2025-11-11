@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -253,11 +254,27 @@ class NotificationService {
     Map<String, dynamic>? data,
   }) async {
     try {
-      final serviceAccountJson = await rootBundle.loadString(
-        'assets/service_account.json',
-      );
-      final serviceAccountData =
-          jsonDecode(serviceAccountJson) as Map<String, dynamic>;
+      // final serviceAccountJson = await rootBundle.loadString(
+      //   'assets/service_account.json',
+      // );
+      // final serviceAccountData =
+      //     jsonDecode(serviceAccountJson) as Map<String, dynamic>;
+
+      final serviceAccountEnv = const String.fromEnvironment('FIREBASE_SERVICE_ACCOUNT', defaultValue: '');
+Map<String, dynamic> serviceAccountData;
+
+if (serviceAccountEnv.isNotEmpty) {
+  serviceAccountData = jsonDecode(serviceAccountEnv) as Map<String, dynamic>;
+} else {
+  // fallback (optional)
+  final env = Platform.environment['FIREBASE_SERVICE_ACCOUNT'];
+  if (env != null && env.isNotEmpty) {
+    serviceAccountData = jsonDecode(env) as Map<String, dynamic>;
+  } else {
+    throw Exception('❌ FIREBASE_SERVICE_ACCOUNT env not found.');
+  }
+}
+
 
       final scopes = ['https://www.googleapis.com/auth/firebase.messaging'];
       final credentials = ServiceAccountCredentials.fromJson(
@@ -334,11 +351,19 @@ class NotificationService {
     required String orderType,
     required String employeeName,
     required int itemCount,
+    required bool isArabic,
   }) async {
+    final title = isArabic 
+        ? '🛒 طلب جديد معاد ليك'
+        : '🛒 New Order Assigned';
+    final body = isArabic
+        ? '$employeeName طلب $itemCount عنصر'
+        : '$employeeName ordered $itemCount item(s)';
+
     await sendNotificationToUser(
       targetUserId: officeBoyId,
-      title: '🛒 New Order Assigned',
-      body: '$employeeName ordered $itemCount item(s)',
+      title: title,
+      body: body,
       data: {
         'type': 'new_order',
         'orderId': orderId,
@@ -355,11 +380,19 @@ class NotificationService {
     required String orderId,
     required String employeeName,
     required int itemCount,
+    required bool isArabic,
   }) async {
+    final title = isArabic 
+        ? '✏️ الطلب اتعدل'
+        : '✏️ Order Updated';
+    final body = isArabic
+        ? '$employeeName عدل طلبه ($itemCount عنصر)'
+        : '$employeeName modified their order ($itemCount items)';
+
     await sendNotificationToUser(
       targetUserId: officeBoyId,
-      title: '✏️ Order Updated',
-      body: '$employeeName modified their order ($itemCount items)',
+      title: title,
+      body: body,
       data: {
         'type': 'order_edited',
         'orderId': orderId,
@@ -375,13 +408,23 @@ class NotificationService {
     required String orderId,
     required String employeeName,
     required String responseType, // 'continue' or 'cancel'
+    required bool isArabic,
   }) async {
-    final title = responseType == 'continue'
-        ? '✅ Employee Accepted Available Items'
-        : '❌ Employee Cancelled Order';
-    final body = responseType == 'continue'
-        ? '$employeeName wants to continue with available items'
-        : '$employeeName cancelled the order';
+    final title = isArabic
+        ? responseType == 'continue'
+            ? '✅ الموافق وافق على العناصر المتاحة'
+            : '❌ الموافق ألغى الطلب'
+        : responseType == 'continue'
+            ? '✅ Employee Accepted Available Items'
+            : '❌ Employee Cancelled Order';
+    
+    final body = isArabic
+        ? responseType == 'continue'
+            ? '$employeeName عايز يكمل بالعناصر المتاحة'
+            : '$employeeName ألغى الطلب'
+        : responseType == 'continue'
+            ? '$employeeName wants to continue with available items'
+            : '$employeeName cancelled the order';
 
     await sendNotificationToUser(
       targetUserId: officeBoyId,
@@ -403,12 +446,19 @@ class NotificationService {
     required String orderId,
     required String employeeName,
     required int itemCount,
+    required bool isArabic,
   }) async {
+    final title = isArabic 
+        ? '🔄 الطلب اتعدل واتبع تاني'
+        : '🔄 Order Resubmitted';
+    final body = isArabic
+        ? '$employeeName عدل وبعت الطلب تاني ($itemCount عنصر)'
+        : '$employeeName updated and resubmitted their order ($itemCount items)';
+
     await sendNotificationToUser(
       targetUserId: officeBoyId,
-      title: '🔄 Order Resubmitted',
-      body:
-          '$employeeName updated and resubmitted their order ($itemCount items)',
+      title: title,
+      body: body,
       data: {
         'type': 'order_resubmitted',
         'orderId': orderId,
@@ -425,11 +475,19 @@ class NotificationService {
     required String employeeName,
     required int itemCount,
     required String originalOrderId,
+    required bool isArabic,
   }) async {
+    final title = isArabic 
+        ? '🔁 طلب جديد من السجل'
+        : '🔁 Reorder Created';
+    final body = isArabic
+        ? '$employeeName عمل طلب جديد ب $itemCount عنصر'
+        : '$employeeName reordered $itemCount item(s)';
+
     await sendNotificationToUser(
       targetUserId: officeBoyId,
-      title: '🔁 Reorder Created',
-      body: '$employeeName reordered $itemCount item(s)',
+      title: title,
+      body: body,
       data: {
         'type': 'reorder',
         'orderId': orderId,
@@ -449,12 +507,19 @@ class NotificationService {
     required String employeeName,
     required int itemCount,
     required String fromOfficeBoyName,
+    required bool isArabic,
   }) async {
+    final title = isArabic 
+        ? '🔄 طلب اتحول ليك'
+        : '🔄 Order Transferred to You';
+    final body = isArabic
+        ? '$fromOfficeBoyName حول طلب $employeeName ($itemCount عنصر) ليك'
+        : '$fromOfficeBoyName transferred $employeeName\'s order ($itemCount items) to you';
+
     await sendNotificationToUser(
       targetUserId: newOfficeBoyId,
-      title: '🔄 Order Transferred to You',
-      body:
-          '$fromOfficeBoyName transferred $employeeName\'s order ($itemCount items) to you',
+      title: title,
+      body: body,
       data: {
         'type': 'order_transferred_received',
         'orderId': orderId,
@@ -471,11 +536,19 @@ class NotificationService {
     required String fromOfficeBoyName,
     required String toOfficeBoyName,
     required bool isAdmin,
+    required bool isArabic,
   }) async {
-    final title = isAdmin ? '🔄 Your Order Reassigned' : '🔄 Order Reassigned';
-    final body = isAdmin
-        ? 'Your order was transferred from $fromOfficeBoyName to $toOfficeBoyName'
-        : 'Your order was transferred from $fromOfficeBoyName to $toOfficeBoyName';
+    final title = isArabic
+        ? isAdmin ? '🔄 طلبك اتحول' : '🔄 طلبك اتحول'
+        : isAdmin ? '🔄 Your Order Reassigned' : '🔄 Order Reassigned';
+    
+    final body = isArabic
+        ? isAdmin
+            ? 'طلبك اتحول من $fromOfficeBoyName لـ $toOfficeBoyName'
+            : 'طلبك اتحول من $fromOfficeBoyName لـ $toOfficeBoyName'
+        : isAdmin
+            ? 'Your order was transferred from $fromOfficeBoyName to $toOfficeBoyName'
+            : 'Your order was transferred from $fromOfficeBoyName to $toOfficeBoyName';
 
     await sendNotificationToUser(
       targetUserId: userId,
@@ -498,10 +571,14 @@ class NotificationService {
     required String orderId,
     required String officeBoyName,
     required bool isAdmin,
+    required bool isArabic,
   }) async {
-    final title = isAdmin ? '✅ Your Order Accepted' : '✅ Order Accepted';
-    final body = isAdmin
-        ? '$officeBoyName accepted your order'
+    final title = isArabic
+        ? isAdmin ? '✅ طلبك اتبقبل' : '✅ طلبك اتبقبل'
+        : isAdmin ? '✅ Your Order Accepted' : '✅ Order Accepted';
+    
+    final body = isArabic
+        ? '$officeBoyName قبل طلبك'
         : '$officeBoyName accepted your order';
 
     await sendNotificationToUser(
@@ -524,11 +601,19 @@ class NotificationService {
     required String employeeId,
     required String orderId,
     required String officeBoyName,
+    required bool isArabic,
   }) async {
+    final title = isArabic 
+        ? '🚀 الطلب قيد التنفيذ'
+        : '🚀 Order In Progress';
+    final body = isArabic
+        ? '$officeBoyName بدأ يشغل على طلبك'
+        : '$officeBoyName started processing your order';
+
     await sendNotificationToUser(
       targetUserId: employeeId,
-      title: '🚀 Order In Progress',
-      body: '$officeBoyName started processing your order',
+      title: title,
+      body: body,
       data: {
         'type': 'order_in_progress',
         'orderId': orderId,
@@ -545,14 +630,23 @@ class NotificationService {
     required String officeBoyName,
     required int availableCount,
     required int unavailableCount,
+    required bool isArabic,
   }) async {
-    final body = unavailableCount > 0
-        ? '$officeBoyName found $availableCount available and $unavailableCount unavailable items'
-        : '$officeBoyName confirmed all items are available';
+    final title = isArabic 
+        ? '📋 حالة العناصر اتحدثت'
+        : '📋 Items Status Updated';
+    
+    final body = isArabic
+        ? unavailableCount > 0
+            ? '$officeBoyName لقي $availableCount عنصر متاح و $unavailableCount عنصر مش متاح'
+            : '$officeBoyName أكد إن كل العناصر متاحة'
+        : unavailableCount > 0
+            ? '$officeBoyName found $availableCount available and $unavailableCount unavailable items'
+            : '$officeBoyName confirmed all items are available';
 
     await sendNotificationToUser(
       targetUserId: employeeId,
-      title: '📋 Items Status Updated',
+      title: title,
       body: body,
       data: {
         'type': 'items_status_updated',
@@ -569,12 +663,20 @@ class NotificationService {
     required String orderId,
     required String officeBoyName,
     required int unavailableCount,
+    required bool isArabic,
   }) async {
+    final title = isArabic 
+        ? '⚠️ محتاج رد منك'
+        : '⚠️ Action Required';
+    
+    final body = isArabic
+        ? '$unavailableCount عنصر مش متاح. يلزم ترد عشان تكمل.'
+        : '$unavailableCount item(s) unavailable. Please respond to continue.';
+
     await sendNotificationToUser(
       targetUserId: employeeId,
-      title: '⚠️ Action Required',
-      body:
-          '$unavailableCount item(s) unavailable. Please respond to continue.',
+      title: title,
+      body: body,
       data: {
         'type': 'response_needed',
         'orderId': orderId,
@@ -590,15 +692,26 @@ class NotificationService {
     required String orderId,
     required String officeBoyName,
     double? finalPrice,
+    required bool isArabic,
   }) async {
     final priceText = finalPrice != null
-        ? ' (EGP ${finalPrice.toStringAsFixed(0)})'
+        ? isArabic
+            ? ' (ج.م ${finalPrice.toStringAsFixed(0)})'
+            : ' (EGP ${finalPrice.toStringAsFixed(0)})'
         : '';
+
+    final title = isArabic 
+        ? '✅ الطلب اكتمل'
+        : '✅ Order Completed';
+    
+    final body = isArabic
+        ? '$officeBoyName كمل طلبك$priceText'
+        : '$officeBoyName completed your order$priceText';
 
     await sendNotificationToUser(
       targetUserId: employeeId,
-      title: '✅ Order Completed',
-      body: '$officeBoyName completed your order$priceText',
+      title: title,
+      body: body,
       data: {
         'type': 'order_completed',
         'orderId': orderId,
@@ -614,13 +727,24 @@ class NotificationService {
     required String orderId,
     required String officeBoyName,
     String? reason,
+    required bool isArabic,
   }) async {
-    final reasonText = reason != null && reason.isNotEmpty ? ': $reason' : '';
+    final reasonText = reason != null && reason.isNotEmpty 
+        ? isArabic ? ': $reason' : ': $reason'
+        : '';
+
+    final title = isArabic 
+        ? '❌ الطلب اتنلغى'
+        : '❌ Order Cancelled';
+    
+    final body = isArabic
+        ? '$officeBoyName ألغى طلبك$reasonText'
+        : '$officeBoyName cancelled your order$reasonText';
 
     await sendNotificationToUser(
       targetUserId: employeeId,
-      title: '❌ Order Cancelled',
-      body: '$officeBoyName cancelled your order$reasonText',
+      title: title,
+      body: body,
       data: {
         'type': 'order_cancelled',
         'orderId': orderId,
@@ -638,11 +762,24 @@ class NotificationService {
     required String employeeName,
     required String orderType,
     required int itemCount,
+    required bool isArabic,
   }) async {
+    final orderTypeText = isArabic
+        ? orderType == 'internal' ? 'داخلي' : 'خارجي'
+        : orderType;
+
+    final title = isArabic 
+        ? '📦 طلب جديد اتعمل'
+        : '📦 New Order Created';
+    
+    final body = isArabic
+        ? '$employeeName عمل طلب $orderTypeText ($itemCount عنصر)'
+        : '$employeeName created a $orderType order ($itemCount items)';
+
     await sendNotificationToTopic(
       topic: 'admin_$organizationId',
-      title: '📦 New Order Created',
-      body: '$employeeName created a $orderType order ($itemCount items)',
+      title: title,
+      body: body,
       data: {
         'type': 'admin_new_order',
         'orderType': orderType,
@@ -652,24 +789,32 @@ class NotificationService {
     log('✅ New order notification sent to admin');
   }
 
+  /// Send notification to admin when order is in progress
   Future<void> notifyAdminOrderInProgress({
     required String organizationId,
-
-
     required String orderId,
     required String officeBoyName,
+    required bool isArabic,
   }) async {
-    await sendNotificationToUser(
-      targetUserId: organizationId,
-      title: '🚀 Order In Progress',
-      body: '$officeBoyName started processing your order',
+    final title = isArabic 
+        ? '🚀 طلب قيد التنفيذ'
+        : '🚀 Order In Progress';
+    
+    final body = isArabic
+        ? '$officeBoyName بدأ يشغل على الطلب'
+        : '$officeBoyName started processing the order';
+
+    await sendNotificationToTopic(
+      topic: 'admin_$organizationId',
+      title: title,
+      body: body,
       data: {
-        'type': 'order_in_progress',
+        'type': 'admin_order_in_progress',
         'orderId': orderId,
-        'screen': 'order_details',
+        'screen': 'orders',
       },
     );
-    log('✅ In progress notification sent to employee $organizationId');
+    log('✅ In progress notification sent to admin');
   }
 
   /// Send notification to admin when order is completed
@@ -678,15 +823,26 @@ class NotificationService {
     required String employeeName,
     required String officeBoyName,
     double? finalPrice,
+    required bool isArabic,
   }) async {
     final priceText = finalPrice != null
-        ? ' (EGP ${finalPrice.toStringAsFixed(0)})'
+        ? isArabic
+            ? ' (ج.م ${finalPrice.toStringAsFixed(0)})'
+            : ' (EGP ${finalPrice.toStringAsFixed(0)})'
         : '';
+
+    final title = isArabic 
+        ? '✅ طلب اكتمل'
+        : '✅ Order Completed';
+    
+    final body = isArabic
+        ? '$officeBoyName كمل طلب $employeeName$priceText'
+        : '$officeBoyName completed $employeeName\'s order$priceText';
 
     await sendNotificationToTopic(
       topic: 'admin_$organizationId',
-      title: '✅ Order Completed',
-      body: '$officeBoyName completed $employeeName\'s order$priceText',
+      title: title,
+      body: body,
       data: {'type': 'admin_order_completed', 'screen': 'orders'},
     );
     log('✅ Completion notification sent to admin');
@@ -697,11 +853,20 @@ class NotificationService {
     required String organizationId,
     required String employeeName,
     required String officeBoyName,
+    required bool isArabic,
   }) async {
+    final title = isArabic 
+        ? '❌ طلب اتنلغى'
+        : '❌ Order Cancelled';
+    
+    final body = isArabic
+        ? '$officeBoyName ألغى طلب $employeeName'
+        : '$officeBoyName cancelled $employeeName\'s order';
+
     await sendNotificationToTopic(
       topic: 'admin_$organizationId',
-      title: '❌ Order Cancelled',
-      body: '$officeBoyName cancelled $employeeName\'s order',
+      title: title,
+      body: body,
       data: {'type': 'admin_order_cancelled', 'screen': 'orders'},
     );
     log('✅ Cancellation notification sent to admin');

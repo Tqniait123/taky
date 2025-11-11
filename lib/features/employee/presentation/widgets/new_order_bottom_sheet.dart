@@ -57,12 +57,17 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
   late Animation<double> _scaleAnimation;
   late Animation<double> _glowAnimation;
   late Animation<double> _particleAnimation;
-  // late Animation<double> _shimmerAnimation;
 
-  // Predefined items
-  final Map<OrderType, List<String>> _predefinedItems = {
-    OrderType.internal: ['Tea', 'Coffee', 'Water', 'Other'],
-    OrderType.external: ['Breakfast', 'Lunch', 'Drinks', 'Other'],
+  // Predefined items - localized
+  final Map<OrderType, Map<String, List<String>>> _predefinedItems = {
+    OrderType.internal: {
+      'en': ['Tea', 'Coffee', 'Water'],
+      'ar': ['شاي', 'قهوة', 'مياه'],
+    },
+    OrderType.external: {
+      'en': ['Breakfast', 'Lunch', 'Drinks'],
+      'ar': ['إفطار', 'غداء', 'مشروبات'],
+    },
   };
 
   @override
@@ -127,9 +132,6 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
       vsync: this,
       duration: const Duration(seconds: 3),
     );
-    // _shimmerAnimation = Tween<double>(begin: -1.0, end: 2.0).animate(
-    //   CurvedAnimation(parent: _shimmerController, curve: Curves.easeInOut),
-    // );
   }
 
   void _startAnimations() {
@@ -168,6 +170,7 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
 
   @override
   Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context).languageCode;
     return AnimatedBuilder(
       animation: Listenable.merge([
         _slideController,
@@ -225,7 +228,10 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
                               width: 1,
                             ),
                           ),
-                          child: Form(key: _formKey, child: _buildContent()),
+                          child: Form(
+                            key: _formKey,
+                            child: _buildContent(locale),
+                          ),
                         ),
                       ),
                     ),
@@ -257,12 +263,6 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
               widget.organization.primaryColorValue.withOpacity(0.05),
             ],
           ),
-          // gradient: RadialGradient(
-          //   colors: [
-          //     Colors.white.withOpacity(0.15 + (_glowAnimation.value * 0.3)),
-          //     Colors.white.withOpacity(0.05),
-          //   ],
-          // ),
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(32),
             topRight: Radius.circular(32),
@@ -280,10 +280,10 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(String locale) {
     return Column(
       children: [
-        _buildGlassHeader(),
+        _buildGlassHeader(locale),
         Expanded(
           child: SingleChildScrollView(
             physics: BouncingScrollPhysics(),
@@ -292,68 +292,87 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(height: 20),
-                _buildOrderTypeSelection(),
+                _buildOrderTypeSelection(locale),
                 SizedBox(height: 24),
-                _buildItemSelection(),
+                _buildItemSelection(locale),
                 SizedBox(height: 24),
-                _buildSelectedItemsDisplay(),
+                _buildSelectedItemsDisplay(locale),
                 SizedBox(height: 24),
-                _buildPredefinedItems(),
+                _buildPredefinedItems(locale),
                 SizedBox(height: 24),
                 _buildGlassTextField(
                   controller: _descriptionController,
-                  label: 'Description (Optional)',
-                  hint: 'Any specific details or preferences...',
+                  label: locale == 'ar'
+                      ? 'الوصف (اختياري)'
+                      : 'Description (Optional)',
+                  hint: locale == 'ar'
+                      ? 'أي تفاصيل أو تفضيلات محددة...'
+                      : 'Any specific details or preferences...',
                   icon: Assets.imagesSvgsOrder,
                   delay: 200,
                   maxLines: 3,
+                  locale: locale,
                 ),
                 if (_selectedType == OrderType.external) ...[
                   SizedBox(height: 24),
                   _buildGlassTextField(
                     controller: _priceController,
-                    label: 'Estimated Price (EGP)',
-                    hint: 'Enter estimated price',
+                    label: locale == 'ar'
+                        ? 'السعر (ج.م)'
+                        : 'Estimated Price (EGP)',
+                    hint: locale == 'ar'
+                        ? 'أدخل السعر '
+                        : 'Enter estimated price',
                     icon: Assets.imagesSvgsMoney,
                     delay: 300,
                     keyboardType: TextInputType.number,
                     validator: (value) {
                       if (_selectedType == OrderType.external &&
                           (value == null || value.trim().isEmpty)) {
-                        return 'Please enter estimated price for external orders';
+                        return locale == 'ar'
+                            ? 'يرجى إدخال السعر المقدر للطلبات الخارجية'
+                            : 'Please enter estimated price for external orders';
                       }
                       if (value != null && value.isNotEmpty) {
                         final price = double.tryParse(value);
                         if (price == null || price <= 0) {
-                          return 'Please enter a valid price';
+                          return locale == 'ar'
+                              ? 'يرجى إدخال سعر صحيح'
+                              : 'Please enter a valid price';
                         }
                       }
                       return null;
                     },
+                    locale: locale,
                   ),
                 ],
                 SizedBox(height: 24),
-                _buildOfficeBoySelection(),
+                _buildOfficeBoySelection(locale),
                 SizedBox(height: 24),
                 _buildGlassTextField(
                   controller: _notesController,
-                  label: 'Additional Notes (Optional)',
-                  hint: 'Any special instructions...',
+                  label: locale == 'ar'
+                      ? 'ملاحظات إضافية (اختياري)'
+                      : 'Additional Notes (Optional)',
+                  hint: locale == 'ar'
+                      ? 'أي تعليمات خاصة...'
+                      : 'Any special instructions...',
                   icon: Assets.imagesSvgsNote,
                   delay: 400,
                   maxLines: 2,
+                  locale: locale,
                 ),
                 SizedBox(height: 32),
               ],
             ),
           ),
         ),
-        _buildGlassBottomActions(),
+        _buildGlassBottomActions(locale),
       ],
     );
   }
 
-  Widget _buildGlassHeader() {
+  Widget _buildGlassHeader(String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 800),
@@ -416,7 +435,7 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
                     child: AnimatedBuilder(
                       animation: _shimmerController,
                       builder: (context, child) => Text(
-                        'New Order',
+                        locale == 'ar' ? 'طلب جديد' : 'New Order',
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
@@ -483,7 +502,7 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
     );
   }
 
-  Widget _buildOrderTypeSelection() {
+  Widget _buildOrderTypeSelection(String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 800),
@@ -517,7 +536,7 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Order Type',
+                    locale == 'ar' ? 'نوع الطلب' : 'Order Type',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -530,21 +549,27 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
                     children: [
                       Expanded(
                         child: _buildGlassTypeCard(
-                          'Internal',
-                          'Tea, Coffee, Water',
+                          locale == 'ar' ? 'داخلي' : 'Internal',
+                          locale == 'ar'
+                              ? 'شاي، قهوة، مياه'
+                              : 'Tea, Coffee, Water',
                           Assets.imagesSvgsCompany,
                           OrderType.internal,
                           widget.organization.secondaryColorValue,
+                          locale: locale,
                         ),
                       ),
                       SizedBox(width: 16),
                       Expanded(
                         child: _buildGlassTypeCard(
-                          'External',
-                          'Food, Meals, Delivery',
+                          locale == 'ar' ? 'خارجي' : 'External',
+                          locale == 'ar'
+                              ? 'طعام، وجبات، توصيل'
+                              : 'Food, Meals, Delivery',
                           Assets.imagesSvgsShoppingCart,
                           OrderType.external,
                           widget.organization.secondaryColorValue,
+                          locale: locale,
                         ),
                       ),
                     ],
@@ -563,8 +588,9 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
     String subtitle,
     String icon,
     OrderType type,
-    Color color,
-  ) {
+    Color color, {
+    required String locale,
+  }) {
     final isSelected = _selectedType == type;
 
     return AnimatedBuilder(
@@ -656,7 +682,7 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
     );
   }
 
-  Widget _buildItemSelection() {
+  Widget _buildItemSelection(String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 600),
@@ -667,7 +693,7 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Add Custom Item',
+              locale == 'ar' ? 'إضافة عنصر مخصص' : 'Add Custom Item',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -712,7 +738,9 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
                             fontWeight: FontWeight.w500,
                           ),
                           decoration: InputDecoration(
-                            hintText: 'Enter item name...',
+                            hintText: locale == 'ar'
+                                ? 'أدخل اسم العنصر...'
+                                : 'Enter item name...',
                             hintStyle: TextStyle(
                               color: Colors.white.withOpacity(0.6),
                               fontSize: 14,
@@ -781,7 +809,7 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
     );
   }
 
-  Widget _buildSelectedItemsDisplay() {
+  Widget _buildSelectedItemsDisplay(String locale) {
     if (_selectedItems.isEmpty) return SizedBox.shrink();
 
     return TweenAnimationBuilder<double>(
@@ -820,7 +848,9 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Selected Items (${_selectedItems.length})',
+                    locale == 'ar'
+                        ? 'العناصر المحددة (${_selectedItems.length})'
+                        : 'Selected Items (${_selectedItems.length})',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -888,7 +918,9 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
     );
   }
 
-  Widget _buildPredefinedItems() {
+  Widget _buildPredefinedItems(String locale) {
+    final items = _predefinedItems[_selectedType]![locale]!;
+
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 800),
@@ -923,7 +955,7 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Quick Select',
+                    locale == 'ar' ? 'اختيار سريع' : 'Quick Select',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -935,7 +967,7 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: _predefinedItems[_selectedType]!.map((item) {
+                    children: items.map((item) {
                       final isSelected = _selectedItems.contains(item);
                       return AnimatedBuilder(
                         animation: _glowController,
@@ -1025,7 +1057,7 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
     );
   }
 
-  Widget _buildOfficeBoySelection() {
+  Widget _buildOfficeBoySelection(String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 600 + 300),
@@ -1036,7 +1068,7 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Select Office Boy',
+              locale == 'ar' ? 'اختر عامل التوصيل' : 'Select Office Boy',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -1058,13 +1090,6 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
                   color: Colors.white.withOpacity(0.2),
                   width: 1,
                 ),
-                // boxShadow: [
-                //   BoxShadow(
-                //     color: Colors.black.withOpacity(0.1),
-                //     blurRadius: 20,
-                //     offset: Offset(0, 8),
-                //   ),
-                // ],
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
@@ -1146,6 +1171,7 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
     required String hint,
     required String icon,
     required int delay,
+    required String locale,
     TextInputType? keyboardType,
     int? maxLines,
     String? Function(String?)? validator,
@@ -1236,7 +1262,7 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
     );
   }
 
-  Widget _buildGlassBottomActions() {
+  Widget _buildGlassBottomActions(String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 1200),
@@ -1291,10 +1317,12 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
                           ? () {
                               showErrorToast(
                                 context,
-                                'Please select at least one item',
+                                locale == 'ar'
+                                    ? 'يرجى اختيار عنصر واحد على الأقل'
+                                    : 'Please select at least one item',
                               );
                             }
-                          : _submitOrder,
+                          : () => _submitOrder(locale),
                       child: Container(
                         alignment: Alignment.center,
                         child: _isSubmitting
@@ -1311,7 +1339,9 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
                                   ),
                                   SizedBox(width: 12),
                                   Text(
-                                    'Placing Order...',
+                                    locale == 'ar'
+                                        ? 'جاري تقديم الطلب...'
+                                        : 'Placing Order...',
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 16,
@@ -1321,7 +1351,9 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
                                 ],
                               )
                             : Text(
-                                'Place Order (${_selectedItems.length} items)',
+                                locale == 'ar'
+                                    ? 'تقديم الطلب (${_selectedItems.length} عناصر)'
+                                    : 'Place Order (${_selectedItems.length} items)',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
@@ -1341,87 +1373,113 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
     );
   }
 
-  void _submitOrder() async {
-  if (_selectedItems.isEmpty) {
-    showErrorToast(context, 'Please select at least one item');
-    return;
-  }
-
-  if (_selectedOfficeBoy == null) {
-    showErrorToast(context, 'Please select an office boy');
-    return;
-  }
-
-  if (!_formKey.currentState!.validate()) {
-    return;
-  }
-
-  setState(() {
-    _isSubmitting = true;
-  });
-
-  try {
-    final items = _selectedItems
-        .map((itemName) => OrderItem(name: itemName))
-        .toList();
-
-    final order = EmployeeOrder(
-      id: '',
-      employeeId: widget.employee.id,
-      employeeName: widget.employee.name,
-      employeeRole: widget.employee.role,
-      officeBoyId: _selectedOfficeBoy!.id,
-      officeBoyName: _selectedOfficeBoy!.name,
-      items: items,
-      description: _descriptionController.text.trim(),
-      type: _selectedType,
-      status: OrderStatus.pending,
-      createdAt: DateTime.now(),
-      price: _priceController.text.isNotEmpty
-          ? double.tryParse(_priceController.text)
-          : null,
-      organizationId: widget.organization.id,
-      notes: _notesController.text.trim().isNotEmpty
-          ? _notesController.text.trim()
-          : null,
-      isSpecificallyAssigned: true,
-      specificallyAssignedOfficeBoyId: _selectedOfficeBoy!.id,
-    );
-
-    // Create order in Firestore
-    final docRef = await FirebaseFirestore.instance
-        .collection('orders')
-        .add(order.toFirestore());
-
-    // ✅ SEND NOTIFICATION TO OFFICE BOY
-    await NotificationService().notifyOfficeBoyNewOrder(
-      officeBoyId: _selectedOfficeBoy!.id,
-      orderId: docRef.id,
-      orderType: _selectedType == OrderType.internal ? 'Internal' : 'External',
-      employeeName: widget.employee.name,
-      itemCount: items.length,
-    );
-
-    // ✅ NOTIFY ADMIN IF EMPLOYEE IS NOT ADMIN
-    if (widget.employee.role != UserRole.admin) {
-      await NotificationService().notifyAdminNewOrder(
-        organizationId: widget.organization.id,
-        employeeName: widget.employee.name,
-        orderType: _selectedType == OrderType.internal ? 'Internal' : 'External',
-        itemCount: items.length,
+  void _submitOrder(String locale) async {
+    if (_selectedItems.isEmpty) {
+      showErrorToast(
+        context,
+        locale == 'ar'
+            ? 'يرجى اختيار عنصر واحد على الأقل'
+            : 'Please select at least one item',
       );
+      return;
     }
 
-    widget.onOrderCreated(order.copyWith(id: docRef.id));
-    Navigator.pop(context);
-  } catch (e) {
-    showErrorToast(context, 'Failed to place order: $e');
-  } finally {
+    if (_selectedOfficeBoy == null) {
+      showErrorToast(
+        context,
+        locale == 'ar'
+            ? 'يرجى اختيار عامل التوصيل'
+            : 'Please select an office boy',
+      );
+      return;
+    }
+
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
     setState(() {
-      _isSubmitting = false;
+      _isSubmitting = true;
     });
+
+    try {
+      final items = _selectedItems
+          .map((itemName) => OrderItem(name: itemName))
+          .toList();
+
+      final order = EmployeeOrder(
+        id: '',
+        employeeId: widget.employee.id,
+        employeeName: widget.employee.name,
+        employeeRole: widget.employee.role,
+        officeBoyId: _selectedOfficeBoy!.id,
+        officeBoyName: _selectedOfficeBoy!.name,
+        items: items,
+        description: _descriptionController.text.trim(),
+        type: _selectedType,
+        status: OrderStatus.pending,
+        createdAt: DateTime.now(),
+        price: _priceController.text.isNotEmpty
+            ? double.tryParse(_priceController.text)
+            : null,
+        organizationId: widget.organization.id,
+        notes: _notesController.text.trim().isNotEmpty
+            ? _notesController.text.trim()
+            : null,
+        isSpecificallyAssigned: true,
+        specificallyAssignedOfficeBoyId: _selectedOfficeBoy!.id,
+      );
+
+      // Create order in Firestore
+      final docRef = await FirebaseFirestore.instance
+          .collection('orders')
+          .add(order.toFirestore());
+
+      // ✅ SEND NOTIFICATION TO OFFICE BOY
+      await NotificationService().notifyOfficeBoyNewOrder(
+        officeBoyId: _selectedOfficeBoy!.id,
+        orderId: docRef.id,
+        orderType: _selectedType == OrderType.internal
+            ? (locale == 'ar' ? 'داخلي' : 'Internal')
+            : (locale == 'ar' ? 'خارجي' : 'External'),
+        employeeName: widget.employee.name,
+        itemCount: items.length,
+        isArabic: locale == 'ar',
+      );
+
+      // ✅ NOTIFY ADMIN IF EMPLOYEE IS NOT ADMIN
+      if (widget.employee.role != UserRole.admin) {
+        await NotificationService().notifyAdminNewOrder(
+          organizationId: widget.organization.id,
+          employeeName: widget.employee.name,
+          orderType: _selectedType == OrderType.internal
+              ? (locale == 'ar' ? 'داخلي' : 'Internal')
+              : (locale == 'ar' ? 'خارجي' : 'External'),
+          itemCount: items.length,
+          isArabic: locale == 'ar',
+        );
+      }
+
+      widget.onOrderCreated(order.copyWith(id: docRef.id));
+
+      // Show success message
+      showSuccessToast(
+        context,
+        locale == 'ar' ? 'تم تقديم الطلب بنجاح' : 'Order placed successfully!',
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      showErrorToast(
+        context,
+        locale == 'ar' ? 'فشل في تقديم الطلب: $e' : 'Failed to place order: $e',
+      );
+    } finally {
+      setState(() {
+        _isSubmitting = false;
+      });
+    }
   }
-}
 }
 
 // Custom painter for animated particles background

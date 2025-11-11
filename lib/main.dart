@@ -101,7 +101,7 @@ Future<void> main() async {
         // Locales.french,
         // Locales.dutch,
       ],
-      startLocale: Locales.english,
+      startLocale: Locales.arabic,
       fallbackLocale: Locales.english,
       useOnlyLangCode: true,
       assetLoader: const CodegenLoader(),

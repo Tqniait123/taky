@@ -106,6 +106,7 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final safePadding = MediaQuery.of(context).padding.top;
+    final locale = Localizations.localeOf(context).languageCode;
 
     return Material(
       color: Colors.transparent,
@@ -151,7 +152,7 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
                         width: 1.5,
                       ),
                     ),
-                    child: _buildContent(),
+                    child: _buildContent(locale),
                   ),
                 ),
               ),
@@ -189,30 +190,30 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(String locale) {
     return Column(
       children: [
         // Header with handle
-        _buildHeader(),
+        _buildHeader(locale),
 
         // User info section
-        _buildUserInfo(),
+        _buildUserInfo(locale),
 
         // Tab bar
-        _buildTabBar(),
+        _buildTabBar(locale),
 
         // Tab content
         Expanded(
           child: TabBarView(
             controller: _tabController,
-            children: [_buildOrdersTab(), _buildStatisticsTab()],
+            children: [_buildOrdersTab(locale), _buildStatisticsTab(locale)],
           ),
         ),
       ],
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(String locale) {
     return Column(
       children: [
         // Handle bar
@@ -248,7 +249,7 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
                   children: [
                     Expanded(
                       child: Text(
-                        'User Profile',
+                        locale == 'ar' ? 'الملف الشخصي' : 'User Profile',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w700,
@@ -316,7 +317,7 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
     );
   }
 
-  Widget _buildUserInfo() {
+  Widget _buildUserInfo(String locale) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       padding: const EdgeInsets.all(20),
@@ -352,7 +353,7 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildNameAndStatus(),
+                    _buildNameAndStatus(locale),
                     const SizedBox(height: 12),
                     _buildUserDetails(),
                   ],
@@ -426,7 +427,7 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
     );
   }
 
-  Widget _buildNameAndStatus() {
+  Widget _buildNameAndStatus(String locale) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -458,7 +459,11 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
                 ),
                 child: Text(
                   widget.user.role == UserRole.employee
-                      ? 'Employee'
+                      ? locale == 'ar'
+                            ? 'موظف'
+                            : 'Employee'
+                      : locale == 'ar'
+                      ? 'عامل'
                       : 'Office Boy',
                   style: const TextStyle(
                     color: Colors.white,
@@ -471,12 +476,12 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
           ),
         ),
         const SizedBox(width: 12),
-        _buildStatusIndicator(),
+        _buildStatusIndicator(locale),
       ],
     );
   }
 
-  Widget _buildStatusIndicator() {
+  Widget _buildStatusIndicator(String locale) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -522,7 +527,13 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
           ),
           const SizedBox(width: 6),
           Text(
-            widget.user.isActive ? 'Active' : 'Inactive',
+            widget.user.isActive
+                ? locale == 'ar'
+                      ? 'نشط'
+                      : 'Active'
+                : locale == 'ar'
+                ? 'غير نشط'
+                : 'Inactive',
             style: const TextStyle(
               color: Colors.white,
               fontSize: 12,
@@ -574,7 +585,7 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
     );
   }
 
-  Widget _buildTabBar() {
+  Widget _buildTabBar(String locale) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       padding: const EdgeInsets.all(6),
@@ -624,14 +635,14 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
             dividerColor: Colors.transparent,
             splashFactory: NoSplash.splashFactory,
             overlayColor: WidgetStateProperty.all(Colors.transparent),
-            tabs: const [
+            tabs: [
               Tab(
                 icon: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.receipt_long_rounded, size: 18),
                     SizedBox(width: 6),
-                    Text('Orders'),
+                    Text(locale == 'ar' ? 'الطلبات' : 'Orders'),
                   ],
                 ),
               ),
@@ -641,7 +652,7 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
                   children: [
                     Icon(Icons.analytics_rounded, size: 18),
                     SizedBox(width: 6),
-                    Text('Stats'),
+                    Text(locale == 'ar' ? 'الإحصائيات' : 'Stats'),
                   ],
                 ),
               ),
@@ -652,46 +663,57 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
     );
   }
 
-  Widget _buildOrdersTab() {
+  Widget _buildOrdersTab(String locale) {
     return Column(
       children: [
-        _buildOrderFilters(),
+        _buildOrderFilters(locale),
         Expanded(
           child: filteredOrders.isEmpty
-              ? _buildEmptyState('No orders found', Icons.receipt_long_rounded)
-              : _buildOrdersList(),
+              ? _buildEmptyState(
+                  locale == 'ar' ? 'لا توجد طلبات' : 'No orders found',
+                  Icons.receipt_long_rounded,
+                )
+              : _buildOrdersList(locale),
         ),
       ],
     );
   }
 
-  Widget _buildOrderFilters() {
+  Widget _buildOrderFilters(String locale) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            _buildOrderFilterChip('All', selectedFilter == null),
+            _buildOrderFilterChip(
+              locale == 'ar' ? 'الكل' : 'All',
+              selectedFilter == null,
+              locale,
+            ),
             const SizedBox(width: 8),
             _buildOrderFilterChip(
-              'Pending',
+              locale == 'ar' ? 'قيد الانتظار' : 'Pending',
               selectedFilter == OrderStatus.pending,
+              locale,
             ),
             const SizedBox(width: 8),
             _buildOrderFilterChip(
-              'In Progress',
+              locale == 'ar' ? 'قيد التنفيذ' : 'In Progress',
               selectedFilter == OrderStatus.inProgress,
+              locale,
             ),
             const SizedBox(width: 8),
             _buildOrderFilterChip(
-              'Completed',
+              locale == 'ar' ? 'مكتمل' : 'Completed',
               selectedFilter == OrderStatus.completed,
+              locale,
             ),
             const SizedBox(width: 8),
             _buildOrderFilterChip(
-              'Cancelled',
+              locale == 'ar' ? 'ملغي' : 'Cancelled',
               selectedFilter == OrderStatus.cancelled,
+              locale,
             ),
           ],
         ),
@@ -699,9 +721,9 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
     );
   }
 
-  Widget _buildOrderFilterChip(String label, bool isSelected) {
+  Widget _buildOrderFilterChip(String label, bool isSelected, String locale) {
     return GestureDetector(
-      onTap: () => _handleFilterTap(label),
+      onTap: () => _handleFilterTap(label, locale),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -739,38 +761,33 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
     );
   }
 
-  void _handleFilterTap(String label) {
+  void _handleFilterTap(String label, String locale) {
     setState(() {
-      switch (label) {
-        case 'All':
-          selectedFilter = null;
-          break;
-        case 'Pending':
-          selectedFilter = OrderStatus.pending;
-          break;
-        case 'In Progress':
-          selectedFilter = OrderStatus.inProgress;
-          break;
-        case 'Completed':
-          selectedFilter = OrderStatus.completed;
-          break;
-        case 'Cancelled':
-          selectedFilter = OrderStatus.cancelled;
-          break;
+      if (label == (locale == 'ar' ? 'الكل' : 'All')) {
+        selectedFilter = null;
+      } else if (label == (locale == 'ar' ? 'قيد الانتظار' : 'Pending')) {
+        selectedFilter = OrderStatus.pending;
+      } else if (label == (locale == 'ar' ? 'قيد التنفيذ' : 'In Progress')) {
+        selectedFilter = OrderStatus.inProgress;
+      } else if (label == (locale == 'ar' ? 'مكتمل' : 'Completed')) {
+        selectedFilter = OrderStatus.completed;
+      } else if (label == (locale == 'ar' ? 'ملغي' : 'Cancelled')) {
+        selectedFilter = OrderStatus.cancelled;
       }
     });
   }
 
-  Widget _buildOrdersList() {
+  Widget _buildOrdersList(String locale) {
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       itemCount: filteredOrders.length,
-      itemBuilder: (context, index) => _buildOrderCard(filteredOrders[index]),
+      itemBuilder: (context, index) =>
+          _buildOrderCard(filteredOrders[index], locale),
     );
   }
 
-  Widget _buildOrderCard(AdminOrder order) {
+  Widget _buildOrderCard(AdminOrder order, String locale) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: Material(
@@ -793,14 +810,14 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
                 width: 1,
               ),
             ),
-            child: _buildOrderContent(order),
+            child: _buildOrderContent(order, locale),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildOrderContent(AdminOrder order) {
+  Widget _buildOrderContent(AdminOrder order, String locale) {
     final isEmployee = widget.user.role == UserRole.employee;
 
     return Column(
@@ -829,14 +846,14 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
                 ),
               ],
             ),
-            _buildOrderStatus(order.status),
+            _buildOrderStatus(order.status, locale),
           ],
         ),
 
         const SizedBox(height: 12),
 
         // Items list
-        _buildOrderItems(order),
+        _buildOrderItems(order, locale),
 
         // Description if available
         if (order.description.isNotEmpty) ...[
@@ -847,17 +864,17 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
         // Role-specific info
         if ((isEmployee) || (!isEmployee)) ...[
           const SizedBox(height: 12),
-          _buildRoleInfo(order, isEmployee),
+          _buildRoleInfo(order, isEmployee, locale),
         ],
 
         // Price and time
         const SizedBox(height: 12),
-        _buildOrderFooter(order),
+        _buildOrderFooter(order, locale),
       ],
     );
   }
 
-  Widget _buildOrderStatus(OrderStatus status) {
+  Widget _buildOrderStatus(OrderStatus status, String locale) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -866,7 +883,7 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
         border: Border.all(color: _getStatusColor(status).withOpacity(0.3)),
       ),
       child: Text(
-        _getStatusText(status),
+        _getStatusText(status, locale),
         style: TextStyle(
           color: _getStatusColor(status),
           fontSize: 12,
@@ -876,12 +893,14 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
     );
   }
 
-  Widget _buildOrderItems(AdminOrder order) {
+  Widget _buildOrderItems(AdminOrder order, String locale) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '${order.items.length} item${order.items.length != 1 ? 's' : ''}',
+          locale == 'ar'
+              ? '${order.items.length} عنصر'
+              : '${order.items.length} items',
           style: TextStyle(
             color: Colors.white.withOpacity(0.8),
             fontSize: 13,
@@ -947,7 +966,7 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
     );
   }
 
-  Widget _buildRoleInfo(AdminOrder order, bool isEmployee) {
+  Widget _buildRoleInfo(AdminOrder order, bool isEmployee, String locale) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -970,8 +989,8 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
           Expanded(
             child: Text(
               isEmployee
-                  ? 'Delivered by: ${order.officeBoyName}'
-                  : 'Ordered by: ${order.employeeName}',
+                  ? '${locale == 'ar' ? 'تم التسليم بواسطة' : 'Delivered by'}: ${order.officeBoyName}'
+                  : '${locale == 'ar' ? 'تم الطلب بواسطة' : 'Ordered by'}: ${order.employeeName}',
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 12,
@@ -984,7 +1003,7 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
     );
   }
 
-  Widget _buildOrderFooter(AdminOrder order) {
+  Widget _buildOrderFooter(AdminOrder order, String locale) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -997,7 +1016,7 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
             ),
             const SizedBox(width: 6),
             Text(
-              _formatTime(order.createdAt),
+              _formatTime(order.createdAt, locale),
               style: TextStyle(
                 color: Colors.white.withOpacity(0.7),
                 fontSize: 12,
@@ -1005,12 +1024,12 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
             ),
           ],
         ),
-        if (order.finalPrice != null) _buildOrderPrice(order),
+        if (order.finalPrice != null) _buildOrderPrice(order, locale),
       ],
     );
   }
 
-  Widget _buildOrderPrice(AdminOrder order) {
+  Widget _buildOrderPrice(AdminOrder order, String locale) {
     final hasDiscount = order.price != order.finalPrice;
 
     return Row(
@@ -1019,7 +1038,7 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
           Padding(
             padding: const EdgeInsets.only(right: 6),
             child: Text(
-              'EGP ${order.price?.toStringAsFixed(0) ?? '0'}',
+              '${order.price?.toStringAsFixed(0) ?? '0'} ${locale == 'ar' ? 'ج.م' : 'EGP'}',
               style: TextStyle(
                 color: Colors.white.withOpacity(0.5),
                 fontSize: 12,
@@ -1028,7 +1047,7 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
             ),
           ),
         Text(
-          'EGP ${order.finalPrice!.toStringAsFixed(0)}',
+          '${order.finalPrice!.toStringAsFixed(0)} ${locale == 'ar' ? 'ج.م' : 'EGP'}',
           style: const TextStyle(
             color: Colors.white,
             fontSize: 14,
@@ -1039,7 +1058,7 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
     );
   }
 
-  Widget _buildStatisticsTab() {
+  Widget _buildStatisticsTab(String locale) {
     final totalOrders = widget.orders.length;
     final todaysOrders = widget.orders.where(
       (o) => o.createdAt.day == DateTime.now().day,
@@ -1062,6 +1081,7 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
             pendingCount,
             inProgressCount,
             cancelledCount,
+            locale,
           ),
         ],
       ),
@@ -1075,6 +1095,7 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
     int pending,
     int inProgress,
     int cancelled,
+    String locale,
   ) {
     return GridView.count(
       crossAxisCount: 2,
@@ -1086,37 +1107,37 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
       childAspectRatio: 1.3,
       children: [
         _buildStatCard(
-          'Total Orders',
+          locale == 'ar' ? 'إجمالي الطلبات' : 'Total Orders',
           total.toString(),
           Assets.imagesSvgsOrder,
           widget.organization.primaryColorValue,
         ),
         _buildStatCard(
-          'Today\'s Orders',
+          locale == 'ar' ? 'طلبات اليوم' : 'Today\'s Orders',
           todaysOrders.toString(),
           Assets.imagesSvgsCalendar,
           widget.organization.secondaryColorValue,
         ),
         _buildStatCard(
-          'Completed',
+          locale == 'ar' ? 'مكتمل' : 'Completed',
           completed.toString(),
           Assets.imagesSvgsComplete,
           Colors.green,
         ),
         _buildStatCard(
-          'Pending',
+          locale == 'ar' ? 'قيد الانتظار' : 'Pending',
           pending.toString(),
           Assets.imagesSvgsPending,
           Colors.orange,
         ),
         _buildStatCard(
-          'In Progress',
+          locale == 'ar' ? 'قيد التنفيذ' : 'In Progress',
           inProgress.toString(),
           Assets.imagesSvgsClock,
           Colors.blue,
         ),
         _buildStatCard(
-          'Cancelled',
+          locale == 'ar' ? 'ملغي' : 'Cancelled',
           cancelled.toString(),
           Assets.imagesSvgsCancell,
           Colors.red,
@@ -1212,18 +1233,18 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
     }
   }
 
-  String _getStatusText(OrderStatus status) {
+  String _getStatusText(OrderStatus status, String locale) {
     switch (status) {
       case OrderStatus.pending:
-        return 'Pending';
+        return locale == 'ar' ? 'قيد الانتظار' : 'Pending';
       case OrderStatus.inProgress:
-        return 'In Progress';
+        return locale == 'ar' ? 'قيد التنفيذ' : 'In Progress';
       case OrderStatus.completed:
-        return 'Completed';
+        return locale == 'ar' ? 'مكتمل' : 'Completed';
       case OrderStatus.cancelled:
-        return 'Cancelled';
+        return locale == 'ar' ? 'ملغي' : 'Cancelled';
       case OrderStatus.needsResponse:
-        return 'Needs Response';
+        return locale == 'ar' ? 'بحاجة للرد' : 'Needs Response';
     }
   }
 
@@ -1238,20 +1259,22 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet>
     }
   }
 
-  String _formatTime(DateTime dateTime) {
+  String _formatTime(DateTime dateTime, String locale) {
     final now = DateTime.now();
     final difference = now.difference(dateTime).abs();
 
-    if (difference.inMinutes < 1) {
-      return 'Just now';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m ago';
+    if (difference.inMinutes < 60) {
+      return locale == 'ar'
+          ? 'منذ ${difference.inMinutes} دقيقة'
+          : '${difference.inMinutes}m ago';
     } else if (difference.inHours < 24) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays}d ago';
+      return locale == 'ar'
+          ? 'منذ ${difference.inHours} ساعة'
+          : '${difference.inHours}h ago';
     } else {
-      return '${(difference.inDays / 7).floor()}w ago';
+      return locale == 'ar'
+          ? 'منذ ${difference.inDays} يوم'
+          : '${difference.inDays}d ago';
     }
   }
 }

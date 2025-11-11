@@ -13,9 +13,13 @@ class OrderResponseBottomSheet extends StatefulWidget {
   final EmployeeOrder order;
   final EmployeeOrganization organization;
   final Function(String orderId, String response, OrderStatus newStatus)
-      onResponse;
-        final Function(EmployeeOrder order, List<OrderItem> unavailableItems, String response) 
-      onEditRequested; 
+  onResponse;
+  final Function(
+    EmployeeOrder order,
+    List<OrderItem> unavailableItems,
+    String response,
+  )
+  onEditRequested;
 
   const OrderResponseBottomSheet({
     super.key,
@@ -138,80 +142,88 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
     }
   }
 
-  String _getItemStatusText(ItemStatus status) {
+  String _getItemStatusText(ItemStatus status, String locale) {
     switch (status) {
       case ItemStatus.pending:
-        return 'Checking...';
+        return locale == 'ar' ? 'جارٍ التحقق...' : 'Checking...';
       case ItemStatus.available:
-        return 'Available';
+        return locale == 'ar' ? 'متاح' : 'Available';
       case ItemStatus.notAvailable:
-        return 'Not Available';
+        return locale == 'ar' ? 'غير متاح' : 'Not Available';
     }
   }
 
- void _submitResponse() async {
-  setState(() => _isLoading = true);
+  void _submitResponse(String locale) async {
+    setState(() => _isLoading = true);
 
-  try {
-    if (_selectedAction == OrderStatus.pending) {
-      setState(() => _isLoading = false);
-      
-      final unavailableItems = widget.order.items
-          .where((item) => item.status == ItemStatus.notAvailable)
-          .toList();
-      
-      widget.onEditRequested(
-        widget.order, 
-        unavailableItems, 
-        _responseController.text.trim()
+    try {
+      if (_selectedAction == OrderStatus.pending) {
+        setState(() => _isLoading = false);
+
+        final unavailableItems = widget.order.items
+            .where((item) => item.status == ItemStatus.notAvailable)
+            .toList();
+
+        widget.onEditRequested(
+          widget.order,
+          unavailableItems,
+          _responseController.text.trim(),
+        );
+        return;
+      }
+
+      // Update order status
+      await widget.onResponse(
+        widget.order.id,
+        _responseController.text.trim(),
+        _selectedAction,
       );
-      return;
-    }
 
-    // Update order status
-    await widget.onResponse(
-      widget.order.id,
-      _responseController.text.trim(),
-      _selectedAction,
-    );
-
-    // ✅ SEND NOTIFICATION TO OFFICE BOY
-    if (_selectedAction == OrderStatus.inProgress) {
-      // Employee chose to continue with available items
-      // await NotificationService().notifyOfficeBoyNewOrder(
-      //   officeBoyId: widget.order.officeBoyId,
-      //   orderId: widget.order.id,
-      //   orderType: widget.order.type == OrderType.internal ? 'Internal' : 'External',
-      //   employeeName: widget.order.employeeName,
-      //   itemCount: widget.order.items
-      //       .where((item) => item.status == ItemStatus.available)
-      //       .length,
-      // );
+      // ✅ SEND NOTIFICATION TO OFFICE BOY
+      if (_selectedAction == OrderStatus.inProgress) {
+        // Employee chose to continue with available items
         await NotificationService().notifyOfficeBoyEmployeeResponse(
-        officeBoyId: widget.order.officeBoyId,
-        orderId: widget.order.id,
-        employeeName: widget.order.employeeName,
-        responseType: 'continue',
-      );
-    }else if (_selectedAction == OrderStatus.cancelled) {
-      // Employee chose to cancel
-      await NotificationService().notifyOfficeBoyEmployeeResponse(
-        officeBoyId: widget.order.officeBoyId,
-        orderId: widget.order.id,
-        employeeName: widget.order.employeeName,
-        responseType: 'cancel',
-      );
-    }
+          officeBoyId: widget.order.officeBoyId,
+          orderId: widget.order.id,
+          employeeName: widget.order.employeeName,
+          responseType: 'continue',
+          isArabic: locale == 'ar',
+        );
+      } else if (_selectedAction == OrderStatus.cancelled) {
+        // Employee chose to cancel
+        await NotificationService().notifyOfficeBoyEmployeeResponse(
+          officeBoyId: widget.order.officeBoyId,
+          orderId: widget.order.id,
+          employeeName: widget.order.employeeName,
+          responseType: 'cancel',
+          isArabic: locale == 'ar',
+        );
+      }
 
-    Navigator.pop(context);
-  } catch (e) {
-    showErrorToast(context, 'Failed to submit response: $e');
-  } finally {
-    setState(() => _isLoading = false);
+      // Show success message
+      showSuccessToast(
+        context,
+        locale == 'ar'
+            ? 'تم إرسال الرد بنجاح'
+            : 'Response submitted successfully!',
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      showErrorToast(
+        context,
+        locale == 'ar'
+            ? 'فشل في إرسال الرد: $e'
+            : 'Failed to submit response: $e',
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
-}
+
   @override
   Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context).languageCode;
     return AnimatedBuilder(
       animation: Listenable.merge([
         _slideController,
@@ -266,7 +278,7 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
                               width: 1,
                             ),
                           ),
-                          child: _buildContent(),
+                          child: _buildContent(locale),
                         ),
                       ),
                     ),
@@ -311,7 +323,7 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(String locale) {
     final availableItems = widget.order.items
         .where((item) => item.status == ItemStatus.available)
         .toList();
@@ -323,7 +335,7 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
 
     return Column(
       children: [
-        _buildGlassHeader(),
+        _buildGlassHeader(locale),
         Expanded(
           child: SingleChildScrollView(
             physics: BouncingScrollPhysics(),
@@ -332,29 +344,34 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(height: 20),
-                _buildOrderSummary(),
+                _buildOrderSummary(locale),
                 SizedBox(height: 24),
-                _buildAvailabilityStatus(availableItems, unavailableItems),
+                _buildAvailabilityStatus(
+                  availableItems,
+                  unavailableItems,
+                  locale,
+                ),
                 SizedBox(height: 24),
                 _buildActionSelection(
                   hasAvailableItems,
                   hasUnavailableItems,
                   availableCount: availableItems.length,
                   unavailableCount: unavailableItems.length,
+                  locale: locale,
                 ),
                 SizedBox(height: 24),
-                _buildResponseMessage(),
+                _buildResponseMessage(locale),
                 SizedBox(height: 32),
               ],
             ),
           ),
         ),
-        _buildGlassBottomActions(),
+        _buildGlassBottomActions(locale),
       ],
     );
   }
 
-  Widget _buildGlassHeader() {
+  Widget _buildGlassHeader(String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 800),
@@ -414,7 +431,7 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
                     child: AnimatedBuilder(
                       animation: _shimmerController,
                       builder: (context, child) => Text(
-                        'Order Response',
+                        locale == 'ar' ? 'رد على الطلب' : 'Order Response',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -487,7 +504,7 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
     );
   }
 
-  Widget _buildOrderSummary() {
+  Widget _buildOrderSummary(String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 600),
@@ -553,6 +570,8 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
                         Text(
                           widget.order.items.length == 1
                               ? widget.order.items.first.name
+                              : locale == 'ar'
+                              ? 'طلب ${widget.order.items.length} عناصر'
                               : '${widget.order.items.length} Items Order',
                           style: TextStyle(
                             color: Colors.white,
@@ -601,6 +620,7 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
   Widget _buildAvailabilityStatus(
     List<OrderItem> availableItems,
     List<OrderItem> unavailableItems,
+    String locale,
   ) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -612,7 +632,7 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Item Availability Status',
+              locale == 'ar' ? 'حالة توفر العناصر' : 'Item Availability Status',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -631,18 +651,20 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
             if (availableItems.isNotEmpty) ...[
               _buildStatusContainer(
                 availableItems,
-                'Available Items',
+                locale == 'ar' ? 'العناصر المتاحة' : 'Available Items',
                 widget.organization.primaryColorValue,
                 Assets.imagesSvgsComplete,
+                locale,
               ),
               SizedBox(height: 16),
             ],
             if (unavailableItems.isNotEmpty) ...[
               _buildStatusContainer(
                 unavailableItems,
-                'Unavailable Items',
+                locale == 'ar' ? 'العناصر غير المتاحة' : 'Unavailable Items',
                 Colors.red,
                 Assets.imagesSvgsCancell,
+                locale,
               ),
             ],
           ],
@@ -656,6 +678,7 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
     String title,
     Color statusColor,
     String statusIcon,
+    String locale,
   ) {
     return Container(
       padding: EdgeInsets.all(20),
@@ -726,7 +749,9 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
                 ],
               ),
               SizedBox(height: 16),
-              ...items.map((item) => _buildGlassItemRow(item, statusColor)),
+              ...items.map(
+                (item) => _buildGlassItemRow(item, statusColor, locale),
+              ),
             ],
           ),
         ),
@@ -734,7 +759,7 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
     );
   }
 
-  Widget _buildGlassItemRow(OrderItem item, Color statusColor) {
+  Widget _buildGlassItemRow(OrderItem item, Color statusColor, String locale) {
     return Container(
       margin: EdgeInsets.only(bottom: 12),
       padding: EdgeInsets.all(16),
@@ -821,7 +846,7 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
                       ),
                     ),
                     child: Text(
-                      _getItemStatusText(item.status),
+                      _getItemStatusText(item.status, locale),
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
@@ -899,6 +924,7 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
     bool hasUnavailableItems, {
     required int availableCount,
     required int unavailableCount,
+    required String locale,
   }) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -933,7 +959,7 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Your Decision',
+                    locale == 'ar' ? 'قرارك' : 'Your Decision',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -954,10 +980,15 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
                   if (hasAvailableItems) ...[
                     _buildGlassRadioOption(
                       OrderStatus.inProgress,
-                      'Continue with available items',
-                      'Proceed with $availableCount available item${availableCount == 1 ? '' : 's'}',
+                      locale == 'ar'
+                          ? 'المتابعة مع العناصر المتاحة'
+                          : 'Continue with available items',
+                      locale == 'ar'
+                          ? 'المتابعة مع $availableCount عنصر متاح${availableCount == 1 ? '' : ''}'
+                          : 'Proceed with $availableCount available item${availableCount == 1 ? '' : 's'}',
                       Assets.imagesSvgsComplete,
                       widget.organization.primaryColorValue,
+                      locale: locale,
                     ),
                     SizedBox(height: 16),
                   ],
@@ -966,10 +997,13 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
                   if (hasUnavailableItems) ...[
                     _buildGlassRadioOption(
                       OrderStatus.pending,
-                      'Edit the order',
-                      'Modify unavailable item${unavailableCount == 1 ? '' : 's'} and resubmit',
+                      locale == 'ar' ? 'تعديل الطلب' : 'Edit the order',
+                      locale == 'ar'
+                          ? 'تعديل العناصر غير المتاحة وإعادة الإرسال'
+                          : 'Modify unavailable item${unavailableCount == 1 ? '' : 's'} and resubmit',
                       Assets.imagesSvgsEdit,
                       Colors.orange,
+                      locale: locale,
                     ),
                     SizedBox(height: 16),
                   ],
@@ -977,10 +1011,15 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
                   // Cancel option - always show
                   _buildGlassRadioOption(
                     OrderStatus.cancelled,
-                    'Cancel the entire order',
-                    'Cancel due to unavailable items',
+                    locale == 'ar'
+                        ? 'إلغاء الطلب بالكامل'
+                        : 'Cancel the entire order',
+                    locale == 'ar'
+                        ? 'إلغاء بسبب العناصر غير المتاحة'
+                        : 'Cancel due to unavailable items',
                     Assets.imagesSvgsCancell,
                     Colors.red,
+                    locale: locale,
                   ),
                 ],
               ),
@@ -996,8 +1035,9 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
     String title,
     String subtitle,
     String icon,
-    Color color,
-  ) {
+    Color color, {
+    required String locale,
+  }) {
     final isSelected = _selectedAction == value;
 
     return AnimatedBuilder(
@@ -1132,7 +1172,7 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
     );
   }
 
-  Widget _buildResponseMessage() {
+  Widget _buildResponseMessage(String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 1200),
@@ -1143,7 +1183,7 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Your Message (Optional)',
+              locale == 'ar' ? 'رسالتك (اختياري)' : 'Your Message (Optional)',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -1203,10 +1243,16 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
                     ),
                     decoration: InputDecoration(
                       hintText: _selectedAction == OrderStatus.inProgress
-                          ? 'Any special instructions or notes... (Optional)'
+                          ? locale == 'ar'
+                                ? 'أي تعليمات أو ملاحظات خاصة... (اختياري)'
+                                : 'Any special instructions or notes... (Optional)'
                           : _selectedAction == OrderStatus.pending
-                              ? 'Reason for editing... (Optional)'
-                              : 'Reason for cancellation... (Optional)',
+                          ? locale == 'ar'
+                                ? 'سبب التعديل... (اختياري)'
+                                : 'Reason for editing... (Optional)'
+                          : locale == 'ar'
+                          ? 'سبب الإلغاء... (اختياري)'
+                          : 'Reason for cancellation... (Optional)',
                       hintStyle: TextStyle(
                         color: Colors.white.withOpacity(0.7),
                         fontSize: 14,
@@ -1236,7 +1282,7 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
     );
   }
 
-  Widget _buildGlassBottomActions() {
+  Widget _buildGlassBottomActions(String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 1400),
@@ -1296,7 +1342,7 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
                           child: Container(
                             alignment: Alignment.center,
                             child: Text(
-                              'Cancel',
+                              locale == 'ar' ? 'إلغاء' : 'Cancel',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
@@ -1327,17 +1373,23 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
                       builder: (context, child) {
                         final actionColor =
                             _selectedAction == OrderStatus.cancelled
-                                ? Colors.red
-                                : _selectedAction == OrderStatus.pending
-                                    ? Colors.orange
-                                    : widget.organization.primaryColorValue;
+                            ? Colors.red
+                            : _selectedAction == OrderStatus.pending
+                            ? Colors.orange
+                            : widget.organization.primaryColorValue;
 
                         final buttonText =
                             _selectedAction == OrderStatus.cancelled
-                                ? 'Cancel Order'
-                                : _selectedAction == OrderStatus.pending
-                                    ? 'Edit Order'
-                                    : 'Continue Order';
+                            ? locale == 'ar'
+                                  ? 'إلغاء الطلب'
+                                  : 'Cancel Order'
+                            : _selectedAction == OrderStatus.pending
+                            ? locale == 'ar'
+                                  ? 'تعديل الطلب'
+                                  : 'Edit Order'
+                            : locale == 'ar'
+                            ? 'متابعة الطلب'
+                            : 'Continue Order';
 
                         return Container(
                           height: 56,
@@ -1364,7 +1416,9 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
                             color: Colors.transparent,
                             child: InkWell(
                               borderRadius: BorderRadius.circular(16),
-                              onTap: _isLoading ? null : _submitResponse,
+                              onTap: _isLoading
+                                  ? null
+                                  : () => _submitResponse(locale),
                               child: Container(
                                 alignment: Alignment.center,
                                 child: _isLoading
@@ -1382,7 +1436,9 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
                                           ),
                                           SizedBox(width: 12),
                                           Text(
-                                            'Submitting...',
+                                            locale == 'ar'
+                                                ? 'جاري الإرسال...'
+                                                : 'Submitting...',
                                             style: TextStyle(
                                               color: Colors.white,
                                               fontSize: 16,
@@ -1497,8 +1553,7 @@ class ParticlesPainter extends CustomPainter {
       final centerY =
           size.height * 0.5 +
           math.sin(animationValue * 2 * math.pi + i * 1.2) * 80;
-      final radius =
-          30 + math.sin(animationValue * 3 * math.pi + i) * 15;
+      final radius = 30 + math.sin(animationValue * 3 * math.pi + i) * 15;
 
       final gradient = RadialGradient(
         colors: [

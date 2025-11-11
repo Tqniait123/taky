@@ -12,6 +12,7 @@ import 'package:taqy/core/theme/light_theme.dart';
 import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
 import 'package:taqy/features/all/auth/presentation/cubit/user_cubit/user_cubit.dart';
 import 'package:taqy/features/all/auth/presentation/languages_cubit/languages_cubit.dart';
+import 'package:taqy/main.dart';
 
 class TaQy extends StatelessWidget {
   TaQy({super.key});
@@ -39,6 +40,7 @@ class TaQy extends StatelessWidget {
             localizationsDelegates: context.localizationDelegates,
             title: Strings.appName,
             theme: lightTheme(context),
+            key: navigatorKey,
             builder: (context, child) {
               child = BotToastInit()(context, child);
               return Scaffold(
@@ -51,13 +53,13 @@ class TaQy extends StatelessWidget {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              FloatingActionButton(
-                                child: const Icon(Icons.refresh),
-                                onPressed: () async {
-                                  await context.setLocale(const Locale('en')); // Reload translations
-                                  await context.setLocale(const Locale('ar')); // Reload translations
-                                },
-                              ),
+                              // FloatingActionButton(
+                              //   child: const Icon(Icons.refresh),
+                              //   onPressed: () async {
+                              //     await context.setLocale(const Locale('en')); // Reload translations
+                              //     await context.setLocale(const Locale('ar')); // Reload translations
+                              //   },
+                              // ),
                             ],
                           ),
                         ),

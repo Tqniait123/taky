@@ -121,25 +121,37 @@ class _SupportBottomSheetState extends State<SupportBottomSheet>
     super.dispose();
   }
 
-  Future<void> _launchUrl(String url, String type) async {
+  Future<void> _launchUrl(String url, String type, String locale) async {
     try {
       final Uri uri = Uri.parse(url);
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
         if (mounted) {
-          showErrorToast(context, 'Could not open $type');
+          showErrorToast(
+            context,
+            locale == 'ar' 
+                ? 'تعذر فتح $type'
+                : 'Could not open $type',
+          );
         }
       }
     } catch (e) {
       if (mounted) {
-        showErrorToast(context, 'Error opening $type: $e');
+        showErrorToast(
+          context,
+          locale == 'ar'
+              ? 'خطأ في فتح $type: $e'
+              : 'Error opening $type: $e',
+        );
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context).languageCode;
+    
     return AnimatedBuilder(
       animation: Listenable.merge([
         _slideController,
@@ -197,7 +209,7 @@ class _SupportBottomSheetState extends State<SupportBottomSheet>
                               width: 1,
                             ),
                           ),
-                          child: _buildContent(),
+                          child: _buildContent(locale),
                         ),
                       ),
                     ),
@@ -242,10 +254,10 @@ class _SupportBottomSheetState extends State<SupportBottomSheet>
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(String locale) {
     return Column(
       children: [
-        _buildGlassHeader(),
+        _buildGlassHeader(locale),
         Expanded(
           child: SingleChildScrollView(
             physics: BouncingScrollPhysics(),
@@ -254,11 +266,11 @@ class _SupportBottomSheetState extends State<SupportBottomSheet>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(height: 20),
-                _buildWelcomeSection(),
+                _buildWelcomeSection(locale),
                 SizedBox(height: 32),
-                _buildSupportOptionsSection(),
+                _buildSupportOptionsSection(locale),
                 SizedBox(height: 32),
-                _buildQuickInfoSection(),
+                _buildQuickInfoSection(locale),
                 SizedBox(height: 32),
               ],
             ),
@@ -268,7 +280,7 @@ class _SupportBottomSheetState extends State<SupportBottomSheet>
     );
   }
 
-  Widget _buildGlassHeader() {
+  Widget _buildGlassHeader(String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 800),
@@ -382,7 +394,7 @@ class _SupportBottomSheetState extends State<SupportBottomSheet>
                           ],
                         ).createShader(bounds),
                         child: Text(
-                          'Support',
+                          locale == 'ar' ? 'الدعم' : 'Support',
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
@@ -441,7 +453,7 @@ class _SupportBottomSheetState extends State<SupportBottomSheet>
     );
   }
 
-  Widget _buildWelcomeSection() {
+  Widget _buildWelcomeSection(String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 1000),
@@ -468,7 +480,7 @@ class _SupportBottomSheetState extends State<SupportBottomSheet>
                 builder: (context, child) => Transform.scale(
                   scale: 1.0 + (_glowAnimation.value * 0.05),
                   child: Text(
-                    '👋 How can we help you?',
+                    locale == 'ar' ? '👋 كيف يمكننا مساعدتك؟' : '👋 How can we help you?',
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -480,7 +492,9 @@ class _SupportBottomSheetState extends State<SupportBottomSheet>
               ),
               SizedBox(height: 12),
               Text(
-                'Our support team is here to assist you 24/7. Choose your preferred way to reach us.',
+                locale == 'ar' 
+                    ? 'فريق الدعم لدينا هنا لمساعدتك على مدار الساعة. اختر الطريقة المفضلة للتواصل معنا.'
+                    : 'Our support team is here to assist you 24/7. Choose your preferred way to reach us.',
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.white.withOpacity(0.8),
@@ -494,32 +508,32 @@ class _SupportBottomSheetState extends State<SupportBottomSheet>
     );
   }
 
-  Widget _buildSupportOptionsSection() {
+  Widget _buildSupportOptionsSection(String locale) {
     final supportOptions = [
       {
-        'title': 'WhatsApp Support',
-        'subtitle': 'Chat with us instantly',
+        'title': locale == 'ar' ? 'دعم واتساب' : 'WhatsApp Support',
+        'subtitle': locale == 'ar' ? 'تواصل معنا فوراً' : 'Chat with us instantly',
         'icon': Icons.chat_bubble_rounded,
         'color': Color(0xFF25D366),
         'url':
             'https://wa.me/201026865434?text=Hello%2C%20I%20need%20support%20regarding%20the%20Taqy%20App',
-        'description': 'Quick responses • Available 24/7',
+        'description': locale == 'ar' ? 'ردود سريعة • متاح 24/7' : 'Quick responses • Available 24/7',
       },
       {
-        'title': 'Email Support',
-        'subtitle': 'Send us a detailed message',
+        'title': locale == 'ar' ? 'دعم البريد الإلكتروني' : 'Email Support',
+        'subtitle': locale == 'ar' ? 'أرسل لنا رسالة مفصلة' : 'Send us a detailed message',
         'icon': Icons.email_rounded,
         'color': Color.fromARGB(255, 33, 108, 227),
         'url': 'mailto:info@tqniait.com?subject=Taqy%20App%20Support%20Request',
-        'description': 'Response within 24 hours',
+        'description': locale == 'ar' ? 'رد خلال 24 ساعة' : 'Response within 24 hours',
       },
       {
-        'title': 'Visit Website',
-        'subtitle': 'Browse our Services',
+        'title': locale == 'ar' ? 'زيارة الموقع' : 'Visit Website',
+        'subtitle': locale == 'ar' ? 'تصفح خدماتنا' : 'Browse our Services',
         'icon': Icons.language_rounded,
         'color': Color(0xFF673AB7),
         'url': 'https://www.tqniait.com/',
-        'description': 'FAQs • Guides • Tutorials',
+        'description': locale == 'ar' ? 'الأسئلة الشائعة • الأدلة • الشروحات' : 'FAQs • Guides • Tutorials',
       },
     ];
 
@@ -533,7 +547,7 @@ class _SupportBottomSheetState extends State<SupportBottomSheet>
           builder: (context, value, child) => Transform.translate(
             offset: Offset(-30 * (1 - value), 0),
             child: Text(
-              'Contact Options',
+              locale == 'ar' ? 'خيارات التواصل' : 'Contact Options',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -547,13 +561,13 @@ class _SupportBottomSheetState extends State<SupportBottomSheet>
         ...supportOptions.asMap().entries.map((entry) {
           final index = entry.key;
           final option = entry.value;
-          return _buildSupportOptionCard(option, index);
+          return _buildSupportOptionCard(option, index, locale);
         }),
       ],
     );
   }
 
-  Widget _buildSupportOptionCard(Map<String, dynamic> option, int index) {
+  Widget _buildSupportOptionCard(Map<String, dynamic> option, int index, String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 600 + (index * 150)),
@@ -569,6 +583,7 @@ class _SupportBottomSheetState extends State<SupportBottomSheet>
               onTap: () => _launchUrl(
                 option['url'] as String,
                 option['title'] as String,
+                locale,
               ),
               child: AnimatedBuilder(
                 animation: _glowController,
@@ -586,15 +601,6 @@ class _SupportBottomSheetState extends State<SupportBottomSheet>
                       color: Colors.white.withOpacity(0.2),
                       width: 1,
                     ),
-                    // boxShadow: [
-                    //   BoxShadow(
-                    //     color: (option['color'] as Color).withOpacity(
-                    //       0.2 + (_glowAnimation.value * 0.1),
-                    //     ),
-                    //     blurRadius: 15,
-                    //     offset: Offset(0, 5),
-                    //   ),
-                    // ],
                   ),
                   child: Row(
                     children: [
@@ -695,7 +701,7 @@ class _SupportBottomSheetState extends State<SupportBottomSheet>
     );
   }
 
-  Widget _buildQuickInfoSection() {
+  Widget _buildQuickInfoSection(String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 1200),
@@ -738,7 +744,7 @@ class _SupportBottomSheetState extends State<SupportBottomSheet>
                   ),
                   SizedBox(width: 12),
                   Text(
-                    'Quick Info',
+                    locale == 'ar' ? 'معلومات سريعة' : 'Quick Info',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -750,23 +756,26 @@ class _SupportBottomSheetState extends State<SupportBottomSheet>
               SizedBox(height: 16),
               _buildInfoRow(
                 Icons.access_time_rounded,
-                'Response Time',
-                'Within 5 minutes',
+                locale == 'ar' ? 'وقت الاستجابة' : 'Response Time',
+                locale == 'ar' ? 'خلال 5 دقائق' : 'Within 5 minutes',
                 0,
+                locale,
               ),
               SizedBox(height: 12),
               _buildInfoRow(
                 Icons.language_rounded,
-                'Languages',
-                'English & Arabic',
+                locale == 'ar' ? 'اللغات' : 'Languages',
+                locale == 'ar' ? 'الإنجليزية والعربية' : 'English & Arabic',
                 100,
+                locale,
               ),
               SizedBox(height: 12),
               _buildInfoRow(
                 Icons.schedule_rounded,
-                'Availability',
-                '24/7 Support',
+                locale == 'ar' ? 'التوفر' : 'Availability',
+                locale == 'ar' ? 'دعم 24/7' : '24/7 Support',
                 200,
+                locale,
               ),
             ],
           ),
@@ -775,7 +784,7 @@ class _SupportBottomSheetState extends State<SupportBottomSheet>
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value, int delay) {
+  Widget _buildInfoRow(IconData icon, String label, String value, int delay, String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 600 + delay),

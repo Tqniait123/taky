@@ -48,7 +48,6 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
 
   EmployeeUserModel? currentUser;
   EmployeeOrganization? organization;
-  // List<EmployeeOrder> myOrders = [];
   List<EmployeeOrder> todayOrders = [];
   List<EmployeeOrder> historyOrders = [];
   List<EmployeeUserModel> officeBoys = [];
@@ -540,6 +539,8 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
   }
 
   Widget _buildAnimatedHeader() {
+    final locale = Localizations.localeOf(context).languageCode;
+
     return Container(
       height: MediaQuery.of(context).size.height * 0.5,
       decoration: BoxDecoration(
@@ -853,8 +854,10 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                           offset: Offset(0, value),
                           child: Text(
                             currentUser?.role == UserRole.admin
-                                ? 'Welcome, Boss!'
-                                : 'Welcome, ${currentUser?.name ?? ''}',
+                                ? locale == 'ar'
+                                      ? 'مرحباً، يا ريس!'
+                                      : 'Welcome, Boss!'
+                                : '${locale == 'ar' ? 'مرحباً' : 'Welcome'}, ${currentUser?.name ?? ''}',
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.8),
                               fontSize: 16,
@@ -876,9 +879,17 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
   }
 
   Widget _buildAnimatedNavigationBar() {
+    final locale = Localizations.localeOf(context).languageCode;
+
     final navItems = [
-      {'title': 'Today\'s Orders', 'icon': Assets.imagesSvgsCalendar},
-      {'title': 'History', 'icon': Assets.imagesSvgsClock},
+      {
+        'title': locale == 'ar' ? 'طلبات اليوم' : 'Today\'s Orders',
+        'icon': Assets.imagesSvgsCalendar,
+      },
+      {
+        'title': locale == 'ar' ? 'السجل' : 'History',
+        'icon': Assets.imagesSvgsClock,
+      },
     ];
 
     return TweenAnimationBuilder<double>(
@@ -990,6 +1001,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
   }
 
   Widget _buildAnimatedOrderCard(EmployeeOrder order, int index) {
+    final locale = Localizations.localeOf(context).languageCode;
     final needsResponse = order.status == OrderStatus.needsResponse;
 
     return TweenAnimationBuilder<double>(
@@ -1032,7 +1044,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Order #${order.id.substring(0, 8)}',
+                    '${locale == 'ar' ? 'طلب' : 'Order'} #${order.id.substring(0, 8)}',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
@@ -1118,7 +1130,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                         Text(
                           order.items.length == 1
                               ? order.items.first.name
-                              : '${order.items.length} Items Order',
+                              : '${order.items.length} ${locale == 'ar' ? 'عنصر' : 'Items'} ${locale == 'ar' ? 'طلب' : 'Order'}',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
@@ -1157,7 +1169,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                 children: [
                                   if (order.price != null)
                                     Text(
-                                      'Budget: EGP ${order.price!.toStringAsFixed(0)}',
+                                      '${locale == 'ar' ? 'الميزانية' : 'Budget'}: ${locale == 'ar' ? 'ج.م' : 'EGP'} ${order.price!.toStringAsFixed(0)}',
                                       style: TextStyle(
                                         color: Colors.grey[600],
                                         fontSize: 11,
@@ -1165,7 +1177,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                     ),
                                   if (order.finalPrice != null)
                                     Text(
-                                      'Spent: EGP ${order.finalPrice!.toStringAsFixed(0)}',
+                                      '${locale == 'ar' ? 'المصروف' : 'Spent'}: ${locale == 'ar' ? 'ج.م' : 'EGP'} ${order.finalPrice!.toStringAsFixed(0)}',
                                       style: TextStyle(
                                         color:
                                             organization!.secondaryColorValue,
@@ -1217,7 +1229,9 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                           ),
                           SizedBox(width: 6),
                           Text(
-                            'Item Availability Update',
+                            locale == 'ar'
+                                ? 'تحديث حالة العناصر'
+                                : 'Item Availability Update',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: organization!.primaryColorValue,
@@ -1267,9 +1281,15 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                   Expanded(
                                     child: Text(
                                       '${item.name} - ${item.status == ItemStatus.available
-                                          ? "Available"
+                                          ? locale == 'ar'
+                                                ? "متاح"
+                                                : "Available"
                                           : item.status == ItemStatus.notAvailable
-                                          ? "Not Available"
+                                          ? locale == 'ar'
+                                                ? "غير متاح"
+                                                : "Not Available"
+                                          : locale == 'ar'
+                                          ? "قيد التحقق"
                                           : "Checking"}',
                                       style: TextStyle(fontSize: 12),
                                     ),
@@ -1280,7 +1300,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                           ),
                       if (order.items.length > 2)
                         Text(
-                          '... and ${order.items.length - 2} more items',
+                          '${locale == 'ar' ? '... و' : '... and'} ${order.items.length - 2} ${locale == 'ar' ? 'عناصر أخرى' : 'more items'}',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[600],
@@ -1300,7 +1320,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                             ),
                           ),
                           child: Text(
-                            'Respond Now',
+                            locale == 'ar' ? 'رد الآن' : 'Respond Now',
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
@@ -1333,29 +1353,31 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
   }
 
   Widget _buildStatusChip(OrderStatus status) {
+    final locale = Localizations.localeOf(context).languageCode;
+
     Color color;
     String text;
 
     switch (status) {
       case OrderStatus.pending:
         color = Colors.orange;
-        text = 'Pending';
+        text = locale == 'ar' ? 'قيد الانتظار' : 'Pending';
         break;
       case OrderStatus.inProgress:
         color = Colors.blue;
-        text = 'In Progress';
+        text = locale == 'ar' ? 'قيد التنفيذ' : 'In Progress';
         break;
       case OrderStatus.completed:
         color = Colors.green;
-        text = 'Completed';
+        text = locale == 'ar' ? 'مكتمل' : 'Completed';
         break;
       case OrderStatus.cancelled:
         color = Colors.red;
-        text = 'Cancelled';
+        text = locale == 'ar' ? 'ملغي' : 'Cancelled';
         break;
       case OrderStatus.needsResponse:
         color = Colors.purple;
-        text = 'Need Response';
+        text = locale == 'ar' ? 'بحاجة للرد' : 'Need Response';
         break;
     }
 
@@ -1409,20 +1431,29 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
   }
 
   String _formatTime(DateTime dateTime) {
+    final locale = Localizations.localeOf(context).languageCode;
     final now = DateTime.now();
     final difference = now.difference(dateTime).abs();
 
     if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m ago';
+      return locale == 'ar'
+          ? 'منذ ${difference.inMinutes} دقيقة'
+          : '${difference.inMinutes}m ago';
     } else if (difference.inHours < 24) {
-      return '${difference.inHours}h ago';
+      return locale == 'ar'
+          ? 'منذ ${difference.inHours} ساعة'
+          : '${difference.inHours}h ago';
     } else {
-      return '${difference.inDays}d ago';
+      return locale == 'ar'
+          ? 'منذ ${difference.inDays} يوم'
+          : '${difference.inDays}d ago';
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context).languageCode;
+
     if (isLoading) {
       return Scaffold(
         backgroundColor: AppColors.background,
@@ -1465,18 +1496,23 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                   ),
                   SizedBox(height: 16),
                   Text(
-                    'Error loading data',
+                    locale == 'ar'
+                        ? 'خطأ في تحميل البيانات'
+                        : 'Error loading data',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 8),
-                  Text(errorMessage ?? 'Unknown error'),
+                  Text(
+                    errorMessage ??
+                        (locale == 'ar' ? 'خطأ غير معروف' : 'Unknown error'),
+                  ),
                   SizedBox(height: 16),
                   AnimatedContainer(
                     duration: Duration(milliseconds: 300),
                     curve: Curves.easeInOut,
                     child: ElevatedButton(
                       onPressed: _loadData,
-                      child: Text('Retry'),
+                      child: Text(locale == 'ar' ? 'إعادة المحاولة' : 'Retry'),
                     ),
                   ),
                 ],
@@ -1636,6 +1672,8 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
   }
 
   Widget _buildAnimatedHistoryOrders() {
+    final locale = Localizations.localeOf(context).languageCode;
+
     // Filter orders based on current filter
     List<EmployeeOrder> filteredOrders = _getFilteredHistoryOrders();
 
@@ -1663,7 +1701,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                 _currentHistoryFilter == HistoryFilter.completed) ...[
               if (completedOrders.isNotEmpty) ...[
                 _buildSectionHeader(
-                  'Completed Orders',
+                  locale == 'ar' ? 'الطلبات المكتملة' : 'Completed Orders',
                   completedOrders.length,
                   Assets.imagesSvgsComplete,
                 ),
@@ -1682,7 +1720,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                 _currentHistoryFilter == HistoryFilter.cancelled) ...[
               if (cancelledOrders.isNotEmpty) ...[
                 _buildSectionHeader(
-                  'Cancelled Orders',
+                  locale == 'ar' ? 'الطلبات الملغية' : 'Cancelled Orders',
                   cancelledOrders.length,
                   Assets.imagesSvgsCancell,
                 ),
@@ -1703,6 +1741,8 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
     List<EmployeeOrder> completedOrders,
     List<EmployeeOrder> cancelledOrders,
   ) {
+    final locale = Localizations.localeOf(context).languageCode;
+
     final completedCount = historyOrders
         .where((o) => o.status == OrderStatus.completed)
         .length;
@@ -1763,7 +1803,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                     ),
                     SizedBox(width: 12),
                     Text(
-                      'Order History',
+                      locale == 'ar' ? 'سجل الطلبات' : 'Order History',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -1780,8 +1820,8 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                         children: [
                           Expanded(
                             child: _buildHistoryStatCard(
-                              'Total Spent',
-                              'EGP ${totalSpent.toStringAsFixed(0)}',
+                              locale == 'ar' ? 'إجمالي المصروف' : 'Total Spent',
+                              '${locale == 'ar' ? 'ج.م' : 'EGP'} ${totalSpent.toStringAsFixed(0)}',
                               Colors.orange,
                               Assets.imagesSvgsMoney,
                               HistoryFilter.none,
@@ -1803,7 +1843,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                           });
                         },
                         child: _buildHistoryStatCard(
-                          'All',
+                          locale == 'ar' ? 'الكل' : 'All',
                           totalOrders.toString(),
                           organization!.primaryColorValue,
                           Assets.imagesSvgsOverview,
@@ -1820,7 +1860,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                           });
                         },
                         child: _buildHistoryStatCard(
-                          'Completed',
+                          locale == 'ar' ? 'مكتمل' : 'Completed',
                           completedCount.toString(),
                           AppColors.success,
                           Assets.imagesSvgsComplete,
@@ -1837,7 +1877,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                           });
                         },
                         child: _buildHistoryStatCard(
-                          'Cancelled',
+                          locale == 'ar' ? 'ملغي' : 'Cancelled',
                           cancelledCount.toString(),
                           AppColors.error,
                           Assets.imagesSvgsCancell,
@@ -1874,15 +1914,19 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
 
   // Add this method for empty state messages
   String _getEmptyStateMessage() {
+    final locale = Localizations.localeOf(context).languageCode;
+
     switch (_currentHistoryFilter) {
       case HistoryFilter.completed:
-        return 'No completed orders yet';
+        return locale == 'ar'
+            ? 'لا توجد طلبات مكتملة'
+            : 'No completed orders yet';
       case HistoryFilter.cancelled:
-        return 'No cancelled orders';
+        return locale == 'ar' ? 'لا توجد طلبات ملغية' : 'No cancelled orders';
       case HistoryFilter.all:
-        return 'No order history';
+        return locale == 'ar' ? 'لا يوجد سجل للطلبات' : 'No order history';
       default:
-        return 'No order history';
+        return locale == 'ar' ? 'لا يوجد سجل للطلبات' : 'No order history';
     }
   }
 
@@ -1891,8 +1935,9 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
     int index,
     bool isCancelled,
   ) {
+    final locale = Localizations.localeOf(context).languageCode;
+
     final displayPrice = order.finalPrice ?? order.price;
-    // final isCompleted = order.status == OrderStatus.completed;
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -1955,7 +2000,9 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                isCancelled ? 'CANCELLED' : 'COMPLETED',
+                                isCancelled
+                                    ? (locale == 'ar' ? 'ملغي' : 'CANCELLED')
+                                    : (locale == 'ar' ? 'مكتمل' : 'COMPLETED'),
                                 style: TextStyle(
                                   color: isCancelled
                                       ? Colors.red
@@ -2038,7 +2085,13 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                               ),
                               SizedBox(width: 6),
                               Text(
-                                isCancelled ? 'Retry Order' : 'Reorder',
+                                isCancelled
+                                    ? (locale == 'ar'
+                                          ? 'إعادة المحاولة'
+                                          : 'Retry Order')
+                                    : (locale == 'ar'
+                                          ? 'إعادة الطلب'
+                                          : 'Reorder'),
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 13,
@@ -2076,7 +2129,11 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                         height: 18,
                       ),
                       title: Text(
-                        isCancelled ? 'Order Cancelled' : 'Items Delivered',
+                        isCancelled
+                            ? (locale == 'ar' ? 'طلب ملغي' : 'Order Cancelled')
+                            : (locale == 'ar'
+                                  ? 'العناصر المسلمة'
+                                  : 'Items Delivered'),
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -2085,7 +2142,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                       ),
                       subtitle: isCancelled && order.employeeResponse != null
                           ? Text(
-                              'Reason: ${order.employeeResponse}',
+                              '${locale == 'ar' ? 'السبب' : 'Reason'}: ${order.employeeResponse}',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.red[600],
@@ -2094,7 +2151,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                             )
                           : displayPrice != null
                           ? Text(
-                              'Spent: EGP ${displayPrice.toInt()}',
+                              '${locale == 'ar' ? 'المصروف' : 'Spent'}: ${locale == 'ar' ? 'ج.م' : 'EGP'} ${displayPrice.toInt()}',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey[600],
@@ -2103,8 +2160,8 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                           : null,
                       trailing: Text(
                         order.type == OrderType.internal
-                            ? 'Internal'
-                            : 'External',
+                            ? (locale == 'ar' ? 'داخلي' : 'Internal')
+                            : (locale == 'ar' ? 'خارجي' : 'External'),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -2197,7 +2254,13 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                         ),
                         SizedBox(width: 8),
                         Text(
-                          isCancelled ? 'Assigned to: ' : 'Delivered by: ',
+                          isCancelled
+                              ? (locale == 'ar'
+                                    ? 'تم تعيينه لـ: '
+                                    : 'Assigned to: ')
+                              : (locale == 'ar'
+                                    ? 'تم التسليم بواسطة: '
+                                    : 'Delivered by: '),
                           style: TextStyle(
                             fontSize: 13,
                             color: Colors.grey[600],
@@ -2347,15 +2410,16 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
   }
 
   String _formatHistoryDate(DateTime dateTime) {
+    final locale = Localizations.localeOf(context).languageCode;
     final now = DateTime.now();
     final difference = now.difference(dateTime);
 
     if (difference.inDays == 0) {
-      return 'Today ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+      return '${locale == 'ar' ? 'اليوم' : 'Today'} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
     } else if (difference.inDays == 1) {
-      return 'Yesterday ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+      return '${locale == 'ar' ? 'أمس' : 'Yesterday'} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
     } else if (difference.inDays < 7) {
-      return '${difference.inDays} days ago';
+      return '${difference.inDays} ${locale == 'ar' ? 'أيام مضت' : 'days ago'}';
     } else {
       return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
     }
@@ -2368,6 +2432,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
   }
 
   void _showImprovedReorderDialog(EmployeeOrder originalOrder) {
+    final locale = Localizations.localeOf(context).languageCode;
     final TextEditingController budgetController = TextEditingController();
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     bool isLoading = false;
@@ -2555,8 +2620,12 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                   children: [
                                                     Text(
                                                       isCancelled
-                                                          ? 'Retry Order'
-                                                          : 'Reorder Items',
+                                                          ? (locale == 'ar'
+                                                                ? 'إعادة المحاولة'
+                                                                : 'Retry Order')
+                                                          : (locale == 'ar'
+                                                                ? 'إعادة الطلب'
+                                                                : 'Reorder Items'),
                                                       style: TextStyle(
                                                         fontSize: 20,
                                                         fontWeight:
@@ -2568,10 +2637,16 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                     SizedBox(height: 4),
                                                     Text(
                                                       isCancelled
-                                                          ? 'Create a new order with items from cancelled order'
+                                                          ? (locale == 'ar'
+                                                                ? 'إنشاء طلب جديد بالعناصر من الطلب الملغي'
+                                                                : 'Create a new order with items from cancelled order')
                                                           : allItemsUnavailable
-                                                          ? 'All items are currently unavailable, but you can retry them'
-                                                          : 'Select available items to include in new order',
+                                                          ? (locale == 'ar'
+                                                                ? 'جميع العناصر غير متاحة حالياً، لكن يمكنك إعادة المحاولة'
+                                                                : 'All items are currently unavailable, but you can retry them')
+                                                          : (locale == 'ar'
+                                                                ? 'اختر العناصر المتاحة لتضمينها في الطلب الجديد'
+                                                                : 'Select available items to include in new order'),
                                                       style: TextStyle(
                                                         fontSize: 14,
                                                         color: Colors.white
@@ -2638,7 +2713,9 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                           ),
                                                           SizedBox(width: 8),
                                                           Text(
-                                                            'Previous Cancellation Reason',
+                                                            locale == 'ar'
+                                                                ? 'سبب الإلغاء السابق'
+                                                                : 'Previous Cancellation Reason',
                                                             style: TextStyle(
                                                               fontWeight:
                                                                   FontWeight
@@ -2708,7 +2785,9 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                     ),
                                                     SizedBox(width: 8),
                                                     Text(
-                                                      'All Items Currently Unavailable',
+                                                      locale == 'ar'
+                                                          ? 'جميع العناصر غير متاحة حالياً'
+                                                          : 'All Items Currently Unavailable',
                                                       style: TextStyle(
                                                         fontWeight:
                                                             FontWeight.w600,
@@ -2721,7 +2800,9 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                 ),
                                                 SizedBox(height: 8),
                                                 Text(
-                                                  'All items from this order are currently marked as unavailable, but you can retry them in case their availability has changed.',
+                                                  locale == 'ar'
+                                                      ? 'جميع العناصر من هذا الطلب غير متاحة حالياً، لكن يمكنك إعادة المحاولة في حال تغيرت حالتها.'
+                                                      : 'All items from this order are currently marked as unavailable, but you can retry them in case their availability has changed.',
                                                   style: TextStyle(
                                                     color: Colors.white
                                                         .withOpacity(0.8),
@@ -2768,7 +2849,9 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                     ),
                                                     SizedBox(width: 8),
                                                     Text(
-                                                      'Some Items Not Available',
+                                                      locale == 'ar'
+                                                          ? 'بعض العناصر غير متاحة'
+                                                          : 'Some Items Not Available',
                                                       style: TextStyle(
                                                         fontWeight:
                                                             FontWeight.w600,
@@ -2781,7 +2864,9 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                 ),
                                                 SizedBox(height: 8),
                                                 Text(
-                                                  'The following items are currently not available: ${originalOrder.items.where((item) => item.status == ItemStatus.notAvailable).map((item) => item.name).join(", ")}',
+                                                  locale == 'ar'
+                                                      ? 'العناصر التالية غير متاحة حالياً: ${originalOrder.items.where((item) => item.status == ItemStatus.notAvailable).map((item) => item.name).join(", ")}'
+                                                      : 'The following items are currently not available: ${originalOrder.items.where((item) => item.status == ItemStatus.notAvailable).map((item) => item.name).join(", ")}',
                                                   style: TextStyle(
                                                     color: Colors.white
                                                         .withOpacity(0.8),
@@ -2881,10 +2966,19 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                         Expanded(
                                                           child: Text(
                                                             isCancelled
-                                                                ? 'Items to retry:'
+                                                                ? (locale ==
+                                                                          'ar'
+                                                                      ? 'العناصر للمحاولة مرة أخرى:'
+                                                                      : 'Items to retry:')
                                                                 : allItemsUnavailable
-                                                                ? 'Items to retry:'
-                                                                : 'Available items to reorder:',
+                                                                ? (locale ==
+                                                                          'ar'
+                                                                      ? 'العناصر للمحاولة مرة أخرى:'
+                                                                      : 'Items to retry:')
+                                                                : (locale ==
+                                                                          'ar'
+                                                                      ? 'العناصر المتاحة لإعادة الطلب:'
+                                                                      : 'Available items to reorder:'),
                                                             style: TextStyle(
                                                               fontWeight:
                                                                   FontWeight
@@ -2945,8 +3039,14 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                                       ) =>
                                                                           selected,
                                                                     )
-                                                                    ? 'Deselect All'
-                                                                    : 'Select All',
+                                                                    ? (locale ==
+                                                                              'ar'
+                                                                          ? 'إلغاء الكل'
+                                                                          : 'Deselect All')
+                                                                    : (locale ==
+                                                                              'ar'
+                                                                          ? 'اختيار الكل'
+                                                                          : 'Select All'),
                                                                 style: TextStyle(
                                                                   fontSize: 12,
                                                                   color: Colors
@@ -3150,10 +3250,10 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                           ),
                                                       child: Text(
                                                         isCancelled
-                                                            ? '${selectedItems.where((selected) => selected).length} of ${itemsToShow.length} items selected for retry'
+                                                            ? '${selectedItems.where((selected) => selected).length} ${locale == 'ar' ? 'من' : 'of'} ${itemsToShow.length} ${locale == 'ar' ? 'عنصر تم اختياره للمحاولة مرة أخرى' : 'items selected for retry'}'
                                                             : allItemsUnavailable
-                                                            ? '${selectedItems.where((selected) => selected).length} of ${itemsToShow.length} unavailable items selected for retry'
-                                                            : '${selectedItems.where((selected) => selected).length} of ${itemsToShow.length} available items selected',
+                                                            ? '${selectedItems.where((selected) => selected).length} ${locale == 'ar' ? 'من' : 'of'} ${itemsToShow.length} ${locale == 'ar' ? 'عنصر غير متاح تم اختياره للمحاولة مرة أخرى' : 'unavailable items selected for retry'}'
+                                                            : '${selectedItems.where((selected) => selected).length} ${locale == 'ar' ? 'من' : 'of'} ${itemsToShow.length} ${locale == 'ar' ? 'عنصر متاح تم اختياره' : 'available items selected'}',
                                                         style: TextStyle(
                                                           fontSize: 12,
                                                           color: Colors.white
@@ -3192,7 +3292,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                               ),
                                                         ),
                                                         child: Text(
-                                                          'Original Description: ${originalOrder.description}',
+                                                          '${locale == 'ar' ? 'الوصف الأصلي' : 'Original Description'}: ${originalOrder.description}',
                                                           style: TextStyle(
                                                             fontSize: 13,
                                                             color: Colors.white
@@ -3230,7 +3330,9 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                   CrossAxisAlignment.start,
                                               children: [
                                                 Text(
-                                                  'Set Your Budget',
+                                                  locale == 'ar'
+                                                      ? 'حدد ميزانيتك'
+                                                      : 'Set Your Budget',
                                                   style: TextStyle(
                                                     fontSize: 16,
                                                     fontWeight: FontWeight.bold,
@@ -3291,7 +3393,9 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                         ),
                                                         decoration: InputDecoration(
                                                           hintText:
-                                                              'Enter budget amount',
+                                                              locale == 'ar'
+                                                              ? 'أدخل مبلغ الميزانية'
+                                                              : 'Enter budget amount',
                                                           hintStyle: TextStyle(
                                                             color: Colors.white
                                                                 .withOpacity(
@@ -3319,7 +3423,10 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                         validator: (value) {
                                                           if (value == null ||
                                                               value.isEmpty) {
-                                                            return 'Please enter a budget amount';
+                                                            return locale ==
+                                                                    'ar'
+                                                                ? 'يرجى إدخال مبلغ الميزانية'
+                                                                : 'Please enter a budget amount';
                                                           }
                                                           final budget =
                                                               double.tryParse(
@@ -3327,7 +3434,10 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                               );
                                                           if (budget == null ||
                                                               budget <= 0) {
-                                                            return 'Please enter a valid amount';
+                                                            return locale ==
+                                                                    'ar'
+                                                                ? 'يرجى إدخال مبلغ صحيح'
+                                                                : 'Please enter a valid amount';
                                                           }
                                                           return null;
                                                         },
@@ -3337,7 +3447,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                 ),
                                                 SizedBox(height: 8),
                                                 Text(
-                                                  'Previous budget: EGP ${originalOrder.price?.toInt() ?? 0}',
+                                                  '${locale == 'ar' ? 'الميزانية السابقة' : 'Previous budget'}: ${locale == 'ar' ? 'ج.م' : 'EGP'} ${originalOrder.price?.toInt() ?? 0}',
                                                   style: TextStyle(
                                                     fontSize: 12,
                                                     color: Colors.white
@@ -3398,7 +3508,9 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                             ).pop(),
                                                       child: Center(
                                                         child: Text(
-                                                          'Cancel',
+                                                          locale == 'ar'
+                                                              ? 'إلغاء'
+                                                              : 'Cancel',
                                                           style: TextStyle(
                                                             color: Colors.white,
                                                             fontSize: 16,
@@ -3532,6 +3644,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                                         selectedOrderItems,
                                                                         budgetController
                                                                             .text,
+                                                                        locale,
                                                                       );
                                                                       Navigator.of(
                                                                         context,
@@ -3540,10 +3653,19 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                                       String
                                                                       successMessage =
                                                                           isCancelled
-                                                                          ? '$selectedCount items have been retried successfully!'
+                                                                          ? (locale ==
+                                                                                    'ar'
+                                                                                ? 'تمت إعادة المحاولة لـ $selectedCount عنصر بنجاح!'
+                                                                                : '$selectedCount items have been retried successfully!')
                                                                           : allItemsUnavailable
-                                                                          ? '$selectedCount unavailable items have been retried successfully!'
-                                                                          : '$selectedCount available items have been reordered successfully!';
+                                                                          ? (locale ==
+                                                                                    'ar'
+                                                                                ? 'تمت إعادة المحاولة لـ $selectedCount عنصر غير متاح بنجاح!'
+                                                                                : '$selectedCount unavailable items have been retried successfully!')
+                                                                          : (locale ==
+                                                                                    'ar'
+                                                                                ? 'تمت إعادة الطلب لـ $selectedCount عنصر متاح بنجاح!'
+                                                                                : '$selectedCount available items have been reordered successfully!');
 
                                                                       showSuccessToast(
                                                                         context,
@@ -3560,7 +3682,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                                     ) {
                                                                       showErrorToast(
                                                                         context,
-                                                                        'Failed to create ${isCancelled || allItemsUnavailable ? 'retry' : 'reorder'}: $e',
+                                                                        '${locale == 'ar' ? 'فشل في إنشاء' : 'Failed to create'} ${isCancelled || allItemsUnavailable ? (locale == 'ar' ? 'إعادة المحاولة' : 'retry') : (locale == 'ar' ? 'إعادة الطلب' : 'reorder')}: $e',
                                                                       );
                                                                     } finally {
                                                                       setState(
@@ -3596,7 +3718,10 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                                             12,
                                                                       ),
                                                                       Text(
-                                                                        'Creating Order...',
+                                                                        locale ==
+                                                                                'ar'
+                                                                            ? 'جاري إنشاء الطلب...'
+                                                                            : 'Creating Order...',
                                                                         style: TextStyle(
                                                                           color:
                                                                               Colors.white,
@@ -3632,11 +3757,23 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                                       Text(
                                                                         hasSelectedItems
                                                                             ? isCancelled
-                                                                                  ? 'Retry $selectedCount Item${selectedCount > 1 ? 's' : ''}'
+                                                                                  ? (locale ==
+                                                                                            'ar'
+                                                                                        ? 'إعادة محاولة $selectedCount عنصر${selectedCount > 1 ? '' : ''}'
+                                                                                        : 'Retry $selectedCount Item${selectedCount > 1 ? 's' : ''}')
                                                                                   : allItemsUnavailable
-                                                                                  ? 'Retry $selectedCount Item${selectedCount > 1 ? 's' : ''}'
-                                                                                  : 'Reorder $selectedCount Item${selectedCount > 1 ? 's' : ''}'
-                                                                            : 'Select Items First',
+                                                                                  ? (locale ==
+                                                                                            'ar'
+                                                                                        ? 'إعادة محاولة $selectedCount عنصر${selectedCount > 1 ? '' : ''}'
+                                                                                        : 'Retry $selectedCount Item${selectedCount > 1 ? 's' : ''}')
+                                                                                  : (locale ==
+                                                                                            'ar'
+                                                                                        ? 'إعادة طلب $selectedCount عنصر${selectedCount > 1 ? '' : ''}'
+                                                                                        : 'Reorder $selectedCount Item${selectedCount > 1 ? 's' : ''}')
+                                                                            : (locale ==
+                                                                                      'ar'
+                                                                                  ? 'اختر العناصر أولاً'
+                                                                                  : 'Select Items First'),
                                                                         style: TextStyle(
                                                                           color:
                                                                               hasSelectedItems
@@ -3686,6 +3823,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
     EmployeeOrder originalOrder,
     List<OrderItem> selectedItems,
     String budgetText,
+    String locale,
   ) async {
     // Find available office boys
     final availableOfficeBoys = officeBoys.where((ob) => ob.isActive).toList();
@@ -3744,28 +3882,37 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
     );
 
     // Add to Firestore
-  final docRef =  await _firebaseService.addDocument('orders', newOrder.toFirestore());
+    final docRef = await _firebaseService.addDocument(
+      'orders',
+      newOrder.toFirestore(),
+    );
 
     await NotificationService().notifyOfficeBoyReorder(
-    officeBoyId: availableOfficeBoys.first.id,
-    orderId: docRef.id,
-    employeeName: currentUser!.name,
-    itemCount: itemsToProcess.length,
-    originalOrderId: originalOrder.id,
-  );
-
-  // ✅ NOTIFY ADMIN (if employee is not admin)
-  if (currentUser!.role != UserRole.admin) {
-    await NotificationService().notifyAdminNewOrder(
-      organizationId: currentUser!.organizationId,
+      officeBoyId: availableOfficeBoys.first.id,
+      orderId: docRef.id,
       employeeName: currentUser!.name,
-      orderType: originalOrder.type == OrderType.internal ? 'Internal' : 'External',
       itemCount: itemsToProcess.length,
+      originalOrderId: originalOrder.id,
+      isArabic: locale == 'ar',
     );
-  }
+
+    // ✅ NOTIFY ADMIN (if employee is not admin)
+    if (currentUser!.role != UserRole.admin) {
+      await NotificationService().notifyAdminNewOrder(
+        organizationId: currentUser!.organizationId,
+        employeeName: currentUser!.name,
+        orderType: originalOrder.type == OrderType.internal
+            ? 'Internal'
+            : 'External',
+        itemCount: itemsToProcess.length,
+        isArabic: locale == 'ar',
+      );
+    }
   }
 
   Widget _buildAnimatedTodaysOrders() {
+    final locale = Localizations.localeOf(context).languageCode;
+
     return Column(
       children: [
         SizedBox(height: 16),
@@ -3801,7 +3948,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                       Icon(Icons.priority_high, color: Colors.white, size: 24),
                       SizedBox(width: 8),
                       Text(
-                        'Response Required',
+                        locale == 'ar' ? 'محتاج للرد' : 'Response Required',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 18,
@@ -3812,7 +3959,9 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Some of your orders need your response due to item availability issues.',
+                    locale == 'ar'
+                        ? 'بعض طلباتك تحتاج لردك بسبب عدم توفر بعض العناصر.'
+                        : 'Some of your orders need your response due to item availability issues.',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.9),
                       fontSize: 14,
@@ -3829,9 +3978,11 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 16),
           child: Align(
-            alignment: Alignment.centerLeft,
+            alignment: locale == 'ar'
+                ? Alignment.centerRight
+                : Alignment.centerLeft,
             child: Text(
-              'My Orders',
+              locale == 'ar' ? 'طلباتي' : 'My Orders',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -3843,7 +3994,10 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
         SizedBox(height: 16),
 
         if (todayOrders.isEmpty)
-          _buildAnimatedEmptyState('No orders yet', Icons.receipt_long)
+          _buildAnimatedEmptyState(
+            locale == 'ar' ? 'لا توجد طلبات بعد' : 'No orders yet',
+            Icons.receipt_long,
+          )
         else
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),

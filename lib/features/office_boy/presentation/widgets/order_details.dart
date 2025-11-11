@@ -138,28 +138,40 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
     }
   }
 
-  String _getItemStatusText(ItemStatus status) {
+  String _getItemStatusText(ItemStatus status, String locale) {
     switch (status) {
       case ItemStatus.pending:
-        return 'Checking...';
+        return locale == 'ar' ? 'جارى التحقق...' : 'Checking...';
       case ItemStatus.available:
-        return 'Available';
+        return locale == 'ar' ? 'متاح' : 'Available';
       case ItemStatus.notAvailable:
-        return 'Not Available';
+        return locale == 'ar' ? 'غير متاح' : 'Not Available';
     }
   }
 
-  String _formatDateTime(DateTime dateTime) {
-    return '${dateTime.day}/${dateTime.month}/${dateTime.year} at ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+  String _formatDateTime(DateTime dateTime, String locale) {
+    final day = dateTime.day;
+    final month = dateTime.month;
+    final year = dateTime.year;
+    final hour = dateTime.hour;
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+
+    if (locale == 'ar') {
+      return '$day/$month/$year الساعة $hour:$minute';
+    } else {
+      return '$day/$month/$year at $hour:$minute';
+    }
   }
 
-  Future<void> _updateStatus(OrderStatus status) async {
+  Future<void> _updateStatus(OrderStatus status, String locale) async {
     if (status == OrderStatus.completed &&
         widget.order.type == OrderType.external &&
         _priceController.text.trim().isEmpty) {
       showErrorToast(
         context,
-        'Please enter the final price for external orders',
+        locale == 'ar'
+            ? 'يرجى ادخال السعر النهائي للطلبات الخارجية'
+            : 'Please enter the final price for external orders',
       );
       return;
     }
@@ -184,7 +196,12 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
       );
       Navigator.pop(context);
     } catch (e) {
-      showErrorToast(context, 'Failed to update order status: $e');
+      showErrorToast(
+        context,
+        locale == 'ar'
+            ? 'فشل تحديث حالة الطلب: $e'
+            : 'Failed to update order status: $e',
+      );
     } finally {
       setState(() => _isLoading = false);
     }
@@ -201,6 +218,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
 
   @override
   Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context).languageCode;
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Material(
@@ -247,7 +265,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
                         width: 1.5,
                       ),
                     ),
-                    child: _buildContent(),
+                    child: _buildContent(locale),
                   ),
                 ),
               ),
@@ -285,10 +303,10 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(String locale) {
     return Column(
       children: [
-        _buildHeader(),
+        _buildHeader(locale),
         Expanded(
           child: SingleChildScrollView(
             controller: _scrollController,
@@ -297,18 +315,18 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 8),
-                _buildOrderInfoCard(),
+                _buildOrderInfoCard(locale),
                 const SizedBox(height: 20),
-                _buildItemsList(),
+                _buildItemsList(locale),
                 const SizedBox(height: 20),
-                _buildOrderInformation(),
+                _buildOrderInformation(locale),
                 const SizedBox(height: 20),
                 if (widget.order.type == OrderType.external)
-                  _buildPriceSection(),
+                  _buildPriceSection(locale),
                 const SizedBox(height: 20),
-                _buildNotesSection(),
+                _buildNotesSection(locale),
                 const SizedBox(height: 20),
-                _buildActionButtons(),
+                _buildActionButtons(locale),
                 const SizedBox(height: 32),
               ],
             ),
@@ -318,7 +336,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(String locale) {
     return Column(
       children: [
         Container(
@@ -353,7 +371,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
                   children: [
                     Expanded(
                       child: Text(
-                        'Order Details',
+                        locale == 'ar' ? 'تفاصيل الطلب' : 'Order Details',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w700,
@@ -419,7 +437,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
     );
   }
 
-  Widget _buildOrderInfoCard() {
+  Widget _buildOrderInfoCard(String locale) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -474,6 +492,8 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
                     Text(
                       widget.order.items.length == 1
                           ? widget.order.items.first.name
+                          : locale == 'ar'
+                          ? '${widget.order.items.length} عناصر'
                           : '${widget.order.items.length} Items Order',
                       style: const TextStyle(
                         color: Colors.white,
@@ -503,7 +523,11 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
                           ),
                           child: Text(
                             widget.order.type == OrderType.internal
-                                ? 'Internal'
+                                ? locale == 'ar'
+                                      ? 'داخلي'
+                                      : 'Internal'
+                                : locale == 'ar'
+                                ? 'خارجي'
                                 : 'External',
                             style: const TextStyle(
                               color: Colors.white,
@@ -518,16 +542,6 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            // gradient: LinearGradient(
-                            //   colors: [
-                            //     _getOrderStatusColor(
-                            //       widget.order.status,
-                            //     ).withOpacity(0.3),
-                            //     _getOrderStatusColor(
-                            //       widget.order.status,
-                            //     ).withOpacity(0.2),
-                            //   ],
-                            // ),
                             color: Colors.black.withOpacity(0.3),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
@@ -536,11 +550,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
                             ),
                           ),
                           child: Text(
-                            widget.order.status
-                                .toString()
-                                .split('.')
-                                .last
-                                .toUpperCase(),
+                            _getOrderStatusText(widget.order.status, locale),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 12,
@@ -567,9 +577,9 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
                               children: [
                                 Icon(Icons.star, size: 12, color: Colors.white),
                                 const SizedBox(width: 4),
-                                const Text(
-                                  'Assigned',
-                                  style: TextStyle(
+                                Text(
+                                  locale == 'ar' ? 'مخصص' : 'Assigned',
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
@@ -610,7 +620,22 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
     );
   }
 
-  Widget _buildItemsList() {
+  String _getOrderStatusText(OrderStatus status, String locale) {
+    switch (status) {
+      case OrderStatus.pending:
+        return locale == 'ar' ? 'قيد الانتظار' : 'PENDING';
+      case OrderStatus.inProgress:
+        return locale == 'ar' ? 'قيد التنفيذ' : 'IN PROGRESS';
+      case OrderStatus.completed:
+        return locale == 'ar' ? 'مكتمل' : 'COMPLETED';
+      case OrderStatus.cancelled:
+        return locale == 'ar' ? 'ملغي' : 'CANCELLED';
+      case OrderStatus.needsResponse:
+        return locale == 'ar' ? 'يحتاج رد' : 'NEEDS RESPONSE';
+    }
+  }
+
+  Widget _buildItemsList(String locale) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -635,7 +660,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
               ),
               const SizedBox(width: 10),
               Text(
-                'Order Items',
+                locale == 'ar' ? 'عناصر الطلب' : 'Order Items',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 16,
@@ -653,7 +678,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  '${widget.order.items.length} ${widget.order.items.length == 1 ? 'Item' : 'Items'}',
+                  '${widget.order.items.length} ${widget.order.items.length == 1 ? (locale == 'ar' ? 'عنصر' : 'Item') : (locale == 'ar' ? 'عناصر' : 'Items')}',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -664,13 +689,13 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
             ],
           ),
           const SizedBox(height: 16),
-          ...widget.order.items.map((item) => _buildOrderItem(item)),
+          ...widget.order.items.map((item) => _buildOrderItem(item, locale)),
         ],
       ),
     );
   }
 
-  Widget _buildOrderItem(OrderItem item) {
+  Widget _buildOrderItem(OrderItem item, String locale) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
@@ -751,7 +776,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      _getItemStatusText(item.status),
+                      _getItemStatusText(item.status, locale),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -799,7 +824,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
     );
   }
 
-  Widget _buildOrderInformation() {
+  Widget _buildOrderInformation(String locale) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -824,7 +849,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
               ),
               const SizedBox(width: 10),
               Text(
-                'Order Information',
+                locale == 'ar' ? 'معلومات الطلب' : 'Order Information',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 16,
@@ -837,42 +862,48 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
           widget.order.isFromAdmin
               ? _buildInfoRow(
                   Icons.admin_panel_settings,
-                  'Admin',
+                  locale == 'ar' ? 'المدير' : 'Admin',
                   widget.order.employeeName,
+                  locale,
                 )
               : _buildInfoRow(
                   Icons.person_rounded,
-                  'Employee',
+                  locale == 'ar' ? 'الموظف' : 'Employee',
                   widget.order.employeeName,
+                  locale,
                 ),
           if (widget.order.officeBoyName.isNotEmpty) ...[
             const SizedBox(height: 12),
             _buildInfoRow(
               Icons.delivery_dining_rounded,
-              'Office Boy',
+              locale == 'ar' ? 'العامل' : 'Office Boy',
               widget.order.officeBoyName,
+              locale,
             ),
           ],
           const SizedBox(height: 12),
           _buildInfoRow(
             Icons.schedule_rounded,
-            'Created',
-            _formatDateTime(widget.order.createdAt),
+            locale == 'ar' ? 'تاريخ الإنشاء' : 'Created',
+            _formatDateTime(widget.order.createdAt, locale),
+            locale,
           ),
           if (widget.order.completedAt != null) ...[
             const SizedBox(height: 12),
             _buildInfoRow(
               Icons.checklist_rounded,
-              'Completed',
-              _formatDateTime(widget.order.completedAt!),
+              locale == 'ar' ? 'تاريخ الإكمال' : 'Completed',
+              _formatDateTime(widget.order.completedAt!, locale),
+              locale,
             ),
           ],
           if (widget.order.isSpecificallyAssigned) ...[
             const SizedBox(height: 12),
             _buildInfoRow(
               Icons.star_rounded,
-              'Assignment',
-              'Specifically Assigned',
+              locale == 'ar' ? 'التكليف' : 'Assignment',
+              locale == 'ar' ? 'مكلف بشكل خاص' : 'Specifically Assigned',
+              locale,
             ),
           ],
         ],
@@ -880,7 +911,12 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
+  Widget _buildInfoRow(
+    IconData icon,
+    String label,
+    String value,
+    String locale,
+  ) {
     return Row(
       children: [
         Container(
@@ -894,7 +930,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
             ),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: label == 'Completed'
+          child: label == (locale == 'ar' ? 'تاريخ الإكمال' : 'Completed')
               ? SvgPicture.asset(
                   Assets.imagesSvgsComplete,
                   color: Colors.white.withOpacity(0.9),
@@ -931,7 +967,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
     );
   }
 
-  Widget _buildPriceSection() {
+  Widget _buildPriceSection(String locale) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -956,7 +992,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
               ),
               const SizedBox(width: 10),
               Text(
-                'Price Information',
+                locale == 'ar' ? 'معلومات السعر' : 'Price Information',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 16,
@@ -967,13 +1003,19 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
           ),
           const SizedBox(height: 16),
           if (widget.order.price != null)
-            _buildPriceRow('Budget Price', widget.order.price!, Colors.white),
+            _buildPriceRow(
+              locale == 'ar' ? 'السعر المتوقع' : 'Budget Price',
+              widget.order.price!,
+              Colors.white,
+              locale,
+            ),
           if (widget.order.finalPrice != null) ...[
             const SizedBox(height: 12),
             _buildPriceRow(
-              'Final Price',
+              locale == 'ar' ? 'السعر النهائي' : 'Final Price',
               widget.order.finalPrice!,
               Colors.greenAccent,
+              locale,
             ),
           ],
           if (widget.isOfficeBoy &&
@@ -981,7 +1023,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
               widget.order.type == OrderType.external) ...[
             const SizedBox(height: 16),
             Text(
-              'Enter Final Price:',
+              locale == 'ar' ? 'ادخل السعر النهائي:' : 'Enter Final Price:',
               style: TextStyle(
                 color: Colors.white.withOpacity(0.9),
                 fontSize: 13,
@@ -1004,12 +1046,14 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
                   fontWeight: FontWeight.w600,
                 ),
                 decoration: InputDecoration(
-                  hintText: 'Enter actual spent amount',
+                  hintText: locale == 'ar'
+                      ? 'ادخل المبلغ الفعلي الذي تم صرفه'
+                      : 'Enter actual spent amount',
                   hintStyle: TextStyle(
                     color: Colors.white.withOpacity(0.4),
                     fontSize: 14,
                   ),
-                  prefixText: 'EGP ',
+                  prefixText: locale == 'ar' ? 'ج.م ' : 'EGP ',
                   prefixStyle: TextStyle(
                     color: Colors.white.withOpacity(0.8),
                     fontSize: 16,
@@ -1052,7 +1096,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Difference:',
+                    locale == 'ar' ? 'الفرق:' : 'Difference:',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.9),
                       fontSize: 14,
@@ -1060,7 +1104,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
                     ),
                   ),
                   Text(
-                    '${widget.order.finalPrice! > widget.order.price! ? '+' : ''}${(widget.order.finalPrice! - widget.order.price!).toStringAsFixed(0)} EGP',
+                    '${widget.order.finalPrice! > widget.order.price! ? '+' : ''}${(widget.order.finalPrice! - widget.order.price!).toStringAsFixed(0)} ${locale == 'ar' ? 'ج.م' : 'EGP'}',
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 16,
@@ -1078,7 +1122,12 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
     );
   }
 
-  Widget _buildPriceRow(String label, double amount, Color color) {
+  Widget _buildPriceRow(
+    String label,
+    double amount,
+    Color color,
+    String locale,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -1091,7 +1140,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
           ),
         ),
         Text(
-          'EGP ${amount.toStringAsFixed(0)}',
+          '${locale == 'ar' ? 'ج.م' : 'EGP'} ${amount.toStringAsFixed(0)}',
           style: TextStyle(
             color: color,
             fontSize: 18,
@@ -1102,7 +1151,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
     );
   }
 
-  Widget _buildNotesSection() {
+  Widget _buildNotesSection(String locale) {
     if (widget.isOfficeBoy && widget.order.status == OrderStatus.inProgress) {
       return Container(
         padding: const EdgeInsets.all(20),
@@ -1128,7 +1177,9 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  'Add Notes (Optional)',
+                  locale == 'ar'
+                      ? 'اضافة ملاحظات (اختياري)'
+                      : 'Add Notes (Optional)',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 16,
@@ -1148,7 +1199,9 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
                 controller: _notesController,
                 style: const TextStyle(color: Colors.white, fontSize: 14),
                 decoration: InputDecoration(
-                  hintText: 'Add any additional notes...',
+                  hintText: locale == 'ar'
+                      ? 'اضف اي ملاحظات اضافية...'
+                      : 'Add any additional notes...',
                   hintStyle: TextStyle(
                     color: Colors.white.withOpacity(0.4),
                     fontSize: 14,
@@ -1187,7 +1240,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  'Notes',
+                  locale == 'ar' ? 'ملاحظات' : 'Notes',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 16,
@@ -1221,16 +1274,18 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
     return const SizedBox.shrink();
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons(String locale) {
     if (_canTransfer) {
       return SizedBox(
         width: double.infinity,
         child: ElevatedButton.icon(
           onPressed: widget.onTransferRequest,
           icon: const Icon(Icons.swap_horiz_rounded, size: 20),
-          label: const Text(
-            'Transfer to Another Office Boy',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          label: Text(
+            locale == 'ar'
+                ? 'تحويل الى عامل آخر'
+                : 'Transfer to Another Office Boy',
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
           ),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.orange,
@@ -1264,7 +1319,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
               child: ElevatedButton(
                 onPressed: _isLoading
                     ? null
-                    : () => _updateStatus(OrderStatus.cancelled),
+                    : () => _updateStatus(OrderStatus.cancelled, locale),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
                   foregroundColor: Colors.white,
@@ -1274,9 +1329,12 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
                   ),
                   elevation: 0,
                 ),
-                child: const Text(
-                  'Cancel',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                child: Text(
+                  locale == 'ar' ? 'الغاء' : 'Cancel',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
                 ),
               ),
             ),
@@ -1298,7 +1356,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
               child: ElevatedButton(
                 onPressed: _isLoading
                     ? null
-                    : () => _updateStatus(OrderStatus.completed),
+                    : () => _updateStatus(OrderStatus.completed, locale),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   foregroundColor: Colors.white,
@@ -1317,9 +1375,9 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
                           strokeWidth: 2,
                         ),
                       )
-                    : const Text(
-                        'Mark as Completed',
-                        style: TextStyle(
+                    : Text(
+                        locale == 'ar' ? 'تحديد كمكتمل' : 'Mark as Completed',
+                        style: const TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 15,
                         ),
@@ -1348,7 +1406,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
               child: OutlinedButton(
                 onPressed: _isLoading
                     ? null
-                    : () => _updateStatus(OrderStatus.cancelled),
+                    : () => _updateStatus(OrderStatus.cancelled, locale),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.red,
                   side: BorderSide.none,
@@ -1357,9 +1415,12 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-                child: const Text(
-                  'Reject',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                child: Text(
+                  locale == 'ar' ? 'رفض' : 'Reject',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
                 ),
               ),
             ),
@@ -1381,7 +1442,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
               child: ElevatedButton(
                 onPressed: _isLoading
                     ? null
-                    : () => _updateStatus(OrderStatus.inProgress),
+                    : () => _updateStatus(OrderStatus.inProgress, locale),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   foregroundColor: Colors.white,
@@ -1400,9 +1461,9 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
                           strokeWidth: 2,
                         ),
                       )
-                    : const Text(
-                        'Accept Assignment',
-                        style: TextStyle(
+                    : Text(
+                        locale == 'ar' ? 'قبول التكليف' : 'Accept Assignment',
+                        style: const TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 15,
                         ),
