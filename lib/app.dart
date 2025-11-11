@@ -51,13 +51,13 @@ class TaQy extends StatelessWidget {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              // FloatingActionButton(
-                              //   child: const Icon(Icons.refresh),
-                              //   onPressed: () async {
-                              //     await context.setLocale(const Locale('en')); // Reload translations
-                              //     await context.setLocale(const Locale('ar')); // Reload translations
-                              //   },
-                              // ),
+                              FloatingActionButton(
+                                child: const Icon(Icons.refresh),
+                                onPressed: () async {
+                                  await context.setLocale(const Locale('en')); // Reload translations
+                                  await context.setLocale(const Locale('ar')); // Reload translations
+                                },
+                              ),
                             ],
                           ),
                         ),
