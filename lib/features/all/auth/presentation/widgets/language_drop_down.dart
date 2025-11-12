@@ -40,7 +40,7 @@ class CompactLanguageDropdown extends StatelessWidget {
             style: const TextStyle(fontSize: 20),
           ),
           const SizedBox(width: 4),
-          Icon(Icons.arrow_drop_down, color: AppColors.onSurface, size: 20),
+          Icon(Icons.arrow_drop_down, color: Colors.white, size: 20),
         ],
       ),
       offset: const Offset(0, 45),

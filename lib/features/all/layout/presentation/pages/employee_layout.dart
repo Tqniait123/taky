@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 import 'dart:math' as math;
 import 'dart:ui';
@@ -10,6 +11,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 import 'package:taqy/config/routes/routes.dart';
 import 'package:taqy/core/helpers/cache_helper.dart';
+import 'package:taqy/core/notifications/employee_notification_bottom_sheet.dart';
 import 'package:taqy/core/notifications/notification_service.dart';
 import 'package:taqy/core/services/firebase_service.dart';
 import 'package:taqy/core/static/app_assets.dart';
@@ -76,6 +78,9 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
   double _scrollOffset = 0.0;
   bool _isHeaderCollapsed = false;
   final ScrollController _scrollController = ScrollController();
+  bool hasUnreadNotifications = false;
+  StreamSubscription<QuerySnapshot>? _notificationSubscription;
+  int _unreadCount = 0;
 
   @override
   void initState() {
@@ -84,6 +89,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
     _initializeAnimations();
     _loadData();
     _loadSavedColors();
+    _setupNotificationListener();
   }
 
   void _initializeAnimations() {
@@ -166,6 +172,46 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
     });
   }
 
+  void _setupNotificationListener() {
+    _notificationSubscription = FirebaseFirestore.instance
+        .collection('notifications')
+        .where('userId', isEqualTo: currentUser?.id ?? '')
+        .where('isRead', isEqualTo: false)
+        .snapshots()
+        .listen(
+          (snapshot) {
+            if (mounted) {
+              setState(() {
+                _unreadCount = snapshot.docs.length;
+                hasUnreadNotifications = _unreadCount > 0;
+              });
+            }
+          },
+          onError: (error) {
+            log('Error listening to notifications: $error');
+          },
+        );
+  }
+
+  void _checkUnreadNotifications() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('notifications')
+          .where('userId', isEqualTo: currentUser!.id)
+          .where('isRead', isEqualTo: false)
+          .get();
+
+      if (mounted) {
+        setState(() {
+          _unreadCount = snapshot.docs.length;
+          hasUnreadNotifications = _unreadCount > 0;
+        });
+      }
+    } catch (e) {
+      log('Error checking unread notifications: $e');
+    }
+  }
+
   @override
   void dispose() {
     _scrollController.dispose();
@@ -176,7 +222,13 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
     _scaleController.dispose();
     _rotationController.dispose();
     _shimmerController.dispose();
+    _notificationSubscription?.cancel();
     super.dispose();
+  }
+
+  void _refreshNotificationBadge() {
+    // Force refresh the notification badge
+    _checkUnreadNotifications();
   }
 
   Future<void> _loadData() async {
@@ -355,10 +407,15 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
         officeBoys: officeBoys,
         onOrderCreated: (order) async {
           try {
-            await _firebaseService.addDocument('orders', order.toFirestore());
-            showSuccessToast(context, 'Order placed successfully!');
+            // Add document and return the ID
+            final docRef = await _firebaseService.addDocument(
+              'orders',
+              order.toFirestore(),
+            );
+            return docRef.id; // Return the document ID
           } catch (e) {
             showErrorToast(context, 'Failed to place order: $e');
+            rethrow;
           }
         },
       ),
@@ -538,6 +595,20 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
     }
   }
 
+  void _showNotificationBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => EmployeeNotificationBottomSheet(
+        organization: organization!,
+        userId: currentUser!.id,
+        userRole: currentUser!.role,
+        onNotificationsUpdated: _refreshNotificationBadge,
+      ),
+    );
+  }
+
   Widget _buildAnimatedHeader() {
     final locale = Localizations.localeOf(context).languageCode;
 
@@ -569,6 +640,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
               ),
             ),
             if (currentUser?.role == UserRole.employee)
+              // In the _buildAnimatedHeader() method, replace the notification icon:
               Positioned(
                 top: 20,
                 left: 20,
@@ -584,18 +656,58 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                         color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: IconButton(
-                        icon: AnimatedBuilder(
-                          animation: _pulseController,
-                          builder: (context, child) => Transform.scale(
-                            scale: _pulseAnimation.value,
-                            child: SvgPicture.asset(
-                              Assets.imagesSvgsNotification,
-                              color: Colors.white,
+                      child: Stack(
+                        children: [
+                          IconButton(
+                            icon: AnimatedBuilder(
+                              animation: _pulseController,
+                              builder: (context, child) => Transform.scale(
+                                scale: _pulseAnimation.value,
+                                child: SvgPicture.asset(
+                                  Assets.imagesSvgsNotification,
+                                  color: Colors.white,
+                                ),
+                              ),
                             ),
+                            onPressed: _showNotificationBottomSheet,
                           ),
-                        ),
-                        onPressed: _loadData,
+
+                          if (hasUnreadNotifications)
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: Container(
+                                width: _unreadCount > 9 ? 20 : 16,
+                                height: 16,
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 1.5,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.red.withOpacity(0.5),
+                                      blurRadius: 4,
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    _unreadCount > 9 ? '9+' : '$_unreadCount',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: _unreadCount > 9 ? 8 : 9,
+                                      fontWeight: FontWeight.bold,
+                                      height: 1.0,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ),
@@ -729,18 +841,58 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                         color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: IconButton(
-                        icon: AnimatedBuilder(
-                          animation: _pulseController,
-                          builder: (context, child) => Transform.scale(
-                            scale: _pulseAnimation.value,
-                            child: SvgPicture.asset(
-                              Assets.imagesSvgsNotification,
-                              color: Colors.white,
+                      child: Stack(
+                        children: [
+                          IconButton(
+                            icon: AnimatedBuilder(
+                              animation: _pulseController,
+                              builder: (context, child) => Transform.scale(
+                                scale: _pulseAnimation.value,
+                                child: SvgPicture.asset(
+                                  Assets.imagesSvgsNotification,
+                                  color: Colors.white,
+                                ),
+                              ),
                             ),
+                            onPressed: _showNotificationBottomSheet,
                           ),
-                        ),
-                        onPressed: _loadData,
+
+                          if (hasUnreadNotifications)
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: Container(
+                                width: _unreadCount > 9 ? 20 : 16,
+                                height: 16,
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 1.5,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.red.withOpacity(0.5),
+                                      blurRadius: 4,
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    _unreadCount > 9 ? '9+' : '$_unreadCount',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: _unreadCount > 9 ? 8 : 9,
+                                      fontWeight: FontWeight.bold,
+                                      height: 1.0,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ),

@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import 'dart:ui';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:taqy/core/notifications/notification_service.dart';
@@ -15,7 +14,7 @@ class NewOrderBottomSheet extends StatefulWidget {
   final EmployeeUserModel employee;
   final EmployeeOrganization organization;
   final List<EmployeeUserModel> officeBoys;
-  final Function(EmployeeOrder) onOrderCreated;
+  final Future<String> Function(EmployeeOrder) onOrderCreated;
 
   const NewOrderBottomSheet({
     super.key,
@@ -1430,15 +1429,13 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
         specificallyAssignedOfficeBoyId: _selectedOfficeBoy!.id,
       );
 
-      // Create order in Firestore
-      final docRef = await FirebaseFirestore.instance
-          .collection('orders')
-          .add(order.toFirestore());
+      // ✅ Get the document ID from onOrderCreated
+      final orderId = await widget.onOrderCreated(order);
 
       // ✅ SEND NOTIFICATION TO OFFICE BOY
       await NotificationService().notifyOfficeBoyNewOrder(
         officeBoyId: _selectedOfficeBoy!.id,
-        orderId: docRef.id,
+        orderId: orderId,
         orderType: _selectedType == OrderType.internal
             ? (locale == 'ar' ? 'داخلي' : 'Internal')
             : (locale == 'ar' ? 'خارجي' : 'External'),
@@ -1459,8 +1456,6 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
           isArabic: locale == 'ar',
         );
       }
-
-      widget.onOrderCreated(order.copyWith(id: docRef.id));
 
       // Show success message
       showSuccessToast(

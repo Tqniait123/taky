@@ -1,6 +1,6 @@
+
 import 'dart:convert';
 import 'dart:developer';
-import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:http/http.dart' as http;
+import 'package:taqy/core/notifications/notification_model.dart';
 import 'package:taqy/features/all/auth/domain/entities/user.dart';
 
 /// Enhanced notification service with comprehensive notification support
@@ -254,27 +255,11 @@ class NotificationService {
     Map<String, dynamic>? data,
   }) async {
     try {
-      // final serviceAccountJson = await rootBundle.loadString(
-      //   'assets/service_account.json',
-      // );
-      // final serviceAccountData =
-      //     jsonDecode(serviceAccountJson) as Map<String, dynamic>;
-
-      final serviceAccountEnv = const String.fromEnvironment('FIREBASE_SERVICE_ACCOUNT', defaultValue: '');
-Map<String, dynamic> serviceAccountData;
-
-if (serviceAccountEnv.isNotEmpty) {
-  serviceAccountData = jsonDecode(serviceAccountEnv) as Map<String, dynamic>;
-} else {
-  // fallback (optional)
-  final env = Platform.environment['FIREBASE_SERVICE_ACCOUNT'];
-  if (env != null && env.isNotEmpty) {
-    serviceAccountData = jsonDecode(env) as Map<String, dynamic>;
-  } else {
-    throw Exception('❌ FIREBASE_SERVICE_ACCOUNT env not found.');
-  }
-}
-
+      final serviceAccountJson = await rootBundle.loadString(
+        'assets/service_account.json',
+      );
+      final serviceAccountData =
+          jsonDecode(serviceAccountJson) as Map<String, dynamic>;
 
       final scopes = ['https://www.googleapis.com/auth/firebase.messaging'];
       final credentials = ServiceAccountCredentials.fromJson(
@@ -353,13 +338,27 @@ if (serviceAccountEnv.isNotEmpty) {
     required int itemCount,
     required bool isArabic,
   }) async {
-    final title = isArabic 
-        ? '🛒 طلب جديد معاد ليك'
-        : '🛒 New Order Assigned';
+    final title = isArabic ? '🛒 طلب جديد ليك' : '🛒 New Order Assigned';
     final body = isArabic
         ? '$employeeName طلب $itemCount عنصر'
         : '$employeeName ordered $itemCount item(s)';
 
+    // Save to Firestore FIRST
+    await saveNotificationToFirestore(
+      userId: officeBoyId,
+      title: title,
+      body: body,
+      type: NotificationType.orderCreated,
+      orderId: orderId,
+      data: {
+        'type': 'new_order',
+        'orderId': orderId,
+        'orderType': orderType,
+        'screen': 'order_details',
+      },
+    );
+
+    // Then send FCM notification
     await sendNotificationToUser(
       targetUserId: officeBoyId,
       title: title,
@@ -382,12 +381,24 @@ if (serviceAccountEnv.isNotEmpty) {
     required int itemCount,
     required bool isArabic,
   }) async {
-    final title = isArabic 
-        ? '✏️ الطلب اتعدل'
-        : '✏️ Order Updated';
+    final title = isArabic ? '✏️ الطلب اتعدل' : '✏️ Order Updated';
     final body = isArabic
         ? '$employeeName عدل طلبه ($itemCount عنصر)'
         : '$employeeName modified their order ($itemCount items)';
+
+    // Save to Firestore
+    await saveNotificationToFirestore(
+      userId: officeBoyId,
+      title: title,
+      body: body,
+      type: NotificationType.orderCreated,
+      orderId: orderId,
+      data: {
+        'type': 'order_edited',
+        'orderId': orderId,
+        'screen': 'order_details',
+      },
+    );
 
     await sendNotificationToUser(
       targetUserId: officeBoyId,
@@ -412,19 +423,34 @@ if (serviceAccountEnv.isNotEmpty) {
   }) async {
     final title = isArabic
         ? responseType == 'continue'
-            ? '✅ الموافق وافق على العناصر المتاحة'
-            : '❌ الموافق ألغى الطلب'
+              ? '✅ الموافق وافق على العناصر المتاحة'
+              : '❌ الموافق ألغى الطلب'
         : responseType == 'continue'
-            ? '✅ Employee Accepted Available Items'
-            : '❌ Employee Cancelled Order';
-    
+        ? '✅ Employee Accepted Available Items'
+        : '❌ Employee Cancelled Order';
+
     final body = isArabic
         ? responseType == 'continue'
-            ? '$employeeName عايز يكمل بالعناصر المتاحة'
-            : '$employeeName ألغى الطلب'
+              ? '$employeeName عايز يكمل بالعناصر المتاحة'
+              : '$employeeName ألغى الطلب'
         : responseType == 'continue'
-            ? '$employeeName wants to continue with available items'
-            : '$employeeName cancelled the order';
+        ? '$employeeName wants to continue with available items'
+        : '$employeeName cancelled the order';
+
+    // Save to Firestore
+    await saveNotificationToFirestore(
+      userId: officeBoyId,
+      title: title,
+      body: body,
+      type: NotificationType.orderNeedsResponse,
+      orderId: orderId,
+      data: {
+        'type': 'employee_response',
+        'orderId': orderId,
+        'responseType': responseType,
+        'screen': 'order_details',
+      },
+    );
 
     await sendNotificationToUser(
       targetUserId: officeBoyId,
@@ -448,12 +474,26 @@ if (serviceAccountEnv.isNotEmpty) {
     required int itemCount,
     required bool isArabic,
   }) async {
-    final title = isArabic 
-        ? '🔄 الطلب اتعدل واتبع تاني'
+    final title = isArabic
+        ? '🔄 الطلب اتعدل واتبعت تاني'
         : '🔄 Order Resubmitted';
     final body = isArabic
         ? '$employeeName عدل وبعت الطلب تاني ($itemCount عنصر)'
         : '$employeeName updated and resubmitted their order ($itemCount items)';
+
+    // Save to Firestore
+    await saveNotificationToFirestore(
+      userId: officeBoyId,
+      title: title,
+      body: body,
+      type: NotificationType.orderCreated,
+      orderId: orderId,
+      data: {
+        'type': 'order_resubmitted',
+        'orderId': orderId,
+        'screen': 'order_details',
+      },
+    );
 
     await sendNotificationToUser(
       targetUserId: officeBoyId,
@@ -477,12 +517,25 @@ if (serviceAccountEnv.isNotEmpty) {
     required String originalOrderId,
     required bool isArabic,
   }) async {
-    final title = isArabic 
-        ? '🔁 طلب جديد من السجل'
-        : '🔁 Reorder Created';
+    final title = isArabic ? '🔁 طلب جديد من السجل' : '🔁 Reorder Created';
     final body = isArabic
         ? '$employeeName عمل طلب جديد ب $itemCount عنصر'
         : '$employeeName reordered $itemCount item(s)';
+
+    // Save to Firestore
+    await saveNotificationToFirestore(
+      userId: officeBoyId,
+      title: title,
+      body: body,
+      type: NotificationType.orderCreated,
+      orderId: orderId,
+      data: {
+        'type': 'reorder',
+        'orderId': orderId,
+        'originalOrderId': originalOrderId,
+        'screen': 'order_details',
+      },
+    );
 
     await sendNotificationToUser(
       targetUserId: officeBoyId,
@@ -509,12 +562,24 @@ if (serviceAccountEnv.isNotEmpty) {
     required String fromOfficeBoyName,
     required bool isArabic,
   }) async {
-    final title = isArabic 
-        ? '🔄 طلب اتحول ليك'
-        : '🔄 Order Transferred to You';
+    final title = isArabic ? '🔄 طلب اتحول ليك' : '🔄 Order Transferred to You';
     final body = isArabic
         ? '$fromOfficeBoyName حول طلب $employeeName ($itemCount عنصر) ليك'
         : '$fromOfficeBoyName transferred $employeeName\'s order ($itemCount items) to you';
+
+    // Save to Firestore
+    await saveNotificationToFirestore(
+      userId: newOfficeBoyId,
+      title: title,
+      body: body,
+      type: NotificationType.orderTransferred,
+      orderId: orderId,
+      data: {
+        'type': 'order_transferred_received',
+        'orderId': orderId,
+        'screen': 'order_details',
+      },
+    );
 
     await sendNotificationToUser(
       targetUserId: newOfficeBoyId,
@@ -539,16 +604,34 @@ if (serviceAccountEnv.isNotEmpty) {
     required bool isArabic,
   }) async {
     final title = isArabic
-        ? isAdmin ? '🔄 طلبك اتحول' : '🔄 طلبك اتحول'
-        : isAdmin ? '🔄 Your Order Reassigned' : '🔄 Order Reassigned';
-    
+        ? isAdmin
+              ? '🔄 طلبك اتحول'
+              : '🔄 طلبك اتحول'
+        : isAdmin
+        ? '🔄 Your Order Reassigned'
+        : '🔄 Order Reassigned';
+
     final body = isArabic
         ? isAdmin
-            ? 'طلبك اتحول من $fromOfficeBoyName لـ $toOfficeBoyName'
-            : 'طلبك اتحول من $fromOfficeBoyName لـ $toOfficeBoyName'
+              ? 'طلبك اتحول من $fromOfficeBoyName لـ $toOfficeBoyName'
+              : 'طلبك اتحول من $fromOfficeBoyName لـ $toOfficeBoyName'
         : isAdmin
-            ? 'Your order was transferred from $fromOfficeBoyName to $toOfficeBoyName'
-            : 'Your order was transferred from $fromOfficeBoyName to $toOfficeBoyName';
+        ? 'Your order was transferred from $fromOfficeBoyName to $toOfficeBoyName'
+        : 'Your order was transferred from $fromOfficeBoyName to $toOfficeBoyName';
+
+    // Save to Firestore
+    await saveNotificationToFirestore(
+      userId: userId,
+      title: title,
+      body: body,
+      type: NotificationType.orderTransferred,
+      orderId: orderId,
+      data: {
+        'type': 'order_transferred',
+        'orderId': orderId,
+        'screen': 'order_details',
+      },
+    );
 
     await sendNotificationToUser(
       targetUserId: userId,
@@ -574,12 +657,30 @@ if (serviceAccountEnv.isNotEmpty) {
     required bool isArabic,
   }) async {
     final title = isArabic
-        ? isAdmin ? '✅ طلبك اتبقبل' : '✅ طلبك اتبقبل'
-        : isAdmin ? '✅ Your Order Accepted' : '✅ Order Accepted';
-    
+        ? isAdmin
+              ? '✅ طلبك اتبقبل'
+              : '✅ طلبك اتبقبل'
+        : isAdmin
+        ? '✅ Your Order Accepted'
+        : '✅ Order Accepted';
+
     final body = isArabic
         ? '$officeBoyName قبل طلبك'
         : '$officeBoyName accepted your order';
+
+    // Save to Firestore
+    await saveNotificationToFirestore(
+      userId: userId,
+      title: title,
+      body: body,
+      type: NotificationType.orderAccepted,
+      orderId: orderId,
+      data: {
+        'type': 'order_accepted',
+        'orderId': orderId,
+        'screen': 'order_details',
+      },
+    );
 
     await sendNotificationToUser(
       targetUserId: userId,
@@ -603,12 +704,24 @@ if (serviceAccountEnv.isNotEmpty) {
     required String officeBoyName,
     required bool isArabic,
   }) async {
-    final title = isArabic 
-        ? '🚀 الطلب قيد التنفيذ'
-        : '🚀 Order In Progress';
+    final title = isArabic ? '🚀 الطلب قيد التنفيذ' : '🚀 Order In Progress';
     final body = isArabic
         ? '$officeBoyName بدأ يشغل على طلبك'
         : '$officeBoyName started processing your order';
+
+    // Save to Firestore
+    await saveNotificationToFirestore(
+      userId: employeeId,
+      title: title,
+      body: body,
+      type: NotificationType.orderAccepted,
+      orderId: orderId,
+      data: {
+        'type': 'order_in_progress',
+        'orderId': orderId,
+        'screen': 'order_details',
+      },
+    );
 
     await sendNotificationToUser(
       targetUserId: employeeId,
@@ -632,17 +745,31 @@ if (serviceAccountEnv.isNotEmpty) {
     required int unavailableCount,
     required bool isArabic,
   }) async {
-    final title = isArabic 
+    final title = isArabic
         ? '📋 حالة العناصر اتحدثت'
         : '📋 Items Status Updated';
-    
+
     final body = isArabic
         ? unavailableCount > 0
-            ? '$officeBoyName لقي $availableCount عنصر متاح و $unavailableCount عنصر مش متاح'
-            : '$officeBoyName أكد إن كل العناصر متاحة'
+              ? '$officeBoyName لقي $availableCount عنصر متاح و $unavailableCount عنصر مش متاح'
+              : '$officeBoyName أكد إن كل العناصر متاحة'
         : unavailableCount > 0
-            ? '$officeBoyName found $availableCount available and $unavailableCount unavailable items'
-            : '$officeBoyName confirmed all items are available';
+        ? '$officeBoyName found $availableCount available and $unavailableCount unavailable items'
+        : '$officeBoyName confirmed all items are available';
+
+    // Save to Firestore
+    await saveNotificationToFirestore(
+      userId: employeeId,
+      title: title,
+      body: body,
+      type: NotificationType.itemStatusUpdated,
+      orderId: orderId,
+      data: {
+        'type': 'items_status_updated',
+        'orderId': orderId,
+        'screen': 'order_details',
+      },
+    );
 
     await sendNotificationToUser(
       targetUserId: employeeId,
@@ -665,13 +792,25 @@ if (serviceAccountEnv.isNotEmpty) {
     required int unavailableCount,
     required bool isArabic,
   }) async {
-    final title = isArabic 
-        ? '⚠️ محتاج رد منك'
-        : '⚠️ Action Required';
-    
+    final title = isArabic ? '⚠️ محتاج رد منك' : '⚠️ Action Required';
+
     final body = isArabic
         ? '$unavailableCount عنصر مش متاح. يلزم ترد عشان تكمل.'
         : '$unavailableCount item(s) unavailable. Please respond to continue.';
+
+    // Save to Firestore
+    await saveNotificationToFirestore(
+      userId: employeeId,
+      title: title,
+      body: body,
+      type: NotificationType.orderNeedsResponse,
+      orderId: orderId,
+      data: {
+        'type': 'response_needed',
+        'orderId': orderId,
+        'screen': 'order_response',
+      },
+    );
 
     await sendNotificationToUser(
       targetUserId: employeeId,
@@ -696,17 +835,29 @@ if (serviceAccountEnv.isNotEmpty) {
   }) async {
     final priceText = finalPrice != null
         ? isArabic
-            ? ' (ج.م ${finalPrice.toStringAsFixed(0)})'
-            : ' (EGP ${finalPrice.toStringAsFixed(0)})'
+              ? ' (ج.م ${finalPrice.toStringAsFixed(0)})'
+              : ' (EGP ${finalPrice.toStringAsFixed(0)})'
         : '';
 
-    final title = isArabic 
-        ? '✅ الطلب اكتمل'
-        : '✅ Order Completed';
-    
+    final title = isArabic ? '✅ الطلب اكتمل' : '✅ Order Completed';
+
     final body = isArabic
         ? '$officeBoyName كمل طلبك$priceText'
         : '$officeBoyName completed your order$priceText';
+
+    // Save to Firestore
+    await saveNotificationToFirestore(
+      userId: employeeId,
+      title: title,
+      body: body,
+      type: NotificationType.orderCompleted,
+      orderId: orderId,
+      data: {
+        'type': 'order_completed',
+        'orderId': orderId,
+        'screen': 'order_details',
+      },
+    );
 
     await sendNotificationToUser(
       targetUserId: employeeId,
@@ -729,17 +880,31 @@ if (serviceAccountEnv.isNotEmpty) {
     String? reason,
     required bool isArabic,
   }) async {
-    final reasonText = reason != null && reason.isNotEmpty 
-        ? isArabic ? ': $reason' : ': $reason'
+    final reasonText = reason != null && reason.isNotEmpty
+        ? isArabic
+              ? ': $reason'
+              : ': $reason'
         : '';
 
-    final title = isArabic 
-        ? '❌ الطلب اتنلغى'
-        : '❌ Order Cancelled';
-    
+    final title = isArabic ? '❌ الطلب اتنلغى' : '❌ Order Cancelled';
+
     final body = isArabic
         ? '$officeBoyName ألغى طلبك$reasonText'
         : '$officeBoyName cancelled your order$reasonText';
+
+    // Save to Firestore
+    await saveNotificationToFirestore(
+      userId: employeeId,
+      title: title,
+      body: body,
+      type: NotificationType.orderCancelled,
+      orderId: orderId,
+      data: {
+        'type': 'order_cancelled',
+        'orderId': orderId,
+        'screen': 'order_details',
+      },
+    );
 
     await sendNotificationToUser(
       targetUserId: employeeId,
@@ -765,17 +930,40 @@ if (serviceAccountEnv.isNotEmpty) {
     required bool isArabic,
   }) async {
     final orderTypeText = isArabic
-        ? orderType == 'internal' ? 'داخلي' : 'خارجي'
+        ? orderType == 'internal'
+              ? 'داخلي'
+              : 'خارجي'
         : orderType;
 
-    final title = isArabic 
-        ? '📦 طلب جديد اتعمل'
-        : '📦 New Order Created';
-    
+    final title = isArabic ? '📦 طلب جديد اتعمل' : '📦 New Order Created';
+
     final body = isArabic
         ? '$employeeName عمل طلب $orderTypeText ($itemCount عنصر)'
         : '$employeeName created a $orderType order ($itemCount items)';
 
+    // Get all admin users for this organization to save notifications
+    final adminUsers = await _firestore
+        .collection('users')
+        .where('organizationId', isEqualTo: organizationId)
+        .where('role', isEqualTo: 'admin')
+        .get();
+
+    // Save notification for each admin
+    for (final adminDoc in adminUsers.docs) {
+      await saveNotificationToFirestore(
+        userId: adminDoc.id,
+        title: title,
+        body: body,
+        type: NotificationType.orderCreated,
+        data: {
+          'type': 'admin_new_order',
+          'orderType': orderType,
+          'screen': 'orders',
+        },
+      );
+    }
+
+    // Also send FCM to topic
     await sendNotificationToTopic(
       topic: 'admin_$organizationId',
       title: title,
@@ -796,13 +984,34 @@ if (serviceAccountEnv.isNotEmpty) {
     required String officeBoyName,
     required bool isArabic,
   }) async {
-    final title = isArabic 
-        ? '🚀 طلب قيد التنفيذ'
-        : '🚀 Order In Progress';
-    
+    final title = isArabic ? '🚀 طلب قيد التنفيذ' : '🚀 Order In Progress';
+
     final body = isArabic
         ? '$officeBoyName بدأ يشغل على الطلب'
         : '$officeBoyName started processing the order';
+
+    // Get all admin users for this organization to save notifications
+    final adminUsers = await _firestore
+        .collection('users')
+        .where('organizationId', isEqualTo: organizationId)
+        .where('role', isEqualTo: 'admin')
+        .get();
+
+    // Save notification for each admin
+    for (final adminDoc in adminUsers.docs) {
+      await saveNotificationToFirestore(
+        userId: adminDoc.id,
+        title: title,
+        body: body,
+        type: NotificationType.orderAccepted,
+        orderId: orderId,
+        data: {
+          'type': 'admin_order_in_progress',
+          'orderId': orderId,
+          'screen': 'orders',
+        },
+      );
+    }
 
     await sendNotificationToTopic(
       topic: 'admin_$organizationId',
@@ -827,17 +1036,33 @@ if (serviceAccountEnv.isNotEmpty) {
   }) async {
     final priceText = finalPrice != null
         ? isArabic
-            ? ' (ج.م ${finalPrice.toStringAsFixed(0)})'
-            : ' (EGP ${finalPrice.toStringAsFixed(0)})'
+              ? ' (ج.م ${finalPrice.toStringAsFixed(0)})'
+              : ' (EGP ${finalPrice.toStringAsFixed(0)})'
         : '';
 
-    final title = isArabic 
-        ? '✅ طلب اكتمل'
-        : '✅ Order Completed';
-    
+    final title = isArabic ? '✅ طلب اكتمل' : '✅ Order Completed';
+
     final body = isArabic
         ? '$officeBoyName كمل طلب $employeeName$priceText'
         : '$officeBoyName completed $employeeName\'s order$priceText';
+
+    // Get all admin users for this organization to save notifications
+    final adminUsers = await _firestore
+        .collection('users')
+        .where('organizationId', isEqualTo: organizationId)
+        .where('role', isEqualTo: 'admin')
+        .get();
+
+    // Save notification for each admin
+    for (final adminDoc in adminUsers.docs) {
+      await saveNotificationToFirestore(
+        userId: adminDoc.id,
+        title: title,
+        body: body,
+        type: NotificationType.orderCompleted,
+        data: {'type': 'admin_order_completed', 'screen': 'orders'},
+      );
+    }
 
     await sendNotificationToTopic(
       topic: 'admin_$organizationId',
@@ -855,13 +1080,29 @@ if (serviceAccountEnv.isNotEmpty) {
     required String officeBoyName,
     required bool isArabic,
   }) async {
-    final title = isArabic 
-        ? '❌ طلب اتنلغى'
-        : '❌ Order Cancelled';
-    
+    final title = isArabic ? '❌ طلب اتنلغى' : '❌ Order Cancelled';
+
     final body = isArabic
         ? '$officeBoyName ألغى طلب $employeeName'
         : '$officeBoyName cancelled $employeeName\'s order';
+
+    // Get all admin users for this organization to save notifications
+    final adminUsers = await _firestore
+        .collection('users')
+        .where('organizationId', isEqualTo: organizationId)
+        .where('role', isEqualTo: 'admin')
+        .get();
+
+    // Save notification for each admin
+    for (final adminDoc in adminUsers.docs) {
+      await saveNotificationToFirestore(
+        userId: adminDoc.id,
+        title: title,
+        body: body,
+        type: NotificationType.orderCancelled,
+        data: {'type': 'admin_order_cancelled', 'screen': 'orders'},
+      );
+    }
 
     await sendNotificationToTopic(
       topic: 'admin_$organizationId',
@@ -870,6 +1111,47 @@ if (serviceAccountEnv.isNotEmpty) {
       data: {'type': 'admin_order_cancelled', 'screen': 'orders'},
     );
     log('✅ Cancellation notification sent to admin');
+  }
+
+  /// Save notification to Firestore - FIXED VERSION
+  Future<void> saveNotificationToFirestore({
+    required String userId,
+    required String title,
+    required String body,
+    required NotificationType type,
+    String? orderId,
+    String? relatedUserId,
+    Map<String, dynamic>? data,
+  }) async {
+    try {
+      final notification = AppNotification(
+        id: FirebaseFirestore.instance.collection('notifications').doc().id,
+        title: title,
+        body: body,
+        type: type,
+        orderId: orderId,
+        relatedUserId: relatedUserId,
+        createdAt: DateTime.now(),
+        isRead: false,
+        data: data,
+      );
+
+      // Create the document with ALL required fields including userId
+      final notificationData = {
+        ...notification.toFirestore(),
+        'userId': userId, // This is crucial for the query to work
+      };
+
+      await FirebaseFirestore.instance
+          .collection('notifications')
+          .doc(notification.id)
+          .set(notificationData);
+
+      debugPrint('✅ Notification saved to Firestore for user: $userId');
+      debugPrint('📄 Notification data: $notificationData');
+    } catch (e) {
+      debugPrint('❌ Error saving notification: $e');
+    }
   }
 
   /// Cleanup on logout
@@ -893,5 +1175,21 @@ if (serviceAccountEnv.isNotEmpty) {
     } catch (e) {
       debugPrint('❌ Cleanup error: $e');
     }
+  }
+
+  /// Test method to create a notification for debugging
+  Future<void> createTestNotification({
+    required String userId,
+    required String title,
+    required String body,
+  }) async {
+    await saveNotificationToFirestore(
+      userId: userId,
+      title: title,
+      body: body,
+      type: NotificationType.info,
+      data: {'test': 'true', 'screen': 'test'},
+    );
+    debugPrint('🧪 Test notification created for user: $userId');
   }
 }

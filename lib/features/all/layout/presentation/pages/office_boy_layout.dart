@@ -1,3 +1,7 @@
+
+
+import 'dart:async';
+import 'dart:developer';
 import 'dart:math' as math;
 import 'dart:ui';
 
@@ -10,6 +14,7 @@ import 'package:lottie/lottie.dart';
 import 'package:taqy/config/routes/routes.dart';
 import 'package:taqy/core/helpers/cache_helper.dart';
 import 'package:taqy/core/notifications/notification_service.dart';
+import 'package:taqy/core/notifications/office_boy_notification_bottom_sheet.dart';
 import 'package:taqy/core/services/firebase_service.dart';
 import 'package:taqy/core/static/app_assets.dart';
 import 'package:taqy/core/theme/colors.dart';
@@ -63,6 +68,9 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
   double _scrollOffset = 0.0;
   bool _isHeaderCollapsed = false;
   final ScrollController _scrollController = ScrollController();
+  bool hasUnreadNotifications = false;
+  StreamSubscription<QuerySnapshot>? _notificationSubscription;
+  int _unreadCount = 0;
 
   @override
   void initState() {
@@ -71,6 +79,47 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
     _initializeAnimations();
     _loadData();
     _loadSavedColors();
+    _setupNotificationListener();
+  }
+
+  void _setupNotificationListener() {
+    _notificationSubscription = FirebaseFirestore.instance
+        .collection('notifications')
+        .where('userId', isEqualTo: currentUser?.id ?? '')
+        .where('isRead', isEqualTo: false)
+        .snapshots()
+        .listen(
+          (snapshot) {
+            if (mounted) {
+              setState(() {
+                _unreadCount = snapshot.docs.length;
+                hasUnreadNotifications = _unreadCount > 0;
+              });
+            }
+          },
+          onError: (error) {
+            log('Error listening to notifications: $error');
+          },
+        );
+  }
+
+  void _checkUnreadNotifications() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('notifications')
+          .where('userId', isEqualTo: currentUser!.id)
+          .where('isRead', isEqualTo: false)
+          .get();
+
+      if (mounted) {
+        setState(() {
+          _unreadCount = snapshot.docs.length;
+          hasUnreadNotifications = _unreadCount > 0;
+        });
+      }
+    } catch (e) {
+      log('Error checking unread notifications: $e');
+    }
   }
 
   void _initializeAnimations() {
@@ -166,7 +215,27 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
     _scaleController.dispose();
     _rotationController.dispose();
     _shimmerController.dispose();
+    _notificationSubscription?.cancel();
     super.dispose();
+  }
+
+  void _refreshNotificationBadge() {
+    // Force refresh the notification badge
+    _checkUnreadNotifications();
+  }
+
+  void _showNotificationBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => OfficeBoyNotificationBottomSheet(
+        organization: organization!,
+        userId: currentUser!.id,
+        userRole: currentUser!.role,
+        onNotificationsUpdated: _refreshNotificationBadge,
+      ),
+    );
   }
 
   Future<void> _loadData() async {
@@ -956,13 +1025,16 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         );
 
         // ✅ NOTIFY ADMIN
-        await NotificationService().notifyAdminOrderCompleted(
-          organizationId: order.organizationId,
-          employeeName: order.employeeName,
-          officeBoyName: currentUser!.name,
-          finalPrice: finalPrice,
-          isArabic: _currentLocale == 'ar',
-        );
+
+        if (currentUser?.role == UserRole.admin) {
+          await NotificationService().notifyAdminOrderCompleted(
+            organizationId: order.organizationId,
+            employeeName: order.employeeName,
+            officeBoyName: currentUser!.name,
+            finalPrice: finalPrice,
+            isArabic: _currentLocale == 'ar',
+          );
+        }
       } else if (status == OrderStatus.cancelled) {
         // ✅ NOTIFY EMPLOYEE - ORDER CANCELLED
         await NotificationService().notifyEmployeeOrderCancelled(
@@ -974,12 +1046,14 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         );
 
         // ✅ NOTIFY ADMIN
-        await NotificationService().notifyAdminOrderCancelled(
-          organizationId: order.organizationId,
-          employeeName: order.employeeName,
-          officeBoyName: currentUser!.name,
-          isArabic: _currentLocale == 'ar',
-        );
+        if (currentUser?.role == UserRole.admin) {
+          await NotificationService().notifyAdminOrderCancelled(
+            organizationId: order.organizationId,
+            employeeName: order.employeeName,
+            officeBoyName: currentUser!.name,
+            isArabic: _currentLocale == 'ar',
+          );
+        }
       } else if (status == OrderStatus.inProgress) {
         // ✅ NOTIFY EMPLOYEE - ORDER RESUMED
         await NotificationService().notifyEmployeeOrderInProgress(
@@ -990,12 +1064,14 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
         );
 
         // ✅ NOTIFY ADMIN
-        await NotificationService().notifyAdminOrderInProgress(
-          organizationId: order.organizationId,
-          orderId: order.id,
-          officeBoyName: currentUser!.name,
-          isArabic: _currentLocale == 'ar',
-        );
+        if (currentUser?.role == UserRole.admin) {
+          await NotificationService().notifyAdminOrderInProgress(
+            organizationId: order.organizationId,
+            orderId: order.id,
+            officeBoyName: currentUser!.name,
+            isArabic: _currentLocale == 'ar',
+          );
+        }
       }
 
       if (notes != null && notes.isNotEmpty) {
@@ -1839,18 +1915,58 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                       color: Colors.white.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: IconButton(
-                      icon: AnimatedBuilder(
-                        animation: _pulseController,
-                        builder: (context, child) => Transform.scale(
-                          scale: _pulseAnimation.value,
-                          child: SvgPicture.asset(
-                            Assets.imagesSvgsNotification,
-                            color: Colors.white,
+                    child: Stack(
+                      children: [
+                        IconButton(
+                          icon: AnimatedBuilder(
+                            animation: _pulseController,
+                            builder: (context, child) => Transform.scale(
+                              scale: _pulseAnimation.value,
+                              child: SvgPicture.asset(
+                                Assets.imagesSvgsNotification,
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
+                          onPressed: _showNotificationBottomSheet,
                         ),
-                      ),
-                      onPressed: _loadData,
+
+                        if (hasUnreadNotifications)
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: Container(
+                              width: _unreadCount > 9 ? 20 : 16,
+                              height: 16,
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 1.5,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.red.withOpacity(0.5),
+                                    blurRadius: 4,
+                                    spreadRadius: 1,
+                                  ),
+                                ],
+                              ),
+                              child: Center(
+                                child: Text(
+                                  _unreadCount > 9 ? '9+' : '$_unreadCount',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: _unreadCount > 9 ? 8 : 9,
+                                    fontWeight: FontWeight.bold,
+                                    height: 1.0,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 ),

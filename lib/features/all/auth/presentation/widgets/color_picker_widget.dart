@@ -659,9 +659,7 @@ class _ModernColorPickerState extends State<ModernColorPicker>
                 ? 'اختر من الألوان الموجودة'
                 : 'Choose from curated colors',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color:
-                  widget.hintColor ??
-                  AppColors.onSurfaceVariant.withOpacity(0.7),
+              color: widget.hintColor ?? Colors.white.withOpacity(0.7),
               fontWeight: FontWeight.w500,
             ),
           ),
