@@ -1,7 +1,5 @@
-
 import 'dart:convert';
 import 'dart:developer';
-import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -256,27 +254,30 @@ class NotificationService {
     Map<String, dynamic>? data,
   }) async {
     try {
-      // final serviceAccountJson = await rootBundle.loadString(
-      //   'assets/service_account.json',
+      final serviceAccountJson = await rootBundle.loadString(
+        'assets/service_account.json',
+      );
+      final serviceAccountData =
+          jsonDecode(serviceAccountJson) as Map<String, dynamic>;
+
+      // final serviceAccountEnv = const String.fromEnvironment(
+      //   'FIREBASE_SERVICE_ACCOUNT',
+      //   defaultValue: '',
       // );
-      // final serviceAccountData =
-      //     jsonDecode(serviceAccountJson) as Map<String, dynamic>;
+      // Map<String, dynamic> serviceAccountData;
 
-           final serviceAccountEnv = const String.fromEnvironment('FIREBASE_SERVICE_ACCOUNT', defaultValue: '');
-Map<String, dynamic> serviceAccountData;
-
-if (serviceAccountEnv.isNotEmpty) {
-  serviceAccountData = jsonDecode(serviceAccountEnv) as Map<String, dynamic>;
-} else {
-  // fallback (optional)
-  final env = Platform.environment['FIREBASE_SERVICE_ACCOUNT'];
-  if (env != null && env.isNotEmpty) {
-    serviceAccountData = jsonDecode(env) as Map<String, dynamic>;
-  } else {
-    throw Exception('❌ FIREBASE_SERVICE_ACCOUNT env not found.');
-  }
-}
-
+      // if (serviceAccountEnv.isNotEmpty) {
+      //   serviceAccountData =
+      //       jsonDecode(serviceAccountEnv) as Map<String, dynamic>;
+      // } else {
+      //   // fallback (optional)
+      //   final env = Platform.environment['FIREBASE_SERVICE_ACCOUNT'];
+      //   if (env != null && env.isNotEmpty) {
+      //     serviceAccountData = jsonDecode(env) as Map<String, dynamic>;
+      //   } else {
+      //     throw Exception('❌ FIREBASE_SERVICE_ACCOUNT env not found.');
+      //   }
+      // }
 
       final scopes = ['https://www.googleapis.com/auth/firebase.messaging'];
       final credentials = ServiceAccountCredentials.fromJson(
