@@ -39,6 +39,7 @@ class _OfficeBoyProfileBottomSheetState
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
   bool _isSaving = false;
+  bool _hasChanges = false;
 
   // Animation Controllers
   late AnimationController _slideController;
@@ -61,8 +62,22 @@ class _OfficeBoyProfileBottomSheetState
     _nameController = TextEditingController(text: widget.user.name);
     _phoneController = TextEditingController(text: widget.user.phone ?? '');
 
+    // Add listeners to track changes
+    _nameController.addListener(_checkForChanges);
+    _phoneController.addListener(_checkForChanges);
+
     _initializeAnimations();
     _startAnimations();
+  }
+
+  void _checkForChanges() {
+    final nameChanged = _nameController.text.trim() != widget.user.name;
+    final phoneChanged =
+        _phoneController.text.trim() != (widget.user.phone ?? '');
+
+    setState(() {
+      _hasChanges = nameChanged || phoneChanged;
+    });
   }
 
   void _initializeAnimations() {
@@ -506,12 +521,12 @@ class _OfficeBoyProfileBottomSheetState
                 _buildProfileAvatar(),
                 SizedBox(height: 32),
                 _buildUserInfoCard(locale),
+                SizedBox(height: 32),
+
+                // NEW: Settings Section with Language
+                _buildSettingsSection(locale),
                 SizedBox(height: 24),
-                LanguageLayoutDropdown(
-                  primaryColor: widget.organization.primaryColorValue,
-                  secondaryColor: widget.organization.secondaryColorValue,
-                ),
-                SizedBox(height: 24),
+
                 _buildGlassTextField(
                   controller: _nameController,
                   label: locale == 'ar' ? 'الاسم كامل' : 'Full Name',
@@ -542,133 +557,285 @@ class _OfficeBoyProfileBottomSheetState
     );
   }
 
+  // NEW: Dedicated Settings Section
+  Widget _buildSettingsSection(String locale) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 800),
+      curve: Curves.easeOutBack,
+      builder: (context, value, child) {
+        return Transform.scale(
+          scale: value,
+          child: Container(
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white.withOpacity(0.15),
+                  Colors.white.withOpacity(0.05),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Section Header
+                    Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            gradient: RadialGradient(
+                              colors: [
+                                Colors.white.withOpacity(0.3),
+                                Colors.white.withOpacity(0.1),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.settings_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Text(
+                          locale == 'ar' ? 'الإعدادات' : 'Settings',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 20),
+
+                    // Language Setting Item
+                    _buildSettingItem(
+                      icon: Icons.language_rounded,
+                      title: locale == 'ar' ? 'اللغة' : 'Language',
+                      subtitle: locale == 'ar'
+                          ? 'تغيير لغة التطبيق'
+                          : 'Change app language',
+                      child: LanguageLayoutDropdown(
+                        primaryColor: widget.organization.primaryColorValue,
+                        secondaryColor: widget.organization.secondaryColorValue,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // NEW: Setting Item Builder
+  Widget _buildSettingItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Widget child,
+  }) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 16),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                colors: [
+                  Colors.white.withOpacity(0.2),
+                  Colors.white.withOpacity(0.1),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: Colors.white, size: 24),
+          ),
+          SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: 12),
+          child,
+        ],
+      ),
+    );
+  }
+
   Widget _buildGlassHeader(String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 800),
       curve: Curves.elasticOut,
-      builder: (context, value, child) => Transform.translate(
-        offset: Offset(0, -50 * (1 - value)),
-        child: Container(
-          padding: EdgeInsets.fromLTRB(24, 20, 24, 16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.white.withOpacity(0.15),
-                Colors.white.withOpacity(0.05),
-              ],
-            ),
-            border: Border(
-              bottom: BorderSide(
-                color: Colors.white.withOpacity(0.1),
-                width: 1,
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, -50 * (1 - value)),
+          child: Container(
+            padding: EdgeInsets.fromLTRB(24, 20, 24, 16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white.withOpacity(0.15),
+                  Colors.white.withOpacity(0.05),
+                ],
+              ),
+              border: Border(
+                bottom: BorderSide(
+                  color: Colors.white.withOpacity(0.1),
+                  width: 1,
+                ),
               ),
             ),
-          ),
-          child: Column(
-            children: [
-              // Handle bar with glow effect
-              AnimatedBuilder(
-                animation: _glowController,
-                builder: (context, child) => Container(
-                  margin: EdgeInsets.only(bottom: 20),
-                  height: 5,
-                  width: 50,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.white.withOpacity(
-                          0.3 + (_glowAnimation.value * 0.4),
-                        ),
-                        Colors.white.withOpacity(
-                          0.3 + (_glowAnimation.value * 0.4),
+            child: Column(
+              children: [
+                // Handle bar with glow effect
+                AnimatedBuilder(
+                  animation: _glowController,
+                  builder: (context, child) => Container(
+                    margin: EdgeInsets.only(bottom: 20),
+                    height: 5,
+                    width: 50,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.white.withOpacity(
+                            0.3 + (_glowAnimation.value * 0.4),
+                          ),
+                          Colors.white.withOpacity(
+                            0.3 + (_glowAnimation.value * 0.4),
+                          ),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(3),
+                      boxShadow: [
+                        BoxShadow(
+                          color: widget.organization.primaryColorValue
+                              .withOpacity(_glowAnimation.value * 0.3),
+                          blurRadius: 10,
+                          spreadRadius: 2,
                         ),
                       ],
                     ),
-                    borderRadius: BorderRadius.circular(3),
-                    boxShadow: [
-                      BoxShadow(
-                        color: widget.organization.primaryColorValue
-                            .withOpacity(_glowAnimation.value * 0.3),
-                        blurRadius: 10,
-                        spreadRadius: 2,
-                      ),
-                    ],
                   ),
                 ),
-              ),
 
-              Row(
-                children: [
-                  // Animated title with shimmer effect
-                  Expanded(
-                    child: AnimatedBuilder(
-                      animation: _shimmerController,
-                      builder: (context, child) => Text(
-                        locale == 'ar' ? 'الملف الشخصي' : 'Profile',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Animated close button
-                  TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0.0, end: 1.0),
-                    duration: Duration(milliseconds: 600),
-                    curve: Curves.elasticOut,
-                    builder: (context, value, child) => Transform.scale(
-                      scale: value,
-                      child: GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: AnimatedBuilder(
-                          animation: _glowController,
-                          builder: (context, child) => Container(
-                            padding: EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              gradient: RadialGradient(
-                                colors: [
-                                  Colors.white.withOpacity(
-                                    0.2 + (_glowAnimation.value * 0.1),
-                                  ),
-                                  Colors.white.withOpacity(0.1),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.3),
-                                width: 1,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.white.withOpacity(
-                                    _glowAnimation.value * 0.2,
-                                  ),
-                                  blurRadius: 15,
-                                  spreadRadius: 1,
-                                ),
-                              ],
-                            ),
-                            child: Icon(
-                              Icons.close,
-                              color: Colors.white.withOpacity(0.9),
-                              size: 20,
-                            ),
+                Row(
+                  children: [
+                    // Animated title with shimmer effect
+                    Expanded(
+                      child: AnimatedBuilder(
+                        animation: _shimmerController,
+                        builder: (context, child) => Text(
+                          locale == 'ar' ? 'الملف الشخصي' : 'Profile',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            letterSpacing: 0.5,
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+
+                    // Animated close button
+                    TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0.0, end: 1.0),
+                      duration: Duration(milliseconds: 600),
+                      curve: Curves.elasticOut,
+                      builder: (context, value, child) {
+                        return Transform.scale(
+                          scale: value,
+                          child: GestureDetector(
+                            onTap: () => Navigator.pop(context),
+                            child: AnimatedBuilder(
+                              animation: _glowController,
+                              builder: (context, child) => Container(
+                                padding: EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  gradient: RadialGradient(
+                                    colors: [
+                                      Colors.white.withOpacity(
+                                        0.2 + (_glowAnimation.value * 0.1),
+                                      ),
+                                      Colors.white.withOpacity(0.1),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.3),
+                                    width: 1,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.white.withOpacity(
+                                        _glowAnimation.value * 0.2,
+                                      ),
+                                      blurRadius: 15,
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(
+                                  Icons.close,
+                                  color: Colors.white.withOpacity(0.9),
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -677,52 +844,54 @@ class _OfficeBoyProfileBottomSheetState
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 1000),
       curve: Curves.elasticOut,
-      builder: (context, value, child) => Transform.scale(
-        scale: value,
-        child: Center(
-          child: Stack(
-            children: [
-              // Main avatar with glow effect
-              AnimatedBuilder(
-                animation: _glowController,
-                builder: (context, child) => Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [
-                        widget.organization.primaryColorValue,
-                        widget.organization.secondaryColorValue,
-                      ],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: widget.organization.primaryColorValue
-                            .withOpacity(0.3 + (_glowAnimation.value * 0.3)),
-                        blurRadius: 20 + (_glowAnimation.value * 10),
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: Container(
-                    margin: EdgeInsets.all(3),
+      builder: (context, value, child) {
+        return Transform.scale(
+          scale: value,
+          child: Center(
+            child: Stack(
+              children: [
+                // Main avatar with glow effect
+                AnimatedBuilder(
+                  animation: _glowController,
+                  builder: (context, child) => Container(
+                    width: 120,
+                    height: 120,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.1),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
-                        width: 2,
+                      gradient: LinearGradient(
+                        colors: [
+                          widget.organization.primaryColorValue,
+                          widget.organization.secondaryColorValue,
+                        ],
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: widget.organization.primaryColorValue
+                              .withOpacity(0.3 + (_glowAnimation.value * 0.3)),
+                          blurRadius: 20 + (_glowAnimation.value * 10),
+                          spreadRadius: 2,
+                        ),
+                      ],
                     ),
-                    child: ClipOval(child: _buildDefaultAvatar()),
+                    child: Container(
+                      margin: EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.1),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                          width: 2,
+                        ),
+                      ),
+                      child: ClipOval(child: _buildDefaultAvatar()),
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -755,69 +924,74 @@ class _OfficeBoyProfileBottomSheetState
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 800),
       curve: Curves.easeOutBack,
-      builder: (context, value, child) => Transform.scale(
-        scale: value,
-        child: Container(
-          padding: EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.white.withOpacity(0.15),
-                Colors.white.withOpacity(0.05),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 20,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Section title with gradient
-                  Text(
-                    locale == 'ar' ? 'معلومات الحساب' : 'Account Information',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  _buildInfoRow(
-                    Assets.imagesSvgsCompany,
-                    widget.organization.name,
-                    0,
-                  ),
-                  SizedBox(height: 16),
-                  _buildInfoRow(
-                    Assets.imagesSvgsCode,
-                    widget.organization.code,
-                    100,
-                  ),
-                  SizedBox(height: 16),
-                  _buildEmailRow(
-                    Assets.imagesSvgsMail,
-                    widget.user.email,
-                    200,
-                    locale,
-                  ),
+      builder: (context, value, child) {
+        return Transform.scale(
+          scale: value,
+          child: Container(
+            padding: EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white.withOpacity(0.15),
+                  Colors.white.withOpacity(0.05),
                 ],
               ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Section title with gradient
+                    Text(
+                      locale == 'ar' ? 'معلومات الحساب' : 'Account Information',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    _buildInfoRow(
+                      Assets.imagesSvgsCompany,
+                      widget.organization.name,
+                      0,
+                    ),
+                    SizedBox(height: 16),
+                    _buildInfoRow(
+                      Assets.imagesSvgsCode,
+                      widget.organization.code,
+                      100,
+                    ),
+                    SizedBox(height: 16),
+                    _buildEmailRow(
+                      Assets.imagesSvgsMail,
+                      widget.user.email,
+                      200,
+                      locale,
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -826,42 +1000,44 @@ class _OfficeBoyProfileBottomSheetState
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 600 + delay),
       curve: Curves.easeOutBack,
-      builder: (context, value, child) => Transform.translate(
-        offset: Offset(30 * (1 - value), 0),
-        child: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  colors: [
-                    Colors.white.withOpacity(0.2),
-                    Colors.white.withOpacity(0.1),
-                  ],
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(30 * (1 - value), 0),
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    colors: [
+                      Colors.white.withOpacity(0.2),
+                      Colors.white.withOpacity(0.1),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: SvgPicture.asset(
-                icon,
-                color: Colors.white.withOpacity(0.8),
-                height: 20,
-                width: 20,
-              ),
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                text,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.9),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
+                child: SvgPicture.asset(
+                  icon,
+                  color: Colors.white.withOpacity(0.8),
+                  height: 20,
+                  width: 20,
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  text,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -870,77 +1046,82 @@ class _OfficeBoyProfileBottomSheetState
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 600 + delay),
       curve: Curves.easeOutBack,
-      builder: (context, value, child) => Transform.translate(
-        offset: Offset(30 * (1 - value), 0),
-        child: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  colors: [
-                    Colors.white.withOpacity(0.2),
-                    Colors.white.withOpacity(0.1),
-                  ],
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(30 * (1 - value), 0),
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    colors: [
+                      Colors.white.withOpacity(0.2),
+                      Colors.white.withOpacity(0.1),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                borderRadius: BorderRadius.circular(8),
+                child: SvgPicture.asset(
+                  icon,
+                  color: Colors.white.withOpacity(0.8),
+                  height: 20,
+                  width: 20,
+                ),
               ),
-              child: SvgPicture.asset(
-                icon,
-                color: Colors.white.withOpacity(0.8),
-                height: 20,
-                width: 20,
-              ),
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  _showFullEmailDialog(email, locale);
-                },
-                child: Tooltip(
-                  message: locale == 'ar'
-                      ? 'اظهار البريد الالكتروني الكامل'
-                      : 'Tap to view full email',
-                  child: Container(
-                    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      color: Colors.white.withOpacity(0.05),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.1),
-                        width: 1,
+              SizedBox(width: 12),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    _showFullEmailDialog(email, locale);
+                  },
+                  child: Tooltip(
+                    message: locale == 'ar'
+                        ? 'اظهار البريد الالكتروني الكامل'
+                        : 'Tap to view full email',
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 12,
                       ),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            _getTruncatedEmail(email),
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        color: Colors.white.withOpacity(0.05),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.1),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _getTruncatedEmail(email),
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.9),
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
                           ),
-                        ),
-                        SizedBox(width: 8),
-                        Icon(
-                          Icons.visibility_outlined,
-                          color: Colors.white.withOpacity(0.6),
-                          size: 16,
-                        ),
-                      ],
+                          SizedBox(width: 8),
+                          Icon(
+                            Icons.visibility_outlined,
+                            color: Colors.white.withOpacity(0.6),
+                            size: 16,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -1172,84 +1353,86 @@ class _OfficeBoyProfileBottomSheetState
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 600 + delay),
       curve: Curves.easeOutBack,
-      builder: (context, value, child) => Transform.translate(
-        offset: Offset(100 * (1 - value), 0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Animated label
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                letterSpacing: 0.5,
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(100 * (1 - value), 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Animated label
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
+                ),
               ),
-            ),
-            SizedBox(height: 12),
+              SizedBox(height: 12),
 
-            // Glass text field
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.white.withOpacity(0.15),
-                    Colors.white.withOpacity(0.05),
+              // Glass text field
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.white.withOpacity(0.15),
+                      Colors.white.withOpacity(0.05),
+                    ],
+                  ),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.2),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 20,
+                      offset: Offset(0, 8),
+                    ),
                   ],
                 ),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.2),
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 20,
-                    offset: Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: TextFormField(
-                    controller: controller,
-                    keyboardType: keyboardType,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: hint,
-                      hintStyle: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
-                        fontSize: 14,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: TextFormField(
+                      controller: controller,
+                      keyboardType: keyboardType,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
                       ),
-                      prefixIcon: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: SvgPicture.asset(
-                          icon,
-                          color: Colors.white,
-                          fit: BoxFit.scaleDown,
+                      decoration: InputDecoration(
+                        hintText: hint,
+                        hintStyle: TextStyle(
+                          color: Colors.white.withOpacity(0.6),
+                          fontSize: 14,
+                        ),
+                        prefixIcon: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: SvgPicture.asset(
+                            icon,
+                            color: Colors.white,
+                            fit: BoxFit.scaleDown,
+                          ),
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 20,
                         ),
                       ),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 20,
-                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -1258,52 +1441,123 @@ class _OfficeBoyProfileBottomSheetState
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 1200),
       curve: Curves.elasticOut,
-      builder: (context, value, child) => Transform.translate(
-        offset: Offset(0, 100 * (1 - value)),
-        child: Container(
-          padding: EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.white.withOpacity(0.2),
-                Colors.white.withOpacity(0.1),
-              ],
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 100 * (1 - value)),
+          child: Container(
+            padding: EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white.withOpacity(0.2),
+                  Colors.white.withOpacity(0.1),
+                ],
+              ),
+              border: Border(
+                top: BorderSide(color: Colors.white.withOpacity(0.2), width: 1),
+              ),
             ),
-            border: Border(
-              top: BorderSide(color: Colors.white.withOpacity(0.2), width: 1),
-            ),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Column(
-                children: [
-                  // Update Profile button with glow effect
-                  AnimatedBuilder(
-                    animation: _glowController,
-                    builder: (context, child) => Container(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Column(
+                  children: [
+                    // Update Profile button with glow effect
+                    AnimatedBuilder(
+                      animation: _glowController,
+                      builder: (context, child) => Container(
+                        width: double.infinity,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          gradient: _hasChanges && !_isSaving
+                              ? LinearGradient(
+                                  colors: [
+                                    widget.organization.primaryColorValue,
+                                    widget.organization.secondaryColorValue,
+                                  ],
+                                )
+                              : LinearGradient(
+                                  colors: [
+                                    Colors.grey.withOpacity(0.6),
+                                    Colors.grey.withOpacity(0.4),
+                                  ],
+                                ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: _hasChanges && !_isSaving
+                              ? [
+                                  BoxShadow(
+                                    color: widget.organization.primaryColorValue
+                                        .withOpacity(
+                                          0.4 + (_glowAnimation.value * 0.2),
+                                        ),
+                                    blurRadius: 15 + (_glowAnimation.value * 5),
+                                    spreadRadius: 1,
+                                    offset: Offset(0, 6),
+                                  ),
+                                ]
+                              : [],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(16),
+                            onTap: (_hasChanges && !_isSaving)
+                                ? () => _updateProfile(locale)
+                                : null,
+                            child: Container(
+                              alignment: Alignment.center,
+                              child: _isSaving
+                                  ? Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            color: Colors.white,
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                        SizedBox(width: 12),
+                                        Text(
+                                          locale == 'ar'
+                                              ? 'تحديث...'
+                                              : 'Updating...',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : Text(
+                                      locale == 'ar'
+                                          ? 'تحديث الملف الشخصي'
+                                          : 'Update Profile',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 16),
+
+                    // Logout button
+                    Container(
                       width: double.infinity,
                       height: 56,
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            widget.organization.primaryColorValue,
-                            widget.organization.secondaryColorValue,
-                          ],
-                        ),
+                        color: Colors.red,
                         borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: widget.organization.primaryColorValue
-                                .withOpacity(
-                                  0.4 + (_glowAnimation.value * 0.2),
-                                ),
-                            blurRadius: 15 + (_glowAnimation.value * 5),
-                            spreadRadius: 1,
-                            offset: Offset(0, 6),
-                          ),
-                        ],
                       ),
                       child: Material(
                         color: Colors.transparent,
@@ -1311,91 +1565,32 @@ class _OfficeBoyProfileBottomSheetState
                           borderRadius: BorderRadius.circular(16),
                           onTap: _isSaving
                               ? null
-                              : () => _updateProfile(locale),
+                              : () {
+                                  Navigator.pop(context);
+                                  _showLogoutConfirmation(locale);
+                                },
                           child: Container(
                             alignment: Alignment.center,
-                            child: _isSaving
-                                ? Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          color: Colors.white,
-                                          strokeWidth: 2,
-                                        ),
-                                      ),
-                                      SizedBox(width: 12),
-                                      Text(
-                                        locale == 'ar'
-                                            ? 'تحديث...'
-                                            : 'Updating...',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                : Text(
-                                    locale == 'ar'
-                                        ? 'تحديث الملف الشخصي'
-                                        : 'Update Profile',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-
-                  // Logout button
-                  Container(
-                    width: double.infinity,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
-                        onTap: _isSaving
-                            ? null
-                            : () {
-                                Navigator.pop(context);
-                                _showLogoutConfirmation(locale);
-                              },
-                        child: Container(
-                          alignment: Alignment.center,
-                          child: Text(
-                            locale == 'ar' ? 'تسجيل الخروج' : 'Logout',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.5,
+                            child: Text(
+                              locale == 'ar' ? 'تسجيل الخروج' : 'Logout',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

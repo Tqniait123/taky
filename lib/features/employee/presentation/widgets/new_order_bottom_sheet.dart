@@ -731,6 +731,8 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
                         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                         child: TextFormField(
                           controller: _itemController,
+                          onTapOutside: (_) =>
+                              FocusManager.instance.primaryFocus?.unfocus(),
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 16,

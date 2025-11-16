@@ -44,6 +44,7 @@ class AuthCubit extends Cubit<AuthState> {
     String? primaryColor,
     String? secondaryColor,
     bool skipImageUpload = true,
+    String? jobTitle ,
   }) async {
     if (isClosed) return;
     emit(const AuthState.loading());
@@ -120,6 +121,7 @@ class AuthCubit extends Cubit<AuthState> {
         organizationLogo: orgLogoUrl,
         primaryColor: primaryColor,
         secondaryColor: secondaryColor,
+        jobTitle: jobTitle,
       );
 
       if (!isClosed) {

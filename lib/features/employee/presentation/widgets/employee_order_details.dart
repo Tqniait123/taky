@@ -3,44 +3,39 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:taqy/core/utils/dialogs/error_toast.dart';
 import 'package:taqy/core/utils/widgets/app_images.dart';
-import 'package:taqy/features/office_boy/data/models/office_order.dart';
-import 'package:taqy/features/office_boy/data/models/office_organization.dart';
-import 'package:taqy/features/office_boy/data/models/office_user_model.dart';
+import 'package:taqy/features/employee/data/models/order_model.dart';
+import 'package:taqy/features/employee/data/models/organization_model.dart';
+import 'package:taqy/features/employee/data/models/user_model.dart';
 
-class OrderDetailsBottomSheet extends StatefulWidget {
-  final OfficeOrder order;
-  final OfficeOrganization organization;
-  final bool isOfficeBoy;
-  final Function(OfficeOrder, OrderStatus, {double? finalPrice, String? notes})
-  onStatusUpdate;
-  final Function(OfficeOrder, int, ItemStatus, String?)? onItemStatusUpdate;
-  final VoidCallback? onTransferRequest;
-  final List<OfficeUserModel>? otherOfficeBoys;
+class EmployeeOrderDetailsBottomSheet extends StatefulWidget {
+  final EmployeeOrder order;
+  final EmployeeOrganization organization;
+  final EmployeeUserModel currentUser;
+  final Function(EmployeeOrder)? onEditOrder;
+  final Function(EmployeeOrder)? onCancelOrder;
+  final Function(EmployeeOrder)? onReorder;
 
-  const OrderDetailsBottomSheet({
+  const EmployeeOrderDetailsBottomSheet({
     super.key,
     required this.order,
     required this.organization,
-    required this.isOfficeBoy,
-    required this.onStatusUpdate,
-    this.onItemStatusUpdate,
-    this.onTransferRequest,
-    this.otherOfficeBoys,
+    required this.currentUser,
+    this.onEditOrder,
+    this.onCancelOrder,
+    this.onReorder,
   });
 
   @override
-  State<OrderDetailsBottomSheet> createState() =>
-      _OrderDetailsBottomSheetState();
+  State<EmployeeOrderDetailsBottomSheet> createState() =>
+      _EmployeeOrderDetailsBottomSheetState();
 }
 
-class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
+class _EmployeeOrderDetailsBottomSheetState
+    extends State<EmployeeOrderDetailsBottomSheet>
     with TickerProviderStateMixin {
-  final _priceController = TextEditingController();
-  final _notesController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   late AnimationController _pulseController;
   late AnimationController _glowController;
@@ -52,15 +47,6 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
   @override
   void initState() {
     super.initState();
-    if (widget.order.price != null) {
-      _priceController.text = widget.order.price!.toStringAsFixed(0);
-    }
-    if (widget.order.finalPrice != null) {
-      _priceController.text = widget.order.finalPrice!.toStringAsFixed(0);
-    }
-    if (widget.order.notes != null) {
-      _notesController.text = widget.order.notes!;
-    }
 
     _pulseController = AnimationController(
       vsync: this,
@@ -92,8 +78,6 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
 
   @override
   void dispose() {
-    _priceController.dispose();
-    _notesController.dispose();
     _scrollController.dispose();
     _pulseController.dispose();
     _glowController.dispose();
@@ -149,6 +133,21 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
     }
   }
 
+  String _getOrderStatusText(OrderStatus status, String locale) {
+    switch (status) {
+      case OrderStatus.pending:
+        return locale == 'ar' ? 'قيد الانتظار' : 'Pending';
+      case OrderStatus.inProgress:
+        return locale == 'ar' ? 'قيد التنفيذ' : 'In Progress';
+      case OrderStatus.completed:
+        return locale == 'ar' ? 'مكتمل' : 'Completed';
+      case OrderStatus.cancelled:
+        return locale == 'ar' ? 'ملغي' : 'Cancelled';
+      case OrderStatus.needsResponse:
+        return locale == 'ar' ? 'يحتاج رد' : 'Needs Response';
+    }
+  }
+
   String _formatDateTime(DateTime dateTime, String locale) {
     final day = dateTime.day;
     final month = dateTime.month;
@@ -163,57 +162,19 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
     }
   }
 
-  Future<void> _updateStatus(OrderStatus status, String locale) async {
-    if (status == OrderStatus.completed &&
-        widget.order.type == OrderType.external &&
-        _priceController.text.trim().isEmpty) {
-      showErrorToast(
-        context,
-        locale == 'ar'
-            ? 'يرجى ادخال السعر النهائي للطلبات الخارجية'
-            : 'Please enter the final price for external orders',
-      );
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    try {
-      double? finalPrice;
-      if (status == OrderStatus.completed &&
-          widget.order.type == OrderType.external &&
-          _priceController.text.trim().isNotEmpty) {
-        finalPrice = double.parse(_priceController.text.trim());
-      }
-
-      await widget.onStatusUpdate(
-        widget.order,
-        status,
-        finalPrice: finalPrice,
-        notes: _notesController.text.trim().isEmpty
-            ? null
-            : _notesController.text.trim(),
-      );
-      Navigator.pop(context);
-    } catch (e) {
-      showErrorToast(
-        context,
-        locale == 'ar'
-            ? 'فشل تحديث حالة الطلب: $e'
-            : 'Failed to update order status: $e',
-      );
-    } finally {
-      setState(() => _isLoading = false);
-    }
+  bool get _canEdit {
+    return widget.order.status == OrderStatus.pending ||
+        widget.order.status == OrderStatus.needsResponse;
   }
 
-  bool get _canTransfer {
-    return widget.isOfficeBoy &&
-        widget.order.status == OrderStatus.pending &&
-        widget.order.isSpecificallyAssigned &&
-        widget.onTransferRequest != null &&
-        widget.otherOfficeBoys != null &&
-        widget.otherOfficeBoys!.isNotEmpty;
+  bool get _canCancel {
+    return widget.order.status == OrderStatus.pending ||
+        widget.order.status == OrderStatus.inProgress;
+  }
+
+  bool get _canReorder {
+    return widget.order.status == OrderStatus.completed ||
+        widget.order.status == OrderStatus.cancelled;
   }
 
   @override
@@ -324,7 +285,9 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
                 if (widget.order.type == OrderType.external)
                   _buildPriceSection(locale),
                 const SizedBox(height: 20),
-                _buildNotesSection(locale),
+                if (widget.order.notes != null &&
+                    widget.order.notes!.isNotEmpty)
+                  _buildNotesSection(locale),
                 const SizedBox(height: 20),
                 _buildActionButtons(locale),
                 const SizedBox(height: 32),
@@ -590,21 +553,6 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
     );
   }
 
-  String _getOrderStatusText(OrderStatus status, String locale) {
-    switch (status) {
-      case OrderStatus.pending:
-        return locale == 'ar' ? 'قيد الانتظار' : 'PENDING';
-      case OrderStatus.inProgress:
-        return locale == 'ar' ? 'قيد التنفيذ' : 'IN PROGRESS';
-      case OrderStatus.completed:
-        return locale == 'ar' ? 'مكتمل' : 'COMPLETED';
-      case OrderStatus.cancelled:
-        return locale == 'ar' ? 'ملغي' : 'CANCELLED';
-      case OrderStatus.needsResponse:
-        return locale == 'ar' ? 'يحتاج رد' : 'NEEDS RESPONSE';
-    }
-  }
-
   Widget _buildItemsList(String locale) {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -813,7 +761,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
           Row(
             children: [
               SvgPicture.asset(
-                Assets.imagesSvgsOrder,
+                Assets.imagesSvgsInfo,
                 color: Colors.white.withOpacity(0.9),
                 height: 20,
               ),
@@ -829,28 +777,19 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
             ],
           ),
           const SizedBox(height: 16),
-          widget.order.isFromAdmin
-              ? _buildInfoRow(
-                  Icons.admin_panel_settings,
-                  locale == 'ar' ? 'المدير' : 'Admin',
-                  widget.order.employeeName,
-                  locale,
-                )
-              : _buildInfoRow(
-                  Icons.person_rounded,
-                  locale == 'ar' ? 'الموظف' : 'Employee',
-                  widget.order.employeeName,
-                  locale,
-                ),
-          if (widget.order.officeBoyName.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            _buildInfoRow(
-              Icons.delivery_dining_rounded,
-              locale == 'ar' ? 'العامل' : 'Office Boy',
-              widget.order.officeBoyName,
-              locale,
-            ),
-          ],
+          _buildInfoRow(
+            Icons.person_rounded,
+            locale == 'ar' ? 'الموظف' : 'Employee',
+            widget.order.employeeName,
+            locale,
+          ),
+          const SizedBox(height: 12),
+          _buildInfoRow(
+            Icons.delivery_dining_rounded,
+            locale == 'ar' ? 'العامل' : 'Office Boy',
+            widget.order.officeBoyName,
+            locale,
+          ),
           const SizedBox(height: 12),
           _buildInfoRow(
             Icons.schedule_rounded,
@@ -867,15 +806,15 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
               locale,
             ),
           ],
-          if (widget.order.isSpecificallyAssigned) ...[
-            const SizedBox(height: 12),
-            _buildInfoRow(
-              Icons.star_rounded,
-              locale == 'ar' ? 'التكليف' : 'Assignment',
-              locale == 'ar' ? 'مكلف بشكل خاص' : 'Specifically Assigned',
-              locale,
-            ),
-          ],
+          // if (widget.order.cancelledAt != null) ...[
+          //   const SizedBox(height: 12),
+          //   _buildInfoRow(
+          //     Icons.cancel_rounded,
+          //     locale == 'ar' ? 'تاريخ الإلغاء' : 'Cancelled',
+          //     _formatDateTime(widget.order.cancelledAt!, locale),
+          //     locale,
+          //   ),
+          // ],
         ],
       ),
     );
@@ -900,13 +839,7 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
             ),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: label == (locale == 'ar' ? 'تاريخ الإكمال' : 'Completed')
-              ? SvgPicture.asset(
-                  Assets.imagesSvgsComplete,
-                  color: Colors.white.withOpacity(0.9),
-                  height: 18,
-                )
-              : Icon(icon, color: Colors.white.withOpacity(0.9), size: 18),
+          child: Icon(icon, color: Colors.white.withOpacity(0.9), size: 18),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -986,56 +919,6 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
               widget.order.finalPrice!,
               Colors.greenAccent,
               locale,
-            ),
-          ],
-          if (widget.isOfficeBoy &&
-              widget.order.status == OrderStatus.inProgress &&
-              widget.order.type == OrderType.external) ...[
-            const SizedBox(height: 16),
-            Text(
-              locale == 'ar' ? 'ادخل السعر النهائي:' : 'Enter Final Price:',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.9),
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white.withOpacity(0.2)),
-              ),
-              child: TextField(
-                controller: _priceController,
-                keyboardType: TextInputType.number,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-                decoration: InputDecoration(
-                  hintText: locale == 'ar'
-                      ? 'ادخل المبلغ الفعلي الذي تم صرفه'
-                      : 'Enter actual spent amount',
-                  hintStyle: TextStyle(
-                    color: Colors.white.withOpacity(0.4),
-                    fontSize: 14,
-                  ),
-                  prefixText: locale == 'ar' ? 'ج.م ' : 'EGP ',
-                  prefixStyle: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
-                ),
-              ),
             ),
           ],
           if (widget.order.price != null &&
@@ -1122,211 +1005,101 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
   }
 
   Widget _buildNotesSection(String locale) {
-    if (widget.isOfficeBoy && widget.order.status == OrderStatus.inProgress) {
-      return Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          gradient: LinearGradient(
-            colors: [
-              Colors.white.withOpacity(0.12),
-              Colors.white.withOpacity(0.08),
-            ],
-          ),
-          border: Border.all(color: Colors.white.withOpacity(0.15), width: 1),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                SvgPicture.asset(
-                  Assets.imagesSvgsNote,
-                  color: Colors.white.withOpacity(0.9),
-                  height: 20,
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  locale == 'ar'
-                      ? 'اضافة ملاحظات (اختياري)'
-                      : 'Add Notes (Optional)',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white.withOpacity(0.15)),
-              ),
-              child: TextField(
-                controller: _notesController,
-                style: const TextStyle(color: Colors.white, fontSize: 14),
-                decoration: InputDecoration(
-                  hintText: locale == 'ar'
-                      ? 'اضف اي ملاحظات اضافية...'
-                      : 'Add any additional notes...',
-                  hintStyle: TextStyle(
-                    color: Colors.white.withOpacity(0.4),
-                    fontSize: 14,
-                  ),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.all(16),
-                ),
-                maxLines: 3,
-              ),
-            ),
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          colors: [
+            Colors.white.withOpacity(0.12),
+            Colors.white.withOpacity(0.08),
           ],
         ),
-      );
-    } else if (widget.order.notes != null && widget.order.notes!.isNotEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          gradient: LinearGradient(
-            colors: [
-              Colors.white.withOpacity(0.12),
-              Colors.white.withOpacity(0.08),
-            ],
-          ),
-          border: Border.all(color: Colors.white.withOpacity(0.15), width: 1),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                SvgPicture.asset(
-                  Assets.imagesSvgsNote,
-                  color: Colors.white.withOpacity(0.9),
-                  height: 20,
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  locale == 'ar' ? 'ملاحظات' : 'Notes',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white.withOpacity(0.1)),
-              ),
-              child: Text(
-                widget.order.notes!,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.9),
-                  fontSize: 14,
-                  height: 1.5,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-    return const SizedBox.shrink();
-  }
-
-  Widget _buildActionButtons(String locale) {
-    if (_canTransfer) {
-      return Column(
+        border: Border.all(color: Colors.white.withOpacity(0.15), width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: widget.onTransferRequest,
-              icon: const Icon(Icons.swap_horiz_rounded, size: 20),
-              label: Text(
-                locale == 'ar'
-                    ? 'تحويل الى عامل آخر'
-                    : 'Transfer to Another Office Boy',
-                style: const TextStyle(
-                  fontSize: 15,
+          Row(
+            children: [
+              SvgPicture.asset(
+                Assets.imagesSvgsNote,
+                color: Colors.white.withOpacity(0.9),
+                height: 20,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                locale == 'ar' ? 'ملاحظات' : 'Notes',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 8,
-                shadowColor: Colors.orange.withOpacity(0.4),
-              ),
-            ),
+            ],
           ),
           const SizedBox(height: 12),
-          SizedBox(
+          Container(
             width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _isLoading
-                  ? null
-                  : () => _updateStatus(OrderStatus.inProgress, locale),
-              icon: const Icon(Icons.delivery_dining_rounded, size: 20),
-              label: Text(
-                locale == 'ar' ? 'اقبل وابدا' : 'Accept & Start',
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 8,
-                shadowColor: Colors.blue.withOpacity(0.4),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
+            ),
+            child: Text(
+              widget.order.notes!,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.9),
+                fontSize: 14,
+                height: 1.5,
               ),
             ),
           ),
         ],
-      );
-    }
+      ),
+    );
+  }
 
-    if (widget.isOfficeBoy && widget.order.status == OrderStatus.inProgress) {
-      return Row(
-        children: [
+  Widget _buildActionButtons(String locale) {
+    return Row(
+      children: [
+        if (_canEdit) ...[
           Expanded(
-            flex: 2,
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.green.withOpacity(0.3),
+                    color: Colors.blue.withOpacity(0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 6),
                   ),
                 ],
               ),
-              child: ElevatedButton(
+              child: ElevatedButton.icon(
                 onPressed: _isLoading
                     ? null
-                    : () => _updateStatus(OrderStatus.completed, locale),
+                    : () {
+                        if (widget.onEditOrder != null) {
+                          Navigator.pop(context);
+                          widget.onEditOrder!(widget.order);
+                        }
+                      },
+                icon: SvgPicture.asset(
+                  Assets.imagesSvgsEdit,
+                  height: 20,
+                  color: Colors.white,
+                ),
+                label: Text(
+                  locale == 'ar' ? 'تعديل الطلب' : 'Edit Order',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
+                ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
+                  backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
@@ -1334,34 +1107,12 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
                   ),
                   elevation: 0,
                 ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : Text(
-                        locale == 'ar' ? 'تحديد كمكتمل' : 'Mark as Completed',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                        ),
-                      ),
               ),
             ),
           ),
+          const SizedBox(width: 12),
         ],
-      );
-    }
-
-    if (widget.isOfficeBoy &&
-        widget.order.status == OrderStatus.pending &&
-        widget.order.isSpecificallyAssigned) {
-      return Row(
-        children: [
+        if (_canCancel) ...[
           Expanded(
             child: Container(
               decoration: BoxDecoration(
@@ -1371,31 +1122,45 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
                   width: 2,
                 ),
               ),
-              child: OutlinedButton(
+              child: ElevatedButton.icon(
                 onPressed: _isLoading
                     ? null
-                    : () => _updateStatus(OrderStatus.cancelled, locale),
-                style: OutlinedButton.styleFrom(
+                    : () {
+                        if (widget.onCancelOrder != null) {
+                          Navigator.pop(context);
+                          widget.onCancelOrder!(widget.order);
+                        }
+                      },
+                icon: SvgPicture.asset(
+                  Assets.imagesSvgsCancell,
+                  height: 20,
+                  color: Colors.white,
+                ),
+                label: Text(
+                  locale == 'ar' ? 'إلغاء الطلب' : 'Cancel Order',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    fontSize: 15,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
                   foregroundColor: Colors.red,
+                  backgroundColor: Colors.red,
                   side: BorderSide.none,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-                child: Text(
-                  locale == 'ar' ? 'رفض' : 'Reject',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                  ),
-                ),
               ),
             ),
           ),
           const SizedBox(width: 12),
+        ],
+        if (_canReorder) ...[
           Expanded(
-            flex: 2,
+            flex: _canEdit || _canCancel ? 1 : 2,
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
@@ -1407,10 +1172,25 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
                   ),
                 ],
               ),
-              child: ElevatedButton(
+              child: ElevatedButton.icon(
                 onPressed: _isLoading
                     ? null
-                    : () => _updateStatus(OrderStatus.inProgress, locale),
+                    : () {
+                        if (widget.onReorder != null) {
+                          Navigator.pop(context);
+                          widget.onReorder!(widget.order);
+                        }
+                      },
+                icon: const Icon(Icons.refresh_rounded, size: 20),
+                label: Text(
+                  widget.order.status == OrderStatus.completed
+                      ? (locale == 'ar' ? 'إعادة الطلب' : 'Reorder')
+                      : (locale == 'ar' ? 'إعادة المحاولة' : 'Retry'),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   foregroundColor: Colors.white,
@@ -1420,30 +1200,12 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
                   ),
                   elevation: 0,
                 ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : Text(
-                        locale == 'ar' ? 'قبول التكليف' : 'Accept Assignment',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                        ),
-                      ),
               ),
             ),
           ),
         ],
-      );
-    }
-
-    return const SizedBox.shrink();
+      ],
+    );
   }
 }
 

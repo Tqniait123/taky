@@ -190,6 +190,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
   @override
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).languageCode;
+
     return AnimatedBuilder(
       animation: Listenable.merge([
         _slideController,
@@ -247,7 +248,10 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                               width: 1,
                             ),
                           ),
-                          child: Form(key: _formKey, child: _buildContent(locale)),
+                          child: Form(
+                            key: _formKey,
+                            child: _buildContent(locale),
+                          ),
                         ),
                       ),
                     ),
@@ -314,8 +318,12 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                 SizedBox(height: 24),
                 _buildGlassTextField(
                   controller: _descriptionController,
-                  label: locale == 'ar' ? 'الوصف (اختياري)' : 'Description (Optional)',
-                  hint: locale == 'ar' ? 'أي تفاصيل أو تفضيلات محددة...' : 'Any specific details or preferences...',
+                  label: locale == 'ar'
+                      ? 'الوصف (اختياري)'
+                      : 'Description (Optional)',
+                  hint: locale == 'ar'
+                      ? 'أي تفاصيل أو تفضيلات محددة...'
+                      : 'Any specific details or preferences...',
                   icon: Assets.imagesSvgsOrder,
                   delay: 200,
                   maxLines: 3,
@@ -325,22 +333,26 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                   SizedBox(height: 24),
                   _buildGlassTextField(
                     controller: _priceController,
-                    label: locale == 'ar' ? 'السعر المقدر (ج.م)' : 'Estimated Price (EGP)',
-                    hint: locale == 'ar' ? 'أدخل السعر المقدر' : 'Enter estimated price',
+                    label: locale == 'ar'
+                        ? 'السعر المقدر (ج.م)'
+                        : 'Estimated Price (EGP)',
+                    hint: locale == 'ar'
+                        ? 'أدخل السعر المقدر'
+                        : 'Enter estimated price',
                     icon: Assets.imagesSvgsMoney,
                     delay: 300,
                     keyboardType: TextInputType.number,
                     validator: (value) {
                       if (_selectedType == OrderType.external &&
                           (value == null || value.trim().isEmpty)) {
-                        return locale == 'ar' 
+                        return locale == 'ar'
                             ? 'يرجى إدخال السعر المقدر للطلبات الخارجية'
                             : 'Please enter estimated price for external orders';
                       }
                       if (value != null && value.isNotEmpty) {
                         final price = double.tryParse(value);
                         if (price == null || price <= 0) {
-                          return locale == 'ar' 
+                          return locale == 'ar'
                               ? 'يرجى إدخال سعر صحيح'
                               : 'Please enter a valid price';
                         }
@@ -355,8 +367,12 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                 SizedBox(height: 24),
                 _buildGlassTextField(
                   controller: _notesController,
-                  label: locale == 'ar' ? 'ملاحظات إضافية (اختياري)' : 'Additional Notes (Optional)',
-                  hint: locale == 'ar' ? 'أي تعليمات خاصة...' : 'Any special instructions...',
+                  label: locale == 'ar'
+                      ? 'ملاحظات إضافية (اختياري)'
+                      : 'Additional Notes (Optional)',
+                  hint: locale == 'ar'
+                      ? 'أي تعليمات خاصة...'
+                      : 'Any special instructions...',
                   icon: Assets.imagesSvgsNote,
                   delay: 400,
                   maxLines: 2,
@@ -452,7 +468,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                           ),
                         ),
                         Text(
-                          locale == 'ar' 
+                          locale == 'ar'
                               ? 'الطلب #${widget.order.id.substring(0, 8)}'
                               : 'Order #${widget.order.id.substring(0, 8)}',
                           style: TextStyle(
@@ -569,22 +585,26 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                       Expanded(
                         child: _buildGlassTypeCard(
                           locale == 'ar' ? 'داخلي' : 'Internal',
-                          locale == 'ar' ? 'شاي، قهوة، مياه' : 'Tea, Coffee, Water',
+                          locale == 'ar'
+                              ? 'شاي، قهوة، مياه'
+                              : 'Tea, Coffee, Water',
                           Assets.imagesSvgsCompany,
                           OrderType.internal,
                           widget.organization.secondaryColorValue,
                           locale: locale,
+                          isEditable: false, // Made read-only
                         ),
                       ),
                       SizedBox(width: 16),
                       Expanded(
                         child: _buildGlassTypeCard(
                           locale == 'ar' ? 'خارجي' : 'External',
-                          locale == 'ar' ? 'طعام، وجبات، توصيل' : 'Food, Meals, Delivery',
+                          locale == 'ar' ? 'طعام، وجبات' : 'Food, Meals',
                           Assets.imagesSvgsShoppingCart,
                           OrderType.external,
                           widget.organization.secondaryColorValue,
                           locale: locale,
+                          isEditable: false, // Made read-only
                         ),
                       ),
                     ],
@@ -605,95 +625,103 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
     OrderType type,
     Color color, {
     required String locale,
+    bool isEditable = true, // Added parameter to control editability
   }) {
     final isSelected = _selectedType == type;
 
     return AnimatedBuilder(
       animation: _glowController,
       builder: (context, child) => GestureDetector(
-        onTap: () {
-          setState(() {
-            _selectedType = type;
-            // Clear price if changing from external to internal
-            if (type == OrderType.internal) {
-              _priceController.clear();
-            }
-          });
-        },
-        child: Container(
-          padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: isSelected
-                ? LinearGradient(
-                    colors: [
-                      color.withOpacity(0.4),
-                      color.withOpacity(0.3),
-                      color.withOpacity(.2),
-                    ],
-                  )
-                : LinearGradient(
-                    colors: [
-                      Colors.white.withOpacity(0.2),
-                      Colors.white.withOpacity(0.1),
-                    ],
-                  ),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isSelected
-                  ? color.withOpacity(0.5)
-                  : Colors.white.withOpacity(0.2),
-              width: isSelected ? 3 : 1,
+        onTap: isEditable
+            ? () {
+                setState(() {
+                  _selectedType = type;
+                  // Clear price if changing from external to internal
+                  if (type == OrderType.internal) {
+                    _priceController.clear();
+                  }
+                });
+              }
+            : null, // Disabled tap when not editable
+        child: Opacity(
+          opacity: isEditable
+              ? 1.0
+              : (isSelected ? 1.0 : 0.5), // Dim non-selected when read-only
+          child: Container(
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: isSelected
+                  ? LinearGradient(
+                      colors: [
+                        color.withOpacity(0.4),
+                        color.withOpacity(0.3),
+                        color.withOpacity(.2),
+                      ],
+                    )
+                  : LinearGradient(
+                      colors: [
+                        Colors.white.withOpacity(0.2),
+                        Colors.white.withOpacity(0.1),
+                      ],
+                    ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isSelected
+                    ? color.withOpacity(0.5)
+                    : Colors.white.withOpacity(0.2),
+                width: isSelected ? 3 : 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: Offset(0, 4),
+                ),
+              ],
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              Container(
-                height: 50,
-                width: 50,
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    colors: [
-                      color.withOpacity(isSelected ? 0.3 : 0.2),
-                      color.withOpacity(0.1),
-                    ],
+            child: Column(
+              children: [
+                Container(
+                  height: 50,
+                  width: 50,
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      colors: [
+                        color.withOpacity(isSelected ? 0.3 : 0.2),
+                        color.withOpacity(0.1),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(25),
+                    border: Border.all(color: color.withOpacity(0.3), width: 1),
                   ),
-                  borderRadius: BorderRadius.circular(25),
-                  border: Border.all(color: color.withOpacity(0.3), width: 1),
+                  child: SvgPicture.asset(
+                    icon,
+                    color: Colors.white,
+                    fit: BoxFit.scaleDown,
+                  ),
                 ),
-                child: SvgPicture.asset(
-                  icon,
-                  color: Colors.white,
-                  fit: BoxFit.scaleDown,
+                SizedBox(height: 12),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isSelected
+                        ? Colors.white
+                        : Colors.white.withOpacity(0.8),
+                  ),
                 ),
-              ),
-              SizedBox(height: 12),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: isSelected
-                      ? Colors.white
-                      : Colors.white.withOpacity(0.8),
+                SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withOpacity(0.6),
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-              ),
-              SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.white.withOpacity(0.6),
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -750,13 +778,17 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                         child: TextFormField(
                           controller: _itemController,
+                          onTapOutside: (_) =>
+                              FocusManager.instance.primaryFocus?.unfocus(),
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
                           ),
                           decoration: InputDecoration(
-                            hintText: locale == 'ar' ? 'أدخل اسم العنصر...' : 'Enter item name...',
+                            hintText: locale == 'ar'
+                                ? 'أدخل اسم العنصر...'
+                                : 'Enter item name...',
                             hintStyle: TextStyle(
                               color: Colors.white.withOpacity(0.6),
                               fontSize: 14,
@@ -864,7 +896,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    locale == 'ar' 
+                    locale == 'ar'
                         ? 'العناصر المحددة (${_selectedItems.length})'
                         : 'Selected Items (${_selectedItems.length})',
                     style: TextStyle(
@@ -936,7 +968,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
 
   Widget _buildPredefinedItems(String locale) {
     final items = _predefinedItems[_selectedType]![locale]!;
-    
+
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 800),
@@ -1341,7 +1373,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                               ? () {
                                   showErrorToast(
                                     context,
-                                    locale == 'ar' 
+                                    locale == 'ar'
                                         ? 'يرجى اختيار عنصر واحد على الأقل'
                                         : 'Please select at least one item',
                                   );
@@ -1363,7 +1395,9 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                                       ),
                                       SizedBox(width: 12),
                                       Text(
-                                        locale == 'ar' ? 'جاري تحديث الطلب...' : 'Updating Order...',
+                                        locale == 'ar'
+                                            ? 'جاري تحديث الطلب...'
+                                            : 'Updating Order...',
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 16,
@@ -1373,7 +1407,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                                     ],
                                   )
                                 : Text(
-                                    locale == 'ar' 
+                                    locale == 'ar'
                                         ? 'تحديث الطلب (${_selectedItems.length} عناصر)'
                                         : 'Update Order (${_selectedItems.length} items)',
                                     style: TextStyle(
@@ -1438,7 +1472,9 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                                       ),
                                       SizedBox(width: 12),
                                       Text(
-                                        locale == 'ar' ? 'جاري حذف الطلب...' : 'Deleting Order...',
+                                        locale == 'ar'
+                                            ? 'جاري حذف الطلب...'
+                                            : 'Deleting Order...',
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 16,
@@ -1448,7 +1484,9 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                                     ],
                                   )
                                 : Text(
-                                    locale == 'ar' ? 'حذف الطلب' : 'Delete Order',
+                                    locale == 'ar'
+                                        ? 'حذف الطلب'
+                                        : 'Delete Order',
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 16,
@@ -1473,20 +1511,20 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
   void _updateOrder(String locale) async {
     if (_selectedItems.isEmpty) {
       showErrorToast(
-        context, 
-        locale == 'ar' 
+        context,
+        locale == 'ar'
             ? 'يرجى اختيار عنصر واحد على الأقل'
-            : 'Please select at least one item'
+            : 'Please select at least one item',
       );
       return;
     }
 
     if (_selectedOfficeBoy == null) {
       showErrorToast(
-        context, 
-        locale == 'ar' 
+        context,
+        locale == 'ar'
             ? 'يرجى اختيار عامل التوصيل'
-            : 'Please select an office boy'
+            : 'Please select an office boy',
       );
       return;
     }
@@ -1511,7 +1549,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
       final updatedOrder = widget.order.copyWith(
         items: items,
         description: _descriptionController.text.trim(),
-        type: _selectedType,
+        // Removed: type: _selectedType, - keeping original order type
         officeBoyId: _selectedOfficeBoy!.id,
         officeBoyName: _selectedOfficeBoy!.name,
         price: _priceController.text.isNotEmpty
@@ -1538,9 +1576,9 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
         );
         showSuccessToast(
           context,
-          locale == 'ar' 
+          locale == 'ar'
               ? 'تم تحديث الطلب وإرساله للمعالجة!'
-              : 'Order updated and sent for processing!'
+              : 'Order updated and sent for processing!',
         );
       } else {
         await NotificationService().notifyOfficeBoyOrderEdited(
@@ -1552,19 +1590,19 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
         );
         showSuccessToast(
           context,
-          locale == 'ar' 
+          locale == 'ar'
               ? 'تم تحديث الطلب بنجاح!'
-              : 'Order updated successfully!'
+              : 'Order updated successfully!',
         );
       }
 
       Navigator.pop(context);
     } catch (e) {
       showErrorToast(
-        context, 
-        locale == 'ar' 
+        context,
+        locale == 'ar'
             ? 'فشل في تحديث الطلب: $e'
-            : 'Failed to update order: $e'
+            : 'Failed to update order: $e',
       );
     } finally {
       setState(() {
@@ -1645,7 +1683,7 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
                   ),
                   SizedBox(height: 12),
                   Text(
-                    locale == 'ar' 
+                    locale == 'ar'
                         ? 'هل أنت متأكد أنك تريد حذف هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء.'
                         : 'Are you sure you want to delete this order? This action cannot be undone.',
                     style: TextStyle(
@@ -1759,17 +1797,13 @@ class _EditOrderBottomSheetState extends State<EditOrderBottomSheet>
       widget.onOrderDeleted(widget.order.id);
       showSuccessToast(
         context,
-        locale == 'ar' 
-            ? 'تم حذف الطلب بنجاح'
-            : 'Order deleted successfully!'
+        locale == 'ar' ? 'تم حذف الطلب بنجاح' : 'Order deleted successfully!',
       );
       Navigator.pop(context);
     } catch (e) {
       showErrorToast(
-        context, 
-        locale == 'ar' 
-            ? 'فشل في حذف الطلب: $e'
-            : 'Failed to delete order: $e'
+        context,
+        locale == 'ar' ? 'فشل في حذف الطلب: $e' : 'Failed to delete order: $e',
       );
     } finally {
       setState(() {

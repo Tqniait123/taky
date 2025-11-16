@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
@@ -18,11 +19,14 @@ import 'package:taqy/core/static/app_assets.dart';
 import 'package:taqy/core/theme/colors.dart';
 import 'package:taqy/core/utils/dialogs/error_toast.dart';
 import 'package:taqy/core/utils/widgets/app_images.dart';
+import 'package:taqy/features/admin/data/models/organization.dart';
+import 'package:taqy/features/admin/presentation/widgets/admin_settings_bottom_sheet.dart';
 import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
 import 'package:taqy/features/employee/data/models/order_model.dart';
 import 'package:taqy/features/employee/data/models/organization_model.dart';
 import 'package:taqy/features/employee/data/models/user_model.dart';
 import 'package:taqy/features/employee/presentation/widgets/edit_order_bottom_sheet.dart';
+import 'package:taqy/features/employee/presentation/widgets/employee_order_details.dart';
 import 'package:taqy/features/employee/presentation/widgets/new_order_bottom_sheet.dart';
 import 'package:taqy/features/employee/presentation/widgets/profile_bottom_sheet.dart';
 import 'package:taqy/features/employee/presentation/widgets/response_bottom_sheet.dart';
@@ -50,6 +54,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
 
   EmployeeUserModel? currentUser;
   EmployeeOrganization? organization;
+  AdminOrganization? adminOrganization;
   List<EmployeeOrder> todayOrders = [];
   List<EmployeeOrder> historyOrders = [];
   List<EmployeeUserModel> officeBoys = [];
@@ -172,6 +177,102 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
     });
   }
 
+  void showSettingsBottomSheet(BuildContext context) {
+    log('Showing settings bottom sheet$adminOrganization');
+    if (adminOrganization == null) return;
+
+    // Create a custom page route for smooth animation
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return AdminSettingsBottomSheet(
+            organization: adminOrganization!,
+            onSettingsUpdated: (updatedOrg) async {
+              try {
+                await _firebaseService.updateDocument(
+                  'organizations',
+                  adminOrganization!.id,
+                  updatedOrg.toFirestore(),
+                );
+
+                setState(() {
+                  adminOrganization = updatedOrg;
+                });
+
+                ColorManager().updateColors(
+                  adminOrganization!.primaryColorValue,
+                  adminOrganization!.secondaryColorValue,
+                );
+
+                showSuccessToast(
+                  context,
+                  'admin.messages.settingsUpdated'.tr(),
+                );
+              } catch (e) {
+                showErrorToast(
+                  context,
+                  'admin.messages.settingsFailed'.tr(args: [e.toString()]),
+                );
+              }
+            },
+            // onLogout: () => _handleLogout(context),
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 600),
+        reverseTransitionDuration: const Duration(milliseconds: 400),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          // Slide up animation
+          const begin = Offset(0.0, 1.0);
+          const end = Offset.zero;
+          const curve = Curves.easeOutCubic;
+
+          var tween = Tween(
+            begin: begin,
+            end: end,
+          ).chain(CurveTween(curve: curve));
+
+          // Scale animation for backdrop
+          var scaleAnimation = Tween<double>(
+            begin: 0.9,
+            end: 1.0,
+          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut));
+
+          // Fade animation for backdrop
+          var fadeAnimation = Tween<double>(
+            begin: 0.0,
+            end: 1.0,
+          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut));
+
+          return Stack(
+            children: [
+              // Animated backdrop
+              FadeTransition(
+                opacity: fadeAnimation,
+                child: Container(color: Colors.black.withOpacity(0.5)),
+              ),
+
+              // Animated bottom sheet
+              SlideTransition(
+                position: animation.drive(tween),
+                child: FadeTransition(
+                  opacity: fadeAnimation,
+                  child: ScaleTransition(
+                    scale: scaleAnimation,
+                    alignment: Alignment.bottomCenter,
+                    child: child,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+        opaque: false,
+        barrierDismissible: true,
+        barrierColor: Colors.transparent,
+      ),
+    );
+  }
+
   void _setupNotificationListener() {
     _notificationSubscription = FirebaseFirestore.instance
         .collection('notifications')
@@ -191,6 +292,31 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
             log('Error listening to notifications: $error');
           },
         );
+  }
+
+  void _showOrderDetailsBottomSheet(EmployeeOrder order) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => EmployeeOrderDetailsBottomSheet(
+        order: order,
+        organization: organization!,
+        currentUser: currentUser!,
+        onEditOrder: (order) {
+          // Handle edit order
+          _showEditOrderBottomSheet(order);
+        },
+        onCancelOrder: (order) {
+          // Handle cancel order
+          _cancelOrder(order);
+        },
+        onReorder: (order) {
+          // Handle reorder
+          _showImprovedReorderDialog(order);
+        },
+      ),
+    );
   }
 
   void _checkUnreadNotifications() async {
@@ -266,6 +392,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
       if (orgDoc.exists) {
         setState(() {
           organization = EmployeeOrganization.fromFirestore(orgDoc);
+          adminOrganization = AdminOrganization.fromFirestore(orgDoc);
         });
 
         ColorManager().updateColors(
@@ -331,14 +458,26 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
 
               setState(() {
                 // Today's orders (all statuses)
-                todayOrders = allOrders.where((order) {
-                  final orderDate = DateTime(
-                    order.createdAt.year,
-                    order.createdAt.month,
-                    order.createdAt.day,
-                  );
-                  return orderDate.isAtSameMomentAs(today);
-                }).toList();
+                todayOrders =
+                    allOrders.where((order) {
+                      final orderDate = DateTime(
+                        order.createdAt.year,
+                        order.createdAt.month,
+                        order.createdAt.day,
+                      );
+                      return orderDate.isAtSameMomentAs(today);
+                    }).toList()..sort((a, b) {
+                      // Priority sort: needsResponse orders first
+                      if (a.status == OrderStatus.needsResponse &&
+                          b.status != OrderStatus.needsResponse) {
+                        return -1;
+                      } else if (a.status != OrderStatus.needsResponse &&
+                          b.status == OrderStatus.needsResponse) {
+                        return 1;
+                      }
+                      // Then sort by creation date (newest first)
+                      return b.createdAt.compareTo(a.createdAt);
+                    });
 
                 // History orders: past orders + today's cancelled/completed orders
                 historyOrders = allOrders.where((order) {
@@ -825,10 +964,42 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                   ),
                 ),
               ),
-            if (currentUser?.role == UserRole.admin)
+            if (currentUser?.role == UserRole.admin) ...[
               Positioned(
                 top: 20,
                 right: 20,
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: Duration(milliseconds: 300),
+                  curve: Curves.elasticOut,
+                  builder: (context, value, child) => Transform.scale(
+                    scale: value,
+                    child: AnimatedContainer(
+                      duration: Duration(milliseconds: 300),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: IconButton(
+                        icon: AnimatedBuilder(
+                          animation: _rotationController,
+                          builder: (context, child) => Transform.rotate(
+                            angle: _rotationAnimation.value * 0.1,
+                            child: SvgPicture.asset(
+                              Assets.imagesSvgsSetting,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        onPressed: () => showSettingsBottomSheet(context),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 20,
+                right: 65,
                 child: TweenAnimationBuilder<double>(
                   tween: Tween(begin: 0.0, end: 1.0),
                   duration: Duration(milliseconds: 800),
@@ -898,6 +1069,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                   ),
                 ),
               ),
+            ],
             // Animated top icons
             if (currentUser?.role == UserRole.employee)
               Positioned(
@@ -1007,9 +1179,24 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                           child: Text(
                             currentUser?.role == UserRole.admin
                                 ? locale == 'ar'
-                                      ? 'مرحباً، يا ريس!'
+                                      ? 'اهلا وسهلا، يا ريس!'
                                       : 'Welcome, Boss!'
-                                : '${locale == 'ar' ? 'مرحباً' : 'Welcome'}, ${currentUser?.name ?? ''}',
+                                : '${locale == 'ar' ? 'اهلا وسهلا' : 'Welcome'}, ${currentUser?.name ?? ''}',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.8),
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                      TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 50.0, end: 0.0),
+                        duration: Duration(milliseconds: 1000),
+                        curve: Curves.easeOutBack,
+                        builder: (context, value, child) => Transform.translate(
+                          offset: Offset(0, value),
+                          child: Text(
+                            currentUser?.jobTitle ?? '',
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.8),
                               fontSize: 16,
@@ -1152,6 +1339,408 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
     );
   }
 
+  Future<void> _cancelOrder(EmployeeOrder order) async {
+    final locale = Localizations.localeOf(context).languageCode;
+    final isArabic = locale == 'ar';
+
+    // Animation controllers for the dialog
+    final animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+
+    final fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: animationController, curve: Curves.easeOutCubic),
+    );
+
+    final scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: animationController, curve: Curves.elasticOut),
+    );
+
+    final slideAnimation =
+        Tween<Offset>(begin: const Offset(0, -0.1), end: Offset.zero).animate(
+          CurvedAnimation(parent: animationController, curve: Curves.easeOut),
+        );
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.6),
+      builder: (context) {
+        animationController.forward();
+        return AnimatedBuilder(
+          animation: animationController,
+          builder: (context, child) => FadeTransition(
+            opacity: fadeAnimation,
+            child: ScaleTransition(
+              scale: scaleAnimation,
+              child: SlideTransition(
+                position: slideAnimation,
+                child: Dialog(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  insetPadding: const EdgeInsets.all(20),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.white.withOpacity(0.25),
+                          Colors.white.withOpacity(0.1),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.2),
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 20,
+                          offset: Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Animated Warning Icon
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 800),
+                                curve: Curves.elasticOut,
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.orange.withOpacity(0.3),
+                                    width: 2,
+                                  ),
+                                ),
+                                child: ShaderMask(
+                                  shaderCallback: (bounds) => LinearGradient(
+                                    colors: [Colors.orange, Colors.deepOrange],
+                                  ).createShader(bounds),
+                                  child: const Icon(
+                                    Icons.warning_amber_rounded,
+                                    size: 32,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 20),
+
+                              // Title with shimmer effect
+                              Text(
+                                isArabic ? 'إلغاء الطلب' : 'Cancel Order',
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+
+                              const SizedBox(height: 16),
+
+                              // Content text
+                              Text(
+                                isArabic
+                                    ? 'هل أنت متأكد أنك تريد إلغاء هذا الطلب؟'
+                                    : 'Are you sure you want to cancel this order?',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                  height: 1.4,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+
+                              const SizedBox(height: 24),
+
+                              // Action buttons
+                              Row(
+                                children: [
+                                  // No Button
+                                  Expanded(
+                                    child: TweenAnimationBuilder<double>(
+                                      tween: Tween(begin: 0.0, end: 1.0),
+                                      duration: const Duration(
+                                        milliseconds: 400,
+                                      ),
+                                      curve: Curves.easeOutBack,
+                                      builder: (context, value, child) =>
+                                          Transform.scale(
+                                            scale: value,
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                gradient: LinearGradient(
+                                                  colors: [
+                                                    Colors.grey.withOpacity(
+                                                      0.1,
+                                                    ),
+                                                    Colors.grey.withOpacity(
+                                                      0.05,
+                                                    ),
+                                                  ],
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                                border: Border.all(
+                                                  color: Colors.grey
+                                                      .withOpacity(0.3),
+                                                  width: 1,
+                                                ),
+                                              ),
+                                              child: Material(
+                                                color: Colors.transparent,
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                                child: InkWell(
+                                                  onTap: () {
+                                                    Navigator.pop(context);
+                                                    animationController
+                                                        .dispose();
+                                                  },
+                                                  borderRadius:
+                                                      BorderRadius.circular(16),
+                                                  child: Container(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          vertical: 14,
+                                                          horizontal: 16,
+                                                        ),
+                                                    child: Center(
+                                                      child: Text(
+                                                        isArabic ? 'لا' : 'No',
+                                                        style: TextStyle(
+                                                          fontSize: 16,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                    ),
+                                  ),
+
+                                  const SizedBox(width: 12),
+
+                                  // Yes, Cancel Button
+                                  Expanded(
+                                    child: TweenAnimationBuilder<double>(
+                                      tween: Tween(begin: 0.0, end: 1.0),
+                                      duration: const Duration(
+                                        milliseconds: 600,
+                                      ),
+                                      curve: Curves.easeOutBack,
+                                      builder: (context, value, child) =>
+                                          Transform.scale(
+                                            scale: value,
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                gradient: LinearGradient(
+                                                  colors: [
+                                                    Colors.red,
+                                                    Colors.redAccent,
+                                                  ],
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.red
+                                                        .withOpacity(0.4),
+                                                    blurRadius: 10,
+                                                    offset: const Offset(0, 4),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: Material(
+                                                color: Colors.transparent,
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                                child: InkWell(
+                                                  onTap: () async {
+                                                    Navigator.pop(context);
+                                                    animationController
+                                                        .dispose();
+                                                    await _performOrderCancellation(
+                                                      order,
+                                                      locale,
+                                                    );
+                                                  },
+                                                  borderRadius:
+                                                      BorderRadius.circular(16),
+                                                  child: Container(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          vertical: 14,
+                                                          horizontal: 16,
+                                                        ),
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        SvgPicture.asset(
+                                                          Assets
+                                                              .imagesSvgsCancell,
+                                                          color: Colors.white,
+                                                          height: 20,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 8,
+                                                        ),
+                                                        Text(
+                                                          isArabic
+                                                              ? 'نعم، إلغاء'
+                                                              : 'Yes, Cancel',
+                                                          style:
+                                                              const TextStyle(
+                                                                fontSize: 16,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                                color: Colors
+                                                                    .white,
+                                                              ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _performOrderCancellation(
+    EmployeeOrder order,
+    String locale,
+  ) async {
+    final isArabic = locale == 'ar';
+
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.95),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(
+                  backgroundColor: AppColors.primary,
+                  strokeWidth: 3,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  isArabic ? 'جاري الإلغاء...' : 'Cancelling...',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      // Update order status to cancelled
+      await _firebaseService.updateDocument('orders', order.id, {
+        'status': OrderStatus.cancelled.toString().split('.').last,
+        'updatedAt': Timestamp.fromDate(DateTime.now()),
+        'cancelledAt': Timestamp.fromDate(DateTime.now()),
+        'cancelledBy': currentUser!.id,
+        'cancellationReason': 'Cancelled by employee',
+      });
+
+      // ✅ NOTIFY OFFICE BOY
+      if (order.officeBoyId.isNotEmpty) {
+        await NotificationService().notifyOfficeBoyOrderCancelled(
+          officeBoyId: order.officeBoyId,
+          orderId: order.id,
+          employeeName: currentUser!.name,
+          isArabic: isArabic,
+        );
+      }
+
+      // ✅ NOTIFY ADMIN (if employee is not admin)
+      if (currentUser!.role != UserRole.admin) {
+        await NotificationService().notifyAdminOrderCancelled(
+          organizationId: order.organizationId,
+          employeeName: currentUser!.name,
+          officeBoyName: order.officeBoyName,
+          isArabic: isArabic,
+        );
+      }
+
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+
+      // Show success toast
+      showSuccessToast(
+        context,
+        isArabic ? 'تم إلغاء الطلب بنجاح' : 'Order cancelled successfully',
+      );
+    } catch (e) {
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+
+      // Show error toast
+      showErrorToast(
+        context,
+        isArabic ? 'فشل في إلغاء الطلب: $e' : 'Failed to cancel order: $e',
+      );
+    }
+  }
+
   Widget _buildAnimatedOrderCard(EmployeeOrder order, int index) {
     final locale = Localizations.localeOf(context).languageCode;
     final needsResponse = order.status == OrderStatus.needsResponse;
@@ -1220,6 +1809,24 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                             child: SvgPicture.asset(
                               Assets.imagesSvgsEdit,
                               color: organization!.primaryColorValue,
+                              height: 16,
+                              width: 16,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () => _cancelOrder(order),
+                          child: Container(
+                            padding: EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: organization!.secondaryColorValue
+                                  .withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: SvgPicture.asset(
+                              Assets.imagesSvgsCancell,
+                              color: Colors.red,
                               height: 16,
                               width: 16,
                             ),
@@ -1321,7 +1928,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                 children: [
                                   if (order.price != null)
                                     Text(
-                                      '${locale == 'ar' ? 'الميزانية' : 'Budget'}: ${locale == 'ar' ? 'ج.م' : 'EGP'} ${order.price!.toStringAsFixed(0)}',
+                                      '${locale == 'ar' ? 'ال اتدفع' : 'Paid'}: ${locale == 'ar' ? 'ج.م' : 'EGP'} ${order.price!.toStringAsFixed(0)}',
                                       style: TextStyle(
                                         color: Colors.grey[600],
                                         fontSize: 11,
@@ -1329,7 +1936,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                     ),
                                   if (order.finalPrice != null)
                                     Text(
-                                      '${locale == 'ar' ? 'المصروف' : 'Spent'}: ${locale == 'ar' ? 'ج.م' : 'EGP'} ${order.finalPrice!.toStringAsFixed(0)}',
+                                      '${locale == 'ar' ? 'ال اتصرف' : 'Spent'}: ${locale == 'ar' ? 'ج.م' : 'EGP'} ${order.finalPrice!.toStringAsFixed(0)}',
                                       style: TextStyle(
                                         color:
                                             organization!.secondaryColorValue,
@@ -1337,6 +1944,26 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
+                                  if (order.price != null &&
+                                      order.finalPrice != null)
+                                    if (order.finalPrice! > order.price!)
+                                      Text(
+                                        '${locale == 'ar' ? 'مطلوب' : 'Required'}: ${locale == 'ar' ? 'ج.م' : 'EGP'} ${(order.finalPrice! - order.price!).toStringAsFixed(0)}',
+                                        style: TextStyle(
+                                          color: Colors.red,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      )
+                                    else
+                                      Text(
+                                        '${locale == 'ar' ? 'ليك' : 'For you'}: ${locale == 'ar' ? 'ج.م' : 'EGP'} ${(order.price! - order.finalPrice!).toStringAsFixed(0)}',
+                                        style: TextStyle(
+                                          color: Colors.green,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                 ],
                               ),
                             ],
@@ -1791,7 +2418,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
 
   Widget _buildSelectedContent() {
     return AnimatedSwitcher(
-      duration: Duration(milliseconds: 600),
+      duration: Duration(milliseconds: 100),
       transitionBuilder: (Widget child, Animation<double> animation) {
         return FadeTransition(
           opacity: animation,
@@ -1908,7 +2535,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 800),
+      duration: Duration(milliseconds: 300),
       curve: Curves.easeOutCubic,
       builder: (context, value, child) => FadeTransition(
         opacity: AlwaysStoppedAnimation(value.clamp(0.0, 1.0)),
@@ -1972,7 +2599,9 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                         children: [
                           Expanded(
                             child: _buildHistoryStatCard(
-                              locale == 'ar' ? 'إجمالي المصروف' : 'Total Spent',
+                              locale == 'ar'
+                                  ? 'إجمالي ال اتصرف'
+                                  : 'Total Spent',
                               '${locale == 'ar' ? 'ج.م' : 'EGP'} ${totalSpent.toStringAsFixed(0)}',
                               Colors.orange,
                               Assets.imagesSvgsMoney,
@@ -2303,7 +2932,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                             )
                           : displayPrice != null
                           ? Text(
-                              '${locale == 'ar' ? 'المصروف' : 'Spent'}: ${locale == 'ar' ? 'ج.م' : 'EGP'} ${displayPrice.toInt()}',
+                              '${locale == 'ar' ? 'ال اتصرف' : 'Spent'}: ${locale == 'ar' ? 'ج.م' : 'EGP'} ${displayPrice.toInt()}',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey[600],
@@ -2797,7 +3426,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                                                 ? 'جميع العناصر غير متاحة حالياً، لكن يمكنك إعادة المحاولة'
                                                                 : 'All items are currently unavailable, but you can retry them')
                                                           : (locale == 'ar'
-                                                                ? 'اختر العناصر المتاحة لتضمينها في الطلب الجديد'
+                                                                ? 'اختر العناصر المتاحة لوضعها في الطلب الجديد'
                                                                 : 'Select available items to include in new order'),
                                                       style: TextStyle(
                                                         fontSize: 14,
@@ -4158,7 +4787,11 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                   .asMap()
                   .entries
                   .map(
-                    (entry) => _buildAnimatedOrderCard(entry.value, entry.key),
+                    (entry) => GestureDetector(
+                      onTap: () =>
+                          _showOrderDetailsBottomSheet(todayOrders[entry.key]),
+                      child: _buildAnimatedOrderCard(entry.value, entry.key),
+                    ),
                   )
                   .toList(),
             ),

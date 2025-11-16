@@ -360,7 +360,8 @@ class _OrderResponseBottomSheetState extends State<OrderResponseBottomSheet>
                   locale: locale,
                 ),
                 SizedBox(height: 24),
-                _buildResponseMessage(locale),
+                if (_selectedAction != OrderStatus.pending)
+                  _buildResponseMessage(locale),
                 SizedBox(height: 32),
               ],
             ),

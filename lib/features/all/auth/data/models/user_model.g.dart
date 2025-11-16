@@ -21,6 +21,7 @@ UserModel _$UserModelFromJson(Map<String, dynamic> json) => UserModel(
   fcmToken: json['fcmToken'] as String?,
   createdAt: DateTime.parse(json['createdAt'] as String),
   updatedAt: DateTime.parse(json['updatedAt'] as String),
+  jobTitle: json['jobTitle'] as String?,
 );
 
 Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
@@ -38,6 +39,7 @@ Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
   'fcmToken': instance.fcmToken,
   'createdAt': instance.createdAt.toIso8601String(),
   'updatedAt': instance.updatedAt.toIso8601String(),
+  'jobTitle': instance.jobTitle,
 };
 
 const _$UserRoleEnumMap = {

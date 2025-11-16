@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'dart:ui';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -228,8 +227,8 @@ class _LoginScreenState extends State<LoginScreen>
                                   // const SizedBox(height: 16),
                                   Align(
                                     alignment: locale == 'ar'
-                                        ? Alignment.topRight
-                                        : Alignment.topLeft,
+                                        ? Alignment.topLeft
+                                        : Alignment.topRight,
                                     child: _buildGlassLanguageDropdown(),
                                   ),
 
@@ -305,8 +304,8 @@ class _LoginScreenState extends State<LoginScreen>
                 builder: (context, child) => Transform.rotate(
                   angle: _rotationAnimation.value * 0.1,
                   child: Container(
-                    width: 120,
-                    height: 120,
+                    width: 100,
+                    height: 100,
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -340,7 +339,7 @@ class _LoginScreenState extends State<LoginScreen>
               ),
             ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
 
           // Animated Text
           TweenAnimationBuilder<double>(
@@ -435,9 +434,9 @@ class _LoginScreenState extends State<LoginScreen>
                       return null;
                     },
                   ),
-            
+
                   const SizedBox(height: 20),
-            
+
                   // Password Field
                   _buildGlassTextField(
                     controller: _passwordController,
@@ -461,9 +460,9 @@ class _LoginScreenState extends State<LoginScreen>
                       return null;
                     },
                   ),
-            
+
                   const SizedBox(height: 20),
-            
+
                   // Forgot Password
                   Container(
                     width: double.infinity,
@@ -490,17 +489,15 @@ class _LoginScreenState extends State<LoginScreen>
                       ),
                     ),
                   ),
-            
+
                   const SizedBox(height: 28),
-            
+
                   // Login Button
                   SizedBox(
                     width: double.infinity,
                     child: AnimatedButton(
                       text: LocaleKeys.signIn.tr(),
-                      onPressed: isLoading
-                          ? null
-                          : () => _handleLogin(context),
+                      onPressed: isLoading ? null : () => _handleLogin(context),
                       isLoading: isLoading,
                       backgroundColor: AppColors.primary,
                       // textColor: Colors.white,

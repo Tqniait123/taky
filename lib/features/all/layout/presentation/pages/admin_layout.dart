@@ -111,7 +111,7 @@ class _AdminLayoutState extends State<AdminLayout>
     // Fade animation
     _fadeController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 100),
     );
     _fadeAnimation = Tween<double>(
       begin: 0.0,
@@ -121,7 +121,7 @@ class _AdminLayoutState extends State<AdminLayout>
     // Scale animation
     _scaleController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 200),
     );
     _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
@@ -1300,13 +1300,13 @@ class _AdminLayoutState extends State<AdminLayout>
 
   Widget _buildSelectedContent(String locale) {
     return AnimatedSwitcher(
-      duration: Duration(milliseconds: 600),
+      duration: Duration(milliseconds: 100),
       transitionBuilder: (Widget child, Animation<double> animation) {
         return FadeTransition(
           opacity: animation,
           child: SlideTransition(
             position: Tween<Offset>(
-              begin: const Offset(0.3, 0),
+              begin: const Offset(0.2, 0),
               end: Offset.zero,
             ).animate(animation),
             child: child,
@@ -1339,7 +1339,7 @@ class _AdminLayoutState extends State<AdminLayout>
     return Column(
       children: [
         AnimatedContainer(
-          duration: Duration(milliseconds: 600),
+          duration: Duration(milliseconds: 100),
           curve: Curves.easeOutCubic,
           // padding: EdgeInsets.all(16),
           color: Colors.white,
@@ -1348,7 +1348,7 @@ class _AdminLayoutState extends State<AdminLayout>
             children: [
               TweenAnimationBuilder<double>(
                 tween: Tween(begin: -30.0, end: 0.0),
-                duration: Duration(milliseconds: 800),
+                duration: Duration(milliseconds: 100),
                 curve: Curves.easeOutBack,
                 builder: (context, value, child) => Transform.translate(
                   offset: Offset(0, value),
@@ -1372,7 +1372,7 @@ class _AdminLayoutState extends State<AdminLayout>
               SizedBox(height: 12),
               TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0.0, end: 1.0),
-                duration: Duration(milliseconds: 1000),
+                duration: Duration(milliseconds: 100),
                 curve: Curves.easeOutCubic,
                 builder: (context, value, child) => Opacity(
                   opacity: value,
@@ -1426,7 +1426,7 @@ class _AdminLayoutState extends State<AdminLayout>
   Widget _buildAnimatedFilterChip(String label, bool isSelected, int index) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 400 + (index * 100)),
+      duration: Duration(milliseconds: 100),
       curve: Curves.elasticOut,
       builder: (context, value, child) => Transform.scale(
         scale: value,
@@ -1457,7 +1457,7 @@ class _AdminLayoutState extends State<AdminLayout>
               });
             },
             child: AnimatedContainer(
-              duration: Duration(milliseconds: 400),
+              duration: Duration(milliseconds: 100),
               curve: Curves.easeOutCubic,
               padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               decoration: BoxDecoration(
@@ -1497,18 +1497,17 @@ class _AdminLayoutState extends State<AdminLayout>
                     children: [
                       isSelected
                           ? SvgPicture.asset(
-                              label == 'All'
+                              label == 'admin.filters.all'.tr()
                                   ? Assets.imagesSvgsOverview
-                                  : label == 'Pending'
+                                  : label == 'admin.filters.pending'.tr()
                                   ? Assets.imagesSvgsCalendar
-                                  : label == 'In Progress'
+                                  : label == 'admin.filters.inProgress'.tr()
                                   ? Assets.imagesSvgsClock
-                                  : label == 'Completed'
+                                  : label == 'admin.filters.completed'.tr()
                                   ? Assets.imagesSvgsComplete
-                                  : label == 'Cancelled'
+                                  : label == 'admin.filters.cancelled'.tr()
                                   ? Assets.imagesSvgsCancell
                                   : Assets.imagesSvgsOverview,
-
                               width: 16,
                               height: 16,
                               color: organization!.primaryColorValue,
@@ -1585,7 +1584,7 @@ class _AdminLayoutState extends State<AdminLayout>
       itemBuilder: (context, index) {
         return TweenAnimationBuilder<double>(
           tween: Tween(begin: 0.0, end: 1.0),
-          duration: Duration(milliseconds: 400 + (index * 50)),
+          duration: Duration(milliseconds: 100),
           curve: Curves.easeOutCubic,
           builder: (context, value, child) => Transform.translate(
             offset: Offset(50 * (1 - value), 0),
@@ -1968,7 +1967,7 @@ class _AdminLayoutState extends State<AdminLayout>
         order.finalPrice != order.price;
 
     return AnimatedContainer(
-      duration: Duration(milliseconds: 400),
+      duration: Duration(milliseconds: 100),
       curve: Curves.easeOutCubic,
       margin: EdgeInsets.only(bottom: 16),
       padding: EdgeInsets.all(16),
@@ -1999,7 +1998,7 @@ class _AdminLayoutState extends State<AdminLayout>
           // Header with animation
           TweenAnimationBuilder<double>(
             tween: Tween(begin: -50.0, end: 0.0),
-            duration: Duration(milliseconds: 600),
+            duration: Duration(milliseconds: 100),
             curve: Curves.easeOutBack,
             builder: (context, value, child) => Transform.translate(
               offset: Offset(value, 0),
@@ -2029,7 +2028,7 @@ class _AdminLayoutState extends State<AdminLayout>
             children: [
               TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0.0, end: 1.0),
-                duration: Duration(milliseconds: 800),
+                duration: Duration(milliseconds: 100),
                 curve: Curves.easeOutCubic,
                 builder: (context, value, child) => Opacity(
                   opacity: value,
@@ -2076,12 +2075,12 @@ class _AdminLayoutState extends State<AdminLayout>
 
               // Items list with staggered animations
               ...order.items.asMap().entries.map((entry) {
-                final itemIndex = entry.key;
+                // final itemIndex = entry.key;
                 final item = entry.value;
 
                 return TweenAnimationBuilder<double>(
                   tween: Tween(begin: 0.0, end: 1.0),
-                  duration: Duration(milliseconds: 600 + (itemIndex * 100)),
+                  duration: Duration(milliseconds: 100),
                   curve: Curves.easeOutBack,
                   builder: (context, value, child) => Transform.translate(
                     offset: Offset(30 * (1 - value), 0),
@@ -2133,7 +2132,7 @@ class _AdminLayoutState extends State<AdminLayout>
               if (order.description.isNotEmpty)
                 TweenAnimationBuilder<double>(
                   tween: Tween(begin: 0.0, end: 1.0),
-                  duration: Duration(milliseconds: 1000),
+                  duration: Duration(milliseconds: 100),
                   curve: Curves.easeOutCubic,
                   builder: (context, value, child) => Opacity(
                     opacity: value,
@@ -2158,7 +2157,7 @@ class _AdminLayoutState extends State<AdminLayout>
           // User info with slide animation
           TweenAnimationBuilder<double>(
             tween: Tween(begin: 50.0, end: 0.0),
-            duration: Duration(milliseconds: 800),
+            duration: Duration(milliseconds: 100),
             curve: Curves.easeOutBack,
             builder: (context, value, child) => Transform.translate(
               offset: Offset(0, value),
@@ -2211,7 +2210,7 @@ class _AdminLayoutState extends State<AdminLayout>
           // Bottom info with fade animation
           TweenAnimationBuilder<double>(
             tween: Tween(begin: 0.0, end: 1.0),
-            duration: Duration(milliseconds: 1200),
+            duration: Duration(milliseconds: 100),
             curve: Curves.easeOut,
             builder: (context, value, child) => Opacity(
               opacity: value,
@@ -2261,7 +2260,7 @@ class _AdminLayoutState extends State<AdminLayout>
               order.employeeResponse!.isNotEmpty)
             TweenAnimationBuilder<double>(
               tween: Tween(begin: 0.0, end: 1.0),
-              duration: Duration(milliseconds: 1400),
+              duration: Duration(milliseconds: 100),
               curve: Curves.elasticOut,
               builder: (context, value, child) => Transform.scale(
                 scale: value,

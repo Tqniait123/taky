@@ -33,6 +33,7 @@ class User extends Equatable {
   final String? fcmToken;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String? jobTitle;
 
   const User({
     required this.id,
@@ -49,6 +50,7 @@ class User extends Equatable {
     this.fcmToken,
     required this.createdAt,
     required this.updatedAt,
+    this.jobTitle,
   });
 
   @override
@@ -67,5 +69,6 @@ class User extends Equatable {
     fcmToken,
     createdAt,
     updatedAt,
+    jobTitle,
   ];
 }

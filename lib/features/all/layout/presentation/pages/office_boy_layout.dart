@@ -1,5 +1,3 @@
-
-
 import 'dart:async';
 import 'dart:developer';
 import 'dart:math' as math;
@@ -1280,8 +1278,8 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                       children: [
                         Text(
                           locale == 'ar'
-                              ? 'الميزانية: ج.م ${order.price!.toStringAsFixed(0)}'
-                              : 'Budget: EGP ${order.price!.toStringAsFixed(0)}',
+                              ? 'ال اتدفع: ج.م ${order.price!.toStringAsFixed(0)}'
+                              : 'Paid: EGP ${order.price!.toStringAsFixed(0)}',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.white.withOpacity(0.7),
@@ -2099,27 +2097,28 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
     final navItems = (otherOfficeBoys.isNotEmpty)
         ? [
             {
-              'title': locale == 'ar' ? 'المتاحة' : 'Available',
-              'icon': Assets.imagesSvgsPending,
-            },
-            {
               'title': locale == 'ar' ? 'طلباتي' : 'My Orders',
               'icon': Assets.imagesSvgsOrder,
             },
             {
-              'title': locale == 'ar' ? 'الإحصائيات' : 'Statistics',
-              'icon': Icons.analytics,
+              'title': locale == 'ar' ? 'المتاحة' : 'Available',
+              'icon': Assets.imagesSvgsPending,
             },
+
+            // {
+            //   'title': locale == 'ar' ? 'الإحصائيات' : 'Statistics',
+            //   'icon': Icons.analytics,
+            // },
           ]
         : [
             {
               'title': locale == 'ar' ? 'طلباتي' : 'My Orders',
               'icon': Assets.imagesSvgsOrder,
             },
-            {
-              'title': locale == 'ar' ? 'الإحصائيات' : 'Statistics',
-              'icon': Icons.analytics,
-            },
+            // {
+            //   'title': locale == 'ar' ? 'الإحصائيات' : 'Statistics',
+            //   'icon': Icons.analytics,
+            // },
           ];
 
     return TweenAnimationBuilder<double>(
@@ -2552,7 +2551,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
 
   Widget _buildSelectedContent() {
     return AnimatedSwitcher(
-      duration: Duration(milliseconds: 600),
+      duration: Duration(milliseconds: 100),
       transitionBuilder: (Widget child, Animation<double> animation) {
         return FadeTransition(
           opacity: animation,
@@ -2575,9 +2574,9 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
   Widget _getSelectedContent() {
     switch (_selectedIndex) {
       case 0:
-        return _buildAvailableOrdersTab();
-      case 1:
         return _buildMyOrdersTab();
+      case 1:
+        return _buildAvailableOrdersTab();
       case 2:
         return _buildStatsTab();
       default:
@@ -2696,7 +2695,9 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                         ),
                       ),
                       Text(
-                        locale == 'ar' ? 'ميزانية النهاردة' : 'Today\'s Budget',
+                        locale == 'ar'
+                            ? 'ال اتدفع النهاردة'
+                            : 'Today\'s Budget',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.white.withOpacity(0.9),
@@ -2743,7 +2744,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                         ),
                       ),
                       Text(
-                        locale == 'ar' ? 'المصروف النهاردة' : 'Today\'s Spent',
+                        locale == 'ar' ? 'ال اتصرف النهاردة' : 'Today\'s Spent',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.white.withOpacity(0.9),
@@ -2902,7 +2903,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                         ),
                       ),
                       Text(
-                        locale == 'ar' ? 'ميزانية النهاردة' : 'Today\'s Budget',
+                        locale == 'ar' ? 'ال اتدفعالنهاردة' : 'Today\'s Budget',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.white.withOpacity(0.9),
@@ -2948,7 +2949,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                         ),
                       ),
                       Text(
-                        locale == 'ar' ? 'المصروف النهاردة' : 'Today\'s Spent',
+                        locale == 'ar' ? 'ال اتصرف النهاردة' : 'Today\'s Spent',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.white.withOpacity(0.9),
@@ -3778,56 +3779,43 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
                                       if (order.price != null)
-                                        Container(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: 6,
-                                            vertical: 2,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.green.withOpacity(
-                                              0.1,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              6,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            '${locale == 'ar' ? 'الميزانية' : 'Budget'}: ${order.price!.toStringAsFixed(0)}',
-                                            style: TextStyle(
-                                              color: Colors.green[700],
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.w600,
-                                            ),
+                                        Text(
+                                          '${locale == 'ar' ? 'ال اتدفع' : 'Paid'}: ${locale == 'ar' ? 'ج.م' : 'EGP'} ${order.price!.toStringAsFixed(0)}',
+                                          style: TextStyle(
+                                            color: Colors.grey[600],
+                                            fontSize: 11,
                                           ),
                                         ),
-                                      if (order.finalPrice != null) ...[
-                                        SizedBox(height: 2),
-                                        Container(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: 6,
-                                            vertical: 2,
+                                      if (order.finalPrice != null)
+                                        Text(
+                                          '${locale == 'ar' ? 'ال اتصرف' : 'Spent'}: ${locale == 'ar' ? 'ج.م' : 'EGP'} ${order.finalPrice!.toStringAsFixed(0)}',
+                                          style: TextStyle(
+                                            color: organization!
+                                                .secondaryColorValue,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
                                           ),
-                                          decoration: BoxDecoration(
-                                            gradient: LinearGradient(
-                                              colors: [
-                                                Colors.green.withOpacity(0.2),
-                                                Colors.green.withOpacity(0.1),
-                                              ],
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              6,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            '${locale == 'ar' ? 'المصروف' : 'Spent'}: ${order.finalPrice!.toStringAsFixed(0)}',
+                                        ),
+                                      if (order.price != null &&
+                                          order.finalPrice != null)
+                                        if (order.finalPrice! > order.price!)
+                                          Text(
+                                            '${locale == 'ar' ? 'ليك' : 'For You'}: ${locale == 'ar' ? 'ج.م' : 'EGP'} ${(order.finalPrice! - order.price!).toStringAsFixed(0)}',
                                             style: TextStyle(
-                                              color: Colors.green[700],
-                                              fontSize: 11,
+                                              color: Colors.green,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          )
+                                        else
+                                          Text(
+                                            '${locale == 'ar' ? 'مطلوب' : 'Required'}: ${locale == 'ar' ? 'ج.م' : 'EGP'} ${(order.price! - order.finalPrice!).toStringAsFixed(0)}',
+                                            style: TextStyle(
+                                              color: Colors.red,
+                                              fontSize: 12,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
-                                        ),
-                                      ],
                                     ],
                                   ),
                                 ],
@@ -3934,30 +3922,30 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
           Row(
             children: [
               if (order.status == OrderStatus.pending) ...[
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => _showStatusChangeBottomSheet(
-                      order,
-                      OrderStatus.cancelled,
-                    ),
-                    icon: SvgPicture.asset(
-                      Assets.imagesSvgsCancell,
-                      color: Colors.red[700],
-                      height: 18,
-                    ),
-                    label: Text(locale == 'ar' ? 'إلغاء' : 'Cancel'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red[50],
-                      foregroundColor: Colors.red[700],
-                      elevation: 0,
-                      padding: EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(width: 8),
+                // Expanded(
+                //   child: ElevatedButton.icon(
+                //     onPressed: () => _showStatusChangeBottomSheet(
+                //       order,
+                //       OrderStatus.cancelled,
+                //     ),
+                //     icon: SvgPicture.asset(
+                //       Assets.imagesSvgsCancell,
+                //       color: Colors.red[700],
+                //       height: 18,
+                //     ),
+                //     label: Text(locale == 'ar' ? 'إلغاء' : 'Cancel'),
+                //     style: ElevatedButton.styleFrom(
+                //       backgroundColor: Colors.red[50],
+                //       foregroundColor: Colors.red[700],
+                //       elevation: 0,
+                //       padding: EdgeInsets.symmetric(vertical: 14),
+                //       shape: RoundedRectangleBorder(
+                //         borderRadius: BorderRadius.circular(12),
+                //       ),
+                //     ),
+                //   ),
+                // ),
+                // SizedBox(width: 8),
                 Expanded(
                   flex: 2,
                   child: ElevatedButton.icon(
@@ -3982,30 +3970,30 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                 ),
               ],
               if (order.status == OrderStatus.inProgress) ...[
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => _showStatusChangeBottomSheet(
-                      order,
-                      OrderStatus.cancelled,
-                    ),
-                    icon: SvgPicture.asset(
-                      Assets.imagesSvgsCancell,
-                      color: Colors.red[700],
-                      height: 18,
-                    ),
-                    label: Text(locale == 'ar' ? 'إلغاء' : 'Cancel'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red[50],
-                      foregroundColor: Colors.red[700],
-                      elevation: 0,
-                      padding: EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(width: 8),
+                // Expanded(
+                //   child: ElevatedButton.icon(
+                //     onPressed: () => _showStatusChangeBottomSheet(
+                //       order,
+                //       OrderStatus.cancelled,
+                //     ),
+                //     icon: SvgPicture.asset(
+                //       Assets.imagesSvgsCancell,
+                //       color: Colors.red[700],
+                //       height: 18,
+                //     ),
+                //     label: Text(locale == 'ar' ? 'إلغاء' : 'Cancel'),
+                //     style: ElevatedButton.styleFrom(
+                //       backgroundColor: Colors.red[50],
+                //       foregroundColor: Colors.red[700],
+                //       elevation: 0,
+                //       padding: EdgeInsets.symmetric(vertical: 14),
+                //       shape: RoundedRectangleBorder(
+                //         borderRadius: BorderRadius.circular(12),
+                //       ),
+                //     ),
+                //   ),
+                // ),
+                // SizedBox(width: 8),
                 Expanded(
                   flex: 2,
                   child: ElevatedButton.icon(

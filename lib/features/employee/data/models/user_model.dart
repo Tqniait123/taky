@@ -19,6 +19,7 @@ class EmployeeUserModel {
   final String? fcmToken;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String? jobTitle;
 
   EmployeeUserModel({
     required this.id,
@@ -35,6 +36,7 @@ class EmployeeUserModel {
     this.fcmToken,
     required this.createdAt,
     required this.updatedAt,
+    this.jobTitle,
   });
 
   factory EmployeeUserModel.fromFirestore(DocumentSnapshot doc) {
@@ -57,6 +59,7 @@ class EmployeeUserModel {
       fcmToken: data['fcmToken'],
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      jobTitle: data['jobTitle'] ?? '',
     );
   }
 
@@ -75,6 +78,7 @@ class EmployeeUserModel {
       'fcmToken': fcmToken,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
+      'jobTitle': jobTitle,
     };
   }
 }

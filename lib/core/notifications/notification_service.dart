@@ -1210,4 +1210,29 @@ class NotificationService {
     );
     debugPrint('🧪 Test notification created for user: $userId');
   }
+
+  // Notify office boy when order is cancelled
+Future<void> notifyOfficeBoyOrderCancelled({
+  required String officeBoyId,
+  required String orderId,
+  required String employeeName,
+  required bool isArabic,
+}) async {
+  try {
+    await FirebaseFirestore.instance.collection('notifications').add({
+      'userId': officeBoyId,
+      'title': isArabic ? 'تم إلغاء الطلب' : 'Order Cancelled',
+      'body': isArabic 
+          ? 'قام $employeeName بإلغاء الطلب #${orderId.substring(0, 8)}'
+          : '$employeeName cancelled order #${orderId.substring(0, 8)}',
+      'type': 'order_cancelled',
+      'orderId': orderId,
+      'isRead': false,
+      'createdAt': Timestamp.now(),
+    });
+  } catch (e) {
+    log('Error notifying office boy about cancelled order: $e');
+  }
+}
+
 }

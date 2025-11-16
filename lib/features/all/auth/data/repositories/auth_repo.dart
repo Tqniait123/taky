@@ -26,9 +26,13 @@ abstract class AuthRepository {
     String? organizationLogo,
     String? primaryColor,
     String? secondaryColor,
+    String? jobTitle,
   });
 
-  Future<Either<Failure, User>> signIn({required String email, required String password});
+  Future<Either<Failure, User>> signIn({
+    required String email,
+    required String password,
+  });
 
   Future<Either<Failure, void>> signOut();
 
@@ -72,11 +76,17 @@ class AuthRepositoryImpl implements AuthRepository {
     String? organizationLogo,
     String? primaryColor,
     String? secondaryColor,
+    String? jobTitle,
   }) async {
     try {
       // 1. Validate inputs for admin
-      if (role == UserRole.admin && (organizationCode == null || organizationName == null)) {
-        return Left(DatabaseFailure('Organization code and name are required for admin signup'));
+      if (role == UserRole.admin &&
+          (organizationCode == null || organizationName == null)) {
+        return Left(
+          DatabaseFailure(
+            'Organization code and name are required for admin signup',
+          ),
+        );
       }
 
       // 2. Create organization if admin
@@ -98,14 +108,20 @@ class AuthRepositoryImpl implements AuthRepository {
           'isActive': true,
         };
 
-        await _firebaseService.setDocument(organizationsCollection, orgId, orgData);
+        await _firebaseService.setDocument(
+          organizationsCollection,
+          orgId,
+          orgData,
+        );
         log('Organization created with ID: $orgId');
       }
 
       // 3. For employee/office boy, get organization by code
       if (role != UserRole.admin && organizationCode != null) {
         final orgResult = await getOrganizationByCode(organizationCode);
-        orgResult.fold((failure) => throw Exception(failure.message), (organization) {
+        orgResult.fold((failure) => throw Exception(failure.message), (
+          organization,
+        ) {
           if (organization == null) {
             throw Exception('Organization not found');
           }
@@ -119,7 +135,10 @@ class AuthRepositoryImpl implements AuthRepository {
       }
 
       // 5. Create user in Firebase Auth
-      final authResult = await _firebaseService.signUpWithEmailPassword(email, password);
+      final authResult = await _firebaseService.signUpWithEmailPassword(
+        email,
+        password,
+      );
 
       if (authResult.user == null) {
         return Left(AuthFailure('User creation failed'));
@@ -141,6 +160,8 @@ class AuthRepositoryImpl implements AuthRepository {
         'isActive': true,
         'isVerified': authResult.user!.emailVerified,
         'fcmToken': null,
+
+        'jobTitle': jobTitle,
       };
 
       await _firebaseService.setDocument(usersCollection, userId, userData);
@@ -161,6 +182,7 @@ class AuthRepositoryImpl implements AuthRepository {
         fcmToken: null,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        jobTitle: jobTitle,
       );
 
       return Right(user);
@@ -177,10 +199,16 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, User>> signIn({required String email, required String password}) async {
+  Future<Either<Failure, User>> signIn({
+    required String email,
+    required String password,
+  }) async {
     try {
       // 1. Sign in with Firebase Auth
-      final authResult = await _firebaseService.signInWithEmailPassword(email, password);
+      final authResult = await _firebaseService.signInWithEmailPassword(
+        email,
+        password,
+      );
 
       if (authResult.user == null) {
         return Left(AuthFailure('Authentication failed'));
@@ -189,7 +217,10 @@ class AuthRepositoryImpl implements AuthRepository {
       final userId = authResult.user!.uid;
 
       // 2. Get user document from Firestore
-      final userDoc = await _firebaseService.getDocument(usersCollection, userId);
+      final userDoc = await _firebaseService.getDocument(
+        usersCollection,
+        userId,
+      );
 
       if (!userDoc.exists) {
         return Left(DatabaseFailure('User data not found'));
@@ -201,12 +232,17 @@ class AuthRepositoryImpl implements AuthRepository {
       final user = UserModel.fromJson({
         ...userData,
         'createdAt':
-            _firebaseService.timestampToDateTime(userData['createdAt'])?.toIso8601String() ??
+            _firebaseService
+                .timestampToDateTime(userData['createdAt'])
+                ?.toIso8601String() ??
             DateTime.now().toIso8601String(),
         'updatedAt':
-            _firebaseService.timestampToDateTime(userData['updatedAt'])?.toIso8601String() ??
+            _firebaseService
+                .timestampToDateTime(userData['updatedAt'])
+                ?.toIso8601String() ??
             DateTime.now().toIso8601String(),
-        'role': userData['role'], // Keep as string for UserRoleExtension.fromString
+        'role':
+            userData['role'], // Keep as string for UserRoleExtension.fromString
       });
 
       return Right(user);
@@ -248,24 +284,35 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, Organization?>> getOrganizationByCode(String code) async {
+  Future<Either<Failure, Organization?>> getOrganizationByCode(
+    String code,
+  ) async {
     try {
-      final querySnapshot = await _firebaseService.getCollectionWhere(organizationsCollection, 'code', code);
+      final querySnapshot = await _firebaseService.getCollectionWhere(
+        organizationsCollection,
+        'code',
+        code,
+      );
 
       if (querySnapshot.docs.isEmpty) {
         return const Right(null);
       }
 
       final doc = querySnapshot.docs.first;
-      final data = doc.data() as Map<String, dynamic>? ?? {}; // Ensure non-null Map
+      final data =
+          doc.data() as Map<String, dynamic>? ?? {}; // Ensure non-null Map
 
       final organization = OrganizationModel.fromJson({
         ...data, // Now safe to spread since we ensured it's a non-null Map
         'createdAt':
-            _firebaseService.timestampToDateTime(data['createdAt'])?.toIso8601String() ??
+            _firebaseService
+                .timestampToDateTime(data['createdAt'])
+                ?.toIso8601String() ??
             DateTime.now().toIso8601String(),
         'updatedAt':
-            _firebaseService.timestampToDateTime(data['updatedAt'])?.toIso8601String() ??
+            _firebaseService
+                .timestampToDateTime(data['updatedAt'])
+                ?.toIso8601String() ??
             DateTime.now().toIso8601String(),
       }).toEntity();
 
@@ -282,9 +329,15 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, bool>> checkOrganizationCodeExists(String code) async {
     try {
-      final querySnapshot = await _firebaseService.getCollectionWhere(organizationsCollection, 'code', code);
+      final querySnapshot = await _firebaseService.getCollectionWhere(
+        organizationsCollection,
+        'code',
+        code,
+      );
 
-      log('DEBUG: Organization query response: ${querySnapshot.docs.length} documents found');
+      log(
+        'DEBUG: Organization query response: ${querySnapshot.docs.length} documents found',
+      );
       log('DEBUG: Searching for code: "$code"');
 
       return Right(querySnapshot.docs.isNotEmpty);
@@ -305,7 +358,10 @@ class AuthRepositoryImpl implements AuthRepository {
         return Left(AuthFailure('User not authenticated'));
       }
 
-      final url = await _firebaseService.uploadProfileImage(currentUser.uid, filePath);
+      final url = await _firebaseService.uploadProfileImage(
+        currentUser.uid,
+        filePath,
+      );
       return Right(url);
     } catch (e) {
       log('Profile image upload error: $e');
@@ -314,11 +370,16 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, String>> uploadOrganizationLogo(String filePath) async {
+  Future<Either<Failure, String>> uploadOrganizationLogo(
+    String filePath,
+  ) async {
     try {
       // Generate a unique organization ID for the upload path
       final orgId = _firebaseService.generateId();
-      final url = await _firebaseService.uploadOrganizationLogo(orgId, filePath);
+      final url = await _firebaseService.uploadOrganizationLogo(
+        orgId,
+        filePath,
+      );
       return Right(url);
     } catch (e) {
       log('Organization logo upload error: $e');
@@ -327,9 +388,14 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, void>> updateFCMToken(String userId, String token) async {
+  Future<Either<Failure, void>> updateFCMToken(
+    String userId,
+    String token,
+  ) async {
     try {
-      await _firebaseService.updateDocument(usersCollection, userId, {'fcmToken': token});
+      await _firebaseService.updateDocument(usersCollection, userId, {
+        'fcmToken': token,
+      });
       return const Right(null);
     } on FirebaseException catch (e) {
       log('FCM token update error: ${e.code} - ${e.message}');
@@ -369,7 +435,10 @@ class AuthRepositoryImpl implements AuthRepository {
 
       try {
         // Fetch complete user data from Firestore
-        final userDoc = await _firebaseService.getDocument(usersCollection, firebaseUser.uid);
+        final userDoc = await _firebaseService.getDocument(
+          usersCollection,
+          firebaseUser.uid,
+        );
 
         if (!userDoc.exists) return null;
 
@@ -378,10 +447,14 @@ class AuthRepositoryImpl implements AuthRepository {
         return UserModel.fromJson({
           ...userData,
           'createdAt':
-              _firebaseService.timestampToDateTime(userData['createdAt'])?.toIso8601String() ??
+              _firebaseService
+                  .timestampToDateTime(userData['createdAt'])
+                  ?.toIso8601String() ??
               DateTime.now().toIso8601String(),
           'updatedAt':
-              _firebaseService.timestampToDateTime(userData['updatedAt'])?.toIso8601String() ??
+              _firebaseService
+                  .timestampToDateTime(userData['updatedAt'])
+                  ?.toIso8601String() ??
               DateTime.now().toIso8601String(),
           'role': userData['role'],
         });

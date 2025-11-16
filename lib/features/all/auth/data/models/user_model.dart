@@ -36,6 +36,8 @@ class UserModel extends User {
   final DateTime createdAt;
   @override
   final DateTime updatedAt;
+   @override
+  final String? jobTitle;
 
   const UserModel({
     required this.id,
@@ -52,6 +54,7 @@ class UserModel extends User {
     this.fcmToken,
     required this.createdAt,
     required this.updatedAt,
+    this.jobTitle,
   }) : super(
          id: id,
          email: email,
@@ -67,6 +70,7 @@ class UserModel extends User {
          fcmToken: fcmToken,
          createdAt: createdAt,
          updatedAt: updatedAt,
+         jobTitle: jobTitle
        );
 
   factory UserModel.fromJson(Map<String, dynamic> json) => _$UserModelFromJson(json);
@@ -89,6 +93,7 @@ class UserModel extends User {
       fcmToken: user.fcmToken,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      jobTitle: user.jobTitle
     );
   }
 }

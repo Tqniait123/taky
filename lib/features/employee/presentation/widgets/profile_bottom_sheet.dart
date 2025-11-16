@@ -35,7 +35,9 @@ class _ProfileBottomSheetState extends State<ProfileBottomSheet>
     with TickerProviderStateMixin {
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
+  late TextEditingController _jobTitleController;
   bool _isSaving = false;
+  bool _hasChanges = false;
   final FirebaseService _firebaseService = FirebaseService();
 
   // Animation Controllers
@@ -52,16 +54,34 @@ class _ProfileBottomSheetState extends State<ProfileBottomSheet>
   late Animation<double> _scaleAnimation;
   late Animation<double> _glowAnimation;
   late Animation<double> _particleAnimation;
-  // late Animation<double> _shimmerAnimation;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.user.name);
     _phoneController = TextEditingController(text: widget.user.phone ?? '');
+    _jobTitleController = TextEditingController(
+      text: widget.user.jobTitle ?? '',
+    );
+
+    _nameController.addListener(_checkForChanges);
+    _phoneController.addListener(_checkForChanges);
+    _jobTitleController.addListener(_checkForChanges);
 
     _initializeAnimations();
     _startAnimations();
+  }
+
+  void _checkForChanges() {
+    final nameChanged = _nameController.text.trim() != widget.user.name;
+    final phoneChanged =
+        _phoneController.text.trim() != (widget.user.phone ?? '');
+    final jobTitleChanged =
+        _jobTitleController.text.trim() != (widget.user.jobTitle ?? '');
+
+    setState(() {
+      _hasChanges = nameChanged || phoneChanged || jobTitleChanged;
+    });
   }
 
   void _initializeAnimations() {
@@ -116,9 +136,6 @@ class _ProfileBottomSheetState extends State<ProfileBottomSheet>
       vsync: this,
       duration: const Duration(seconds: 3),
     );
-    // _shimmerAnimation = Tween<double>(begin: -1.0, end: 2.0).animate(
-    //   CurvedAnimation(parent: _shimmerController, curve: Curves.easeInOut),
-    // );
   }
 
   void _startAnimations() {
@@ -132,8 +149,12 @@ class _ProfileBottomSheetState extends State<ProfileBottomSheet>
 
   @override
   void dispose() {
+    _nameController.removeListener(_checkForChanges);
+    _phoneController.removeListener(_checkForChanges);
+    _jobTitleController.removeListener(_checkForChanges);
     _nameController.dispose();
     _phoneController.dispose();
+    _jobTitleController.dispose();
     _slideController.dispose();
     _fadeController.dispose();
     _scaleController.dispose();
@@ -223,7 +244,6 @@ class _ProfileBottomSheetState extends State<ProfileBottomSheet>
         context,
         locale == 'ar' ? 'لا يمكن ان يكون الاسم فارغ' : 'Name cannot be empty',
       );
-
       return;
     }
 
@@ -232,11 +252,14 @@ class _ProfileBottomSheetState extends State<ProfileBottomSheet>
     });
 
     try {
-      // Update user data
+      // Update user data including job title
       final updatedData = {
         'name': _nameController.text.trim(),
         'phone': _phoneController.text.trim().isNotEmpty
             ? _phoneController.text.trim()
+            : null,
+        'jobTitle': _jobTitleController.text.trim().isNotEmpty
+            ? _jobTitleController.text.trim()
             : null,
         'updatedAt': Timestamp.fromDate(DateTime.now()),
       };
@@ -264,6 +287,9 @@ class _ProfileBottomSheetState extends State<ProfileBottomSheet>
         fcmToken: widget.user.fcmToken,
         createdAt: widget.user.createdAt,
         updatedAt: DateTime.now(),
+        jobTitle: _jobTitleController.text.trim().isNotEmpty
+            ? _jobTitleController.text.trim()
+            : null,
       );
 
       widget.onProfileUpdated(updatedUser);
@@ -526,11 +552,10 @@ class _ProfileBottomSheetState extends State<ProfileBottomSheet>
                 _buildProfileAvatar(),
                 SizedBox(height: 32),
                 _buildUserInfoCard(locale),
-                SizedBox(height: 24),
-                LanguageLayoutDropdown(
-                  primaryColor: widget.organization.primaryColorValue,
-                  secondaryColor: widget.organization.secondaryColorValue,
-                ),
+               SizedBox(height: 32),
+
+                // NEW: Settings Section with Language
+                _buildSettingsSection(locale),
                 SizedBox(height: 24),
                 _buildGlassTextField(
                   controller: _nameController,
@@ -552,6 +577,17 @@ class _ProfileBottomSheetState extends State<ProfileBottomSheet>
                   delay: 100,
                   keyboardType: TextInputType.phone,
                 ),
+                SizedBox(height: 24),
+                // Add Job Title field
+                _buildGlassTextField(
+                  controller: _jobTitleController,
+                  label: locale == 'ar' ? 'المسمى الوظيفي' : 'Job Title',
+                  hint: locale == 'ar'
+                      ? 'ادخل المسمى الوظيفي'
+                      : 'Enter your job title',
+                  icon: Assets.imagesSvgsUser,
+                  delay: 200,
+                ),
                 SizedBox(height: 32),
               ],
             ),
@@ -559,6 +595,153 @@ class _ProfileBottomSheetState extends State<ProfileBottomSheet>
         ),
         _buildGlassBottomActions(locale),
       ],
+    );
+  }
+
+   Widget _buildSettingsSection(String locale) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 800),
+      curve: Curves.easeOutBack,
+      builder: (context, value, child) {
+        return Transform.scale(
+          scale: value,
+          child: Container(
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white.withOpacity(0.15),
+                  Colors.white.withOpacity(0.05),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Section Header
+                    Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            gradient: RadialGradient(
+                              colors: [
+                                Colors.white.withOpacity(0.3),
+                                Colors.white.withOpacity(0.1),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.settings_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Text(
+                          locale == 'ar' ? 'الإعدادات' : 'Settings',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 20),
+
+                    // Language Setting Item
+                    _buildSettingItem(
+                      icon: Icons.language_rounded,
+                      title: locale == 'ar' ? 'اللغة' : 'Language',
+                      subtitle: locale == 'ar'
+                          ? 'تغيير لغة التطبيق'
+                          : 'Change app language',
+                      child: LanguageLayoutDropdown(
+                        primaryColor: widget.organization.primaryColorValue,
+                        secondaryColor: widget.organization.secondaryColorValue,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // NEW: Setting Item Builder
+  Widget _buildSettingItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Widget child,
+  }) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 16),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                colors: [
+                  Colors.white.withOpacity(0.2),
+                  Colors.white.withOpacity(0.1),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: Colors.white, size: 24),
+          ),
+          SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: 12),
+          child,
+        ],
+      ),
     );
   }
 
@@ -826,6 +1009,19 @@ class _ProfileBottomSheetState extends State<ProfileBottomSheet>
                     200,
                   ),
                   SizedBox(height: 16),
+                  // Show job title if available
+                  if (widget.user.jobTitle != null &&
+                      widget.user.jobTitle!.isNotEmpty)
+                    Column(
+                      children: [
+                        _buildInfoRow(
+                          Assets.imagesSvgsUser,
+                          widget.user.jobTitle!,
+                          200,
+                        ),
+                        SizedBox(height: 16),
+                      ],
+                    ),
                   _buildEmailRow(
                     Assets.imagesSvgsMail,
                     widget.user.email,
@@ -965,13 +1161,12 @@ class _ProfileBottomSheetState extends State<ProfileBottomSheet>
   }
 
   String _getTruncatedEmail(String email) {
-    const int maxLength = 25; // Adjust this value based on your design needs
+    const int maxLength = 25;
 
     if (email.length <= maxLength) {
       return email;
     }
 
-    // For long emails, show first part, ellipsis, and domain
     final atIndex = email.indexOf('@');
     if (atIndex == -1) return email;
 
@@ -1307,32 +1502,41 @@ class _ProfileBottomSheetState extends State<ProfileBottomSheet>
                       width: double.infinity,
                       height: 56,
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            widget.organization.primaryColorValue,
-                            widget.organization.secondaryColorValue,
-                          ],
-                        ),
+                        gradient: _hasChanges && !_isSaving
+                            ? LinearGradient(
+                                colors: [
+                                  widget.organization.primaryColorValue,
+                                  widget.organization.secondaryColorValue,
+                                ],
+                              )
+                            : LinearGradient(
+                                colors: [
+                                  Colors.grey.withOpacity(0.6),
+                                  Colors.grey.withOpacity(0.4),
+                                ],
+                              ),
                         borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: widget.organization.primaryColorValue
-                                .withOpacity(
-                                  0.4 + (_glowAnimation.value * 0.2),
+                        boxShadow: _hasChanges && !_isSaving
+                            ? [
+                                BoxShadow(
+                                  color: widget.organization.primaryColorValue
+                                      .withOpacity(
+                                        0.4 + (_glowAnimation.value * 0.2),
+                                      ),
+                                  blurRadius: 15 + (_glowAnimation.value * 5),
+                                  spreadRadius: 1,
+                                  offset: Offset(0, 6),
                                 ),
-                            blurRadius: 15 + (_glowAnimation.value * 5),
-                            spreadRadius: 1,
-                            offset: Offset(0, 6),
-                          ),
-                        ],
+                              ]
+                            : [],
                       ),
                       child: Material(
                         color: Colors.transparent,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(16),
-                          onTap: _isSaving
-                              ? () {}
-                              : () => _updateProfile(locale),
+                          onTap: (_hasChanges && !_isSaving)
+                              ? () => _updateProfile(locale)
+                              : null,
                           child: Container(
                             alignment: Alignment.center,
                             child: _isSaving
@@ -1383,18 +1587,8 @@ class _ProfileBottomSheetState extends State<ProfileBottomSheet>
                     width: double.infinity,
                     height: 56,
                     decoration: BoxDecoration(
-                      // gradient: LinearGradient(
-                      //   colors: [
-                      //     Colors.white.withOpacity(0.15),
-                      //     Colors.white.withOpacity(0.05),
-                      //   ],
-                      // ),
                       color: Colors.red,
                       borderRadius: BorderRadius.circular(16),
-                      // border: Border.all(
-                      //   color: AppColors.error.withOpacity(0.3),
-                      //   width: 1,
-                      // ),
                     ),
                     child: Material(
                       color: Colors.transparent,
@@ -1428,10 +1622,10 @@ class _ProfileBottomSheetState extends State<ProfileBottomSheet>
         ),
       ),
     );
-  } // _buildGlassBottomActions
+  }
 }
 
-// Custom painter for animated particles background (same as AdminSettings)
+// Custom painter for animated particles background
 class ParticlesPainter extends CustomPainter {
   final double animationValue;
   final Color primaryColor;

@@ -37,6 +37,7 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
   late Color _primaryColor;
   late Color _secondaryColor;
   bool _isSaving = false;
+  bool _hasChanges = false; // Add this variable to track changes
   final FirebaseService _firebaseService = FirebaseService();
 
   // Animation Controllers
@@ -63,8 +64,45 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
     _primaryColor = widget.organization.primaryColorValue;
     _secondaryColor = widget.organization.secondaryColorValue;
 
+    // Add listeners to track changes
+    _nameController.addListener(_checkForChanges);
+    _codeController.addListener(_checkForChanges);
+
     _initializeAnimations();
     _startAnimations();
+  }
+
+  // Method to check if form has changes
+  void _checkForChanges() {
+    final nameChanged = _nameController.text.trim() != widget.organization.name;
+    final codeChanged = _codeController.text.trim() != widget.organization.code;
+    final primaryColorChanged =
+        _primaryColor != widget.organization.primaryColorValue;
+    final secondaryColorChanged =
+        _secondaryColor != widget.organization.secondaryColorValue;
+
+    setState(() {
+      _hasChanges =
+          nameChanged ||
+          codeChanged ||
+          primaryColorChanged ||
+          secondaryColorChanged;
+    });
+  }
+
+  // Update color change methods to trigger change detection
+  void _updatePrimaryColor(Color color) {
+    setState(() {
+      _primaryColor = color;
+    });
+    _checkForChanges();
+  }
+
+  void _updateSecondaryColor(Color color) {
+    setState(() {
+      _secondaryColor = color;
+    });
+    _checkForChanges();
   }
 
   void _initializeAnimations() {
@@ -135,6 +173,8 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
 
   @override
   void dispose() {
+    _nameController.removeListener(_checkForChanges);
+    _codeController.removeListener(_checkForChanges);
     _nameController.dispose();
     _codeController.dispose();
     _slideController.dispose();
@@ -262,11 +302,10 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: 20),
-                LanguageLayoutDropdown(
-                  primaryColor: _primaryColor,
-                  secondaryColor: _secondaryColor,
-                ),
+                SizedBox(height: 32),
+
+                // NEW: Settings Section with Language
+                _buildSettingsSection(locale),
                 SizedBox(height: 24),
                 _buildGlassTextField(
                   controller: _nameController,
@@ -365,7 +404,9 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
                     child: AnimatedBuilder(
                       animation: _shimmerController,
                       builder: (context, child) => Text(
-                        locale == 'ar' ? 'الاعدادات' : 'Settings',
+                        locale == 'ar'
+                            ? 'معلومات الحساب'
+                            : 'Account Information',
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
@@ -577,7 +618,7 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
                   _buildGlassColorPicker(
                     locale == 'ar' ? 'اللون الاساسي' : 'Primary Color',
                     _primaryColor,
-                    (color) => setState(() => _primaryColor = color),
+                    _updatePrimaryColor,
                     0,
                   ),
                   SizedBox(height: 20),
@@ -586,7 +627,7 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
                   _buildGlassColorPicker(
                     locale == 'ar' ? 'اللون الثانوي' : 'Secondary Color',
                     _secondaryColor,
-                    (color) => setState(() => _secondaryColor = color),
+                    _updateSecondaryColor,
                     100,
                   ),
                 ],
@@ -745,6 +786,153 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
     );
   }
 
+  Widget _buildSettingsSection(String locale) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 800),
+      curve: Curves.easeOutBack,
+      builder: (context, value, child) {
+        return Transform.scale(
+          scale: value,
+          child: Container(
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white.withOpacity(0.15),
+                  Colors.white.withOpacity(0.05),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Section Header
+                    Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            gradient: RadialGradient(
+                              colors: [
+                                Colors.white.withOpacity(0.3),
+                                Colors.white.withOpacity(0.1),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.settings_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Text(
+                          locale == 'ar' ? 'الإعدادات' : 'Settings',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 20),
+
+                    // Language Setting Item
+                    _buildSettingItem(
+                      icon: Icons.language_rounded,
+                      title: locale == 'ar' ? 'اللغة' : 'Language',
+                      subtitle: locale == 'ar'
+                          ? 'تغيير لغة التطبيق'
+                          : 'Change app language',
+                      child: LanguageLayoutDropdown(
+                        primaryColor: widget.organization.primaryColorValue,
+                        secondaryColor: widget.organization.secondaryColorValue,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // NEW: Setting Item Builder
+  Widget _buildSettingItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Widget child,
+  }) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 16),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                colors: [
+                  Colors.white.withOpacity(0.2),
+                  Colors.white.withOpacity(0.1),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: Colors.white, size: 24),
+          ),
+          SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: 12),
+          child,
+        ],
+      ),
+    );
+  }
+
   Widget _buildGlassBottomActions(String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -771,35 +959,44 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Column(
                 children: [
-                  // Save button with glow effect
+                  // Save button with conditional enable/disable
                   AnimatedBuilder(
                     animation: _glowController,
                     builder: (context, child) => Container(
                       width: double.infinity,
                       height: 56,
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [_primaryColor, _secondaryColor],
-                        ),
+                        gradient: _hasChanges && !_isSaving
+                            ? LinearGradient(
+                                colors: [_primaryColor, _secondaryColor],
+                              )
+                            : LinearGradient(
+                                colors: [
+                                  Colors.grey.withOpacity(0.6),
+                                  Colors.grey.withOpacity(0.4),
+                                ],
+                              ),
                         borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: _primaryColor.withOpacity(
-                              0.4 + (_glowAnimation.value * 0.2),
-                            ),
-                            blurRadius: 15 + (_glowAnimation.value * 5),
-                            spreadRadius: 1,
-                            offset: Offset(0, 6),
-                          ),
-                        ],
+                        boxShadow: _hasChanges && !_isSaving
+                            ? [
+                                BoxShadow(
+                                  color: _primaryColor.withOpacity(
+                                    0.4 + (_glowAnimation.value * 0.2),
+                                  ),
+                                  blurRadius: 15 + (_glowAnimation.value * 5),
+                                  spreadRadius: 1,
+                                  offset: Offset(0, 6),
+                                ),
+                              ]
+                            : [], // No shadow when disabled
                       ),
                       child: Material(
                         color: Colors.transparent,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(16),
-                          onTap: _isSaving
-                              ? () {}
-                              : () => _saveSettings(locale),
+                          onTap: (_hasChanges && !_isSaving)
+                              ? () => _saveSettings(locale)
+                              : null, // Disable when no changes or saving
                           child: Container(
                             alignment: Alignment.center,
                             child: _isSaving
@@ -830,7 +1027,9 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
                                         ? 'حفظ التغييرات'
                                         : 'Save Changes',
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: _hasChanges
+                                          ? Colors.white
+                                          : Colors.white.withOpacity(0.7),
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                       letterSpacing: 0.5,
@@ -848,18 +1047,8 @@ class _AdminSettingsBottomSheetState extends State<AdminSettingsBottomSheet>
                     width: double.infinity,
                     height: 56,
                     decoration: BoxDecoration(
-                      // gradient: LinearGradient(
-                      //   colors: [
-                      //     Colors.white.withOpacity(0.15),
-                      //     Colors.white.withOpacity(0.05),
-                      //   ],
-                      // ),
                       color: Colors.red,
                       borderRadius: BorderRadius.circular(16),
-                      // border: Border.all(
-                      //   color: AppColors.error.withOpacity(0.3),
-                      //   width: 1,
-                      // ),
                     ),
                     child: Material(
                       color: Colors.transparent,

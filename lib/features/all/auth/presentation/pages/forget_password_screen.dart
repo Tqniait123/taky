@@ -601,7 +601,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen>
 
                                   // Back to Login with glass effect
                                   _buildGlassLoginSection(context),
-                                  const SizedBox(height: 32),
+                                  const SizedBox(height: 80),
                                 ],
                               ),
                             ),
