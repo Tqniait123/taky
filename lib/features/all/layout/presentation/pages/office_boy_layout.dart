@@ -1914,6 +1914,7 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Stack(
+                      clipBehavior: Clip.none,
                       children: [
                         IconButton(
                           icon: AnimatedBuilder(
@@ -1931,8 +1932,8 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
 
                         if (hasUnreadNotifications)
                           Positioned(
-                            top: 8,
-                            right: 8,
+                            top: 2,
+                            left: 24,
                             child: Container(
                               width: _unreadCount > 9 ? 20 : 16,
                               height: 16,
@@ -3894,31 +3895,6 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
       padding: EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
-          if (canTransfer)
-            Container(
-              margin: EdgeInsets.only(bottom: 8),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () => _showTransferBottomSheet(order),
-                  icon: Icon(Icons.swap_horiz, size: 18),
-                  label: Text(
-                    locale == 'ar'
-                        ? 'حولها لأوفيس بوي تاني'
-                        : 'Transfer to Another Office Boy',
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                ),
-              ),
-            ),
           Row(
             children: [
               if (order.status == OrderStatus.pending) ...[
@@ -4018,6 +3994,31 @@ class _OfficeBoyLayoutState extends State<OfficeBoyLayout>
               ],
             ],
           ),
+          if (canTransfer)
+            Container(
+              margin: EdgeInsets.only(top: 8),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _showTransferBottomSheet(order),
+                  icon: Icon(Icons.swap_horiz, size: 18),
+                  label: Text(
+                    locale == 'ar'
+                        ? 'حولها لأوفيس بوي تاني'
+                        : 'Transfer to Another Office Boy',
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

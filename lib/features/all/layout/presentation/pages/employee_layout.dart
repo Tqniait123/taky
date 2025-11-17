@@ -796,6 +796,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Stack(
+                        clipBehavior: Clip.none,
                         children: [
                           IconButton(
                             icon: AnimatedBuilder(
@@ -813,8 +814,8 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
 
                           if (hasUnreadNotifications)
                             Positioned(
-                              top: 8,
-                              right: 8,
+                              top: 2,
+                              left: 24,
                               child: Container(
                                 width: _unreadCount > 9 ? 20 : 16,
                                 height: 16,
@@ -1013,6 +1014,7 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Stack(
+                        clipBehavior: Clip.none,
                         children: [
                           IconButton(
                             icon: AnimatedBuilder(
@@ -1030,8 +1032,8 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
 
                           if (hasUnreadNotifications)
                             Positioned(
-                              top: 8,
-                              right: 8,
+                              top: 2,
+                              left: 24,
                               child: Container(
                                 width: _unreadCount > 9 ? 20 : 16,
                                 height: 16,

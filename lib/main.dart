@@ -84,9 +84,9 @@ Future<void> main() async {
   // Set status bar color globally
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent, // Change to your primary color
+      statusBarColor: Colors.transparent, 
       statusBarIconBrightness:
-          Brightness.light, // Light icons for dark background
+          Brightness.light, 
     ),
   );
 

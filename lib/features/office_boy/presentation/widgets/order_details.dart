@@ -1251,33 +1251,6 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: widget.onTransferRequest,
-              icon: const Icon(Icons.swap_horiz_rounded, size: 20),
-              label: Text(
-                locale == 'ar'
-                    ? 'تحويل الى عامل آخر'
-                    : 'Transfer to Another Office Boy',
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 8,
-                shadowColor: Colors.orange.withOpacity(0.4),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
               onPressed: _isLoading
                   ? null
                   : () => _updateStatus(OrderStatus.inProgress, locale),
@@ -1298,6 +1271,33 @@ class _OrderDetailsBottomSheetState extends State<OrderDetailsBottomSheet>
                 ),
                 elevation: 8,
                 shadowColor: Colors.blue.withOpacity(0.4),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: widget.onTransferRequest,
+              icon: const Icon(Icons.swap_horiz_rounded, size: 20),
+              label: Text(
+                locale == 'ar'
+                    ? 'تحويل الى عامل آخر'
+                    : 'Transfer to Another Office Boy',
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 8,
+                shadowColor: Colors.orange.withOpacity(0.4),
               ),
             ),
           ),
