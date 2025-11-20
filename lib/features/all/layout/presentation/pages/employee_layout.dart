@@ -822,10 +822,10 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                 decoration: BoxDecoration(
                                   color: Colors.red,
                                   borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: Colors.white,
-                                    width: 1.5,
-                                  ),
+                                  // border: Border.all(
+                                  //   color: Colors.white,
+                                  //   width: 1.5,
+                                  // ),
                                   boxShadow: [
                                     BoxShadow(
                                       color: Colors.red.withOpacity(0.5),
@@ -1040,10 +1040,10 @@ class _EmployeeLayoutState extends State<EmployeeLayout>
                                 decoration: BoxDecoration(
                                   color: Colors.red,
                                   borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: Colors.white,
-                                    width: 1.5,
-                                  ),
+                                  // border: Border.all(
+                                  //   color: Colors.white,
+                                  //   width: 1.5,
+                                  // ),
                                   boxShadow: [
                                     BoxShadow(
                                       color: Colors.red.withOpacity(0.5),

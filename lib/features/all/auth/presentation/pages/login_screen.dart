@@ -245,6 +245,8 @@ class _LoginScreenState extends State<LoginScreen>
 
                                   // Sign Up Link with glass effect
                                   _buildGlassSignUpSection(context),
+
+                                   const SizedBox(height: 48),
                                 ],
                               ),
                             ),

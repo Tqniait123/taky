@@ -351,164 +351,164 @@ class _EmployeeNotificationBottomSheetState
     }
   }
 
-  void _showNotificationDetails(AppNotification notification, String locale) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => _buildNotificationDetailSheet(notification, locale),
-    );
-  }
+  // void _showNotificationDetails(AppNotification notification, String locale) {
+  //   showModalBottomSheet(
+  //     context: context,
+  //     backgroundColor: Colors.transparent,
+  //     isScrollControlled: true,
+  //     builder: (context) => _buildNotificationDetailSheet(notification, locale),
+  //   );
+  // }
 
-  Widget _buildNotificationDetailSheet(
-    AppNotification notification,
-    String locale,
-  ) {
-    return Container(
-      margin: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(25),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white.withOpacity(0.25),
-            Colors.white.withOpacity(0.1),
-          ],
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(25),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header
-                Row(
-                  children: [
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        gradient: RadialGradient(
-                          colors: [
-                            _getNotificationColor(
-                              notification.type,
-                            ).withOpacity(0.3),
-                            _getNotificationColor(
-                              notification.type,
-                            ).withOpacity(0.1),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(15),
-                        border: Border.all(
-                          color: _getNotificationColor(
-                            notification.type,
-                          ).withOpacity(0.5),
-                          width: 2,
-                        ),
-                      ),
-                      child: Center(
-                        child: SvgPicture.asset(
-                          _getNotificationIcon(notification.type),
-                          color: _getNotificationColor(notification.type),
-                          height: 24,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            notification.title,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            _formatTime(notification.createdAt, locale),
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.7),
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
+  // Widget _buildNotificationDetailSheet(
+  //   AppNotification notification,
+  //   String locale,
+  // ) {
+  //   return Container(
+  //     margin: const EdgeInsets.all(20),
+  //     decoration: BoxDecoration(
+  //       borderRadius: BorderRadius.circular(25),
+  //       gradient: LinearGradient(
+  //         begin: Alignment.topLeft,
+  //         end: Alignment.bottomRight,
+  //         colors: [
+  //           Colors.white.withOpacity(0.25),
+  //           Colors.white.withOpacity(0.1),
+  //         ],
+  //       ),
+  //     ),
+  //     child: ClipRRect(
+  //       borderRadius: BorderRadius.circular(25),
+  //       child: BackdropFilter(
+  //         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+  //         child: Padding(
+  //           padding: const EdgeInsets.all(24),
+  //           child: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               // Header
+  //               Row(
+  //                 children: [
+  //                   Container(
+  //                     width: 50,
+  //                     height: 50,
+  //                     decoration: BoxDecoration(
+  //                       gradient: RadialGradient(
+  //                         colors: [
+  //                           _getNotificationColor(
+  //                             notification.type,
+  //                           ).withOpacity(0.3),
+  //                           _getNotificationColor(
+  //                             notification.type,
+  //                           ).withOpacity(0.1),
+  //                         ],
+  //                       ),
+  //                       borderRadius: BorderRadius.circular(15),
+  //                       border: Border.all(
+  //                         color: _getNotificationColor(
+  //                           notification.type,
+  //                         ).withOpacity(0.5),
+  //                         width: 2,
+  //                       ),
+  //                     ),
+  //                     child: Center(
+  //                       child: SvgPicture.asset(
+  //                         _getNotificationIcon(notification.type),
+  //                         color: _getNotificationColor(notification.type),
+  //                         height: 24,
+  //                       ),
+  //                     ),
+  //                   ),
+  //                   const SizedBox(width: 16),
+  //                   Expanded(
+  //                     child: Column(
+  //                       crossAxisAlignment: CrossAxisAlignment.start,
+  //                       children: [
+  //                         Text(
+  //                           notification.title,
+  //                           style: const TextStyle(
+  //                             color: Colors.white,
+  //                             fontSize: 18,
+  //                             fontWeight: FontWeight.bold,
+  //                           ),
+  //                         ),
+  //                         Text(
+  //                           _formatTime(notification.createdAt, locale),
+  //                           style: TextStyle(
+  //                             color: Colors.white.withOpacity(0.7),
+  //                             fontSize: 12,
+  //                           ),
+  //                         ),
+  //                       ],
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //               const SizedBox(height: 20),
 
-                // Body
-                Text(
-                  notification.body,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 16,
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 20),
+  //               // Body
+  //               Text(
+  //                 notification.body,
+  //                 style: TextStyle(
+  //                   color: Colors.white.withOpacity(0.9),
+  //                   fontSize: 16,
+  //                   height: 1.5,
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 20),
 
-                // Actions
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white.withOpacity(0.1),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
-                            side: BorderSide(
-                              color: Colors.white.withOpacity(0.3),
-                            ),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        onPressed: () => Navigator.pop(context),
-                        child: Text(locale == 'ar' ? 'إغلاق' : 'Close'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _getNotificationColor(
-                            notification.type,
-                          ).withOpacity(0.3),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        onPressed: () {
-                          Navigator.pop(context);
-                          // Handle primary action based on notification type
-                        },
-                        child: Text(
-                          locale == 'ar' ? 'عرض الطلب' : 'View Order',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  //               // Actions
+  //               Row(
+  //                 children: [
+  //                   Expanded(
+  //                     child: ElevatedButton(
+  //                       style: ElevatedButton.styleFrom(
+  //                         backgroundColor: Colors.white.withOpacity(0.1),
+  //                         foregroundColor: Colors.white,
+  //                         shape: RoundedRectangleBorder(
+  //                           borderRadius: BorderRadius.circular(15),
+  //                           side: BorderSide(
+  //                             color: Colors.white.withOpacity(0.3),
+  //                           ),
+  //                         ),
+  //                         padding: const EdgeInsets.symmetric(vertical: 12),
+  //                       ),
+  //                       onPressed: () => Navigator.pop(context),
+  //                       child: Text(locale == 'ar' ? 'إغلاق' : 'Close'),
+  //                     ),
+  //                   ),
+  //                   const SizedBox(width: 12),
+  //                   Expanded(
+  //                     child: ElevatedButton(
+  //                       style: ElevatedButton.styleFrom(
+  //                         backgroundColor: _getNotificationColor(
+  //                           notification.type,
+  //                         ).withOpacity(0.3),
+  //                         foregroundColor: Colors.white,
+  //                         shape: RoundedRectangleBorder(
+  //                           borderRadius: BorderRadius.circular(15),
+  //                         ),
+  //                         padding: const EdgeInsets.symmetric(vertical: 12),
+  //                       ),
+  //                       onPressed: () {
+  //                         Navigator.pop(context);
+  //                         // Handle primary action based on notification type
+  //                       },
+  //                       child: Text(
+  //                         locale == 'ar' ? 'عرض الطلب' : 'View Order',
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Future<void> _showDeleteConfirmation(
     AppNotification notification,
@@ -1223,7 +1223,7 @@ class _EmployeeNotificationBottomSheetState
                   if (!notification.isRead) {
                     _markAsRead(notification.id, locale);
                   }
-                  _showNotificationDetails(notification, locale);
+                  // _showNotificationDetails(notification, locale);
                 },
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -1399,9 +1399,9 @@ class _EmployeeNotificationBottomSheetState
                                 await _markAsUnread(notification.id, locale);
                               }
                               break;
-                            case 'view_details':
-                              _showNotificationDetails(notification, locale);
-                              break;
+                            // case 'view_details':
+                            //   _showNotificationDetails(notification, locale);
+                            // break;
                             case 'delete':
                               await _showDeleteConfirmation(
                                 notification,

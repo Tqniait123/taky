@@ -562,9 +562,7 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
                       Expanded(
                         child: _buildGlassTypeCard(
                           locale == 'ar' ? 'خارجي' : 'External',
-                          locale == 'ar'
-                              ? 'طعام، وجبات، توصيل'
-                              : 'Food, Meals, Delivery',
+                          locale == 'ar' ? 'طعام، وجبات' : 'Food, Meals',
                           Assets.imagesSvgsShoppingCart,
                           OrderType.external,
                           widget.organization.secondaryColorValue,

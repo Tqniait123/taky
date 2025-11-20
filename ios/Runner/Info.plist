@@ -56,6 +56,9 @@
         <string>fetch</string>
         <string>remote-notification</string>
     </array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app requires access to your photo library to upload photos.</string>
+
     
     <key>FirebaseAppDelegateProxyEnabled</key>
     <false/>
