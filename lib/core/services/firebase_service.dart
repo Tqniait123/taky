@@ -79,6 +79,212 @@ class FirebaseService {
     }
   }
 
+    // ================================
+  // ACCOUNT DELETION METHODS
+  // ================================
+
+  /// Delete user account completely (Firestore data + Firebase Auth)
+  Future<void> deleteUserAccount(String userId) async {
+    try {
+      // Delete user from Firebase Authentication
+      final currentUser = _auth.currentUser;
+      if (currentUser != null && currentUser.uid == userId) {
+        await currentUser.delete();
+      }
+
+      // Delete user document from Firestore
+      await deleteDocument('users', userId);
+
+      // Clean up user-related data
+      await _deleteUserPreferences(userId);
+      await _deleteUserFCMTokens(userId);
+      await _deleteUserProfileImage(userId);
+
+    } catch (e) {
+      throw Exception('Failed to delete account: $e');
+    }
+  }
+
+  /// Delete user account with organization cleanup (for admin users)
+  Future<void> deleteAdminAccount(String userId, String organizationId) async {
+    try {
+      // First delete the organization and its data
+      await deleteOrganizationData(organizationId);
+      
+      // Then delete the user account
+      await deleteUserAccount(userId);
+      
+    } catch (e) {
+      throw Exception('Failed to delete admin account: $e');
+    }
+  }
+
+  /// Delete all organization data when admin deletes account
+  Future<void> deleteOrganizationData(String organizationId) async {
+    try {
+      // Delete organization document
+      await deleteDocument('organizations', organizationId);
+      
+      // Delete all users in this organization
+      await _deleteOrganizationUsers(organizationId);
+      
+      // Delete organization logo if exists
+      await _deleteOrganizationLogo(organizationId);
+      
+      // Delete any other organization-related data
+      await _deleteOrganizationRelatedData(organizationId);
+      
+    } catch (e) {
+      throw Exception('Failed to delete organization data: $e');
+    }
+  }
+
+  // ================================
+  // PRIVATE CLEANUP METHODS
+  // ================================
+
+  /// Delete user preferences
+  Future<void> _deleteUserPreferences(String userId) async {
+    try {
+      final preferencesQuery = await _firestore
+          .collection('user_preferences')
+          .where('userId', isEqualTo: userId)
+          .get();
+      
+      final batch = _firestore.batch();
+      for (final doc in preferencesQuery.docs) {
+        batch.delete(doc.reference);
+      }
+      if (preferencesQuery.docs.isNotEmpty) {
+        await batch.commit();
+      }
+    } catch (e) {
+      // Log error but don't throw - preferences are non-critical
+      print('Error deleting user preferences: $e');
+    }
+  }
+
+  /// Delete user FCM tokens
+  Future<void> _deleteUserFCMTokens(String userId) async {
+    try {
+      final fcmTokensQuery = await _firestore
+          .collection('fcm_tokens')
+          .where('userId', isEqualTo: userId)
+          .get();
+      
+      final batch = _firestore.batch();
+      for (final doc in fcmTokensQuery.docs) {
+        batch.delete(doc.reference);
+      }
+      if (fcmTokensQuery.docs.isNotEmpty) {
+        await batch.commit();
+      }
+    } catch (e) {
+      print('Error deleting FCM tokens: $e');
+    }
+  }
+
+  /// Delete user profile image
+  Future<void> _deleteUserProfileImage(String userId) async {
+    try {
+      // Delete all files in user's profile images folder
+      final profileImagesRef = _storage.ref().child('profile_images/$userId');
+      final listResult = await profileImagesRef.listAll();
+      
+      for (final item in listResult.items) {
+        await item.delete().catchError((e) => print('Error deleting file: $e'));
+      }
+    } catch (e) {
+      print('Error deleting profile images: $e');
+    }
+  }
+
+  /// Delete organization logo
+  Future<void> _deleteOrganizationLogo(String organizationId) async {
+    try {
+      final logoRef = _storage.ref().child('organization_logos/$organizationId');
+      final listResult = await logoRef.listAll();
+      
+      for (final item in listResult.items) {
+        await item.delete().catchError((e) => print('Error deleting logo: $e'));
+      }
+    } catch (e) {
+      print('Error deleting organization logo: $e');
+    }
+  }
+
+  /// Delete all users in organization
+  Future<void> _deleteOrganizationUsers(String organizationId) async {
+    try {
+      final usersQuery = await _firestore
+          .collection('users')
+          .where('organizationId', isEqualTo: organizationId)
+          .get();
+      
+      final batch = _firestore.batch();
+      for (final doc in usersQuery.docs) {
+        batch.delete(doc.reference);
+      }
+      if (usersQuery.docs.isNotEmpty) {
+        await batch.commit();
+      }
+    } catch (e) {
+      print('Error deleting organization users: $e');
+    }
+  }
+
+  /// Delete other organization-related data
+  Future<void> _deleteOrganizationRelatedData(String organizationId) async {
+    try {
+      // Add any other collections that contain organization data
+      final collectionsToClean = [
+        'requests',
+        'notifications',
+        'activities',
+        'tasks',
+        'reports',
+      ];
+      
+      for (final collection in collectionsToClean) {
+        try {
+          final query = await _firestore
+              .collection(collection)
+              .where('organizationId', isEqualTo: organizationId)
+              .get();
+          
+          final batch = _firestore.batch();
+          for (final doc in query.docs) {
+            batch.delete(doc.reference);
+          }
+          if (query.docs.isNotEmpty) {
+            await batch.commit();
+          }
+        } catch (e) {
+          print('Error cleaning collection $collection: $e');
+        }
+      }
+    } catch (e) {
+      print('Error deleting organization related data: $e');
+    }
+  }
+
+  /// Reauthenticate user before sensitive operations
+  Future<void> reauthenticateUser(String email, String password) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('No user logged in');
+      
+      final credential = EmailAuthProvider.credential(
+        email: email,
+        password: password,
+      );
+      
+      await user.reauthenticateWithCredential(credential);
+    } on FirebaseAuthException catch (e) {
+      throw _handleAuthException(e);
+    }
+  }
+
   // ================================
   // FIRESTORE CRUD OPERATIONS
   // ================================

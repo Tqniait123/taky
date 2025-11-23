@@ -4,12 +4,16 @@ import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
+import 'package:taqy/config/routes/routes.dart';
 import 'package:taqy/core/services/firebase_service.dart';
 import 'package:taqy/core/theme/colors.dart';
 import 'package:taqy/core/utils/dialogs/error_toast.dart';
 import 'package:taqy/core/utils/widgets/app_images.dart';
 import 'package:taqy/features/admin/presentation/widgets/language_layout_drop_down.dart';
+import 'package:taqy/features/all/auth/presentation/cubit/auth_cubit.dart';
 import 'package:taqy/features/office_boy/data/models/office_organization.dart';
 import 'package:taqy/features/office_boy/data/models/office_user_model.dart';
 
@@ -293,6 +297,22 @@ class _OfficeBoyProfileBottomSheetState
     );
   }
 
+  void _showDeleteAccountConfirmation(String locale) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return OfficeBoyDeleteAccountDialog(
+          locale: locale,
+          user: widget.user,
+          firebaseService: _firebaseService,
+          glowAnimation: _glowAnimation,
+          glowController: _glowController,
+        );
+      },
+    );
+  }
+
   Widget _buildGlassDialog(String locale) {
     return AnimatedBuilder(
       animation: _fadeController,
@@ -523,7 +543,7 @@ class _OfficeBoyProfileBottomSheetState
                 _buildUserInfoCard(locale),
                 SizedBox(height: 32),
 
-                // NEW: Settings Section with Language
+                // Settings Section with Language
                 _buildSettingsSection(locale),
                 SizedBox(height: 24),
 
@@ -557,7 +577,7 @@ class _OfficeBoyProfileBottomSheetState
     );
   }
 
-  // NEW: Dedicated Settings Section
+  // Dedicated Settings Section
   Widget _buildSettingsSection(String locale) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -650,7 +670,7 @@ class _OfficeBoyProfileBottomSheetState
     );
   }
 
-  // NEW: Setting Item Builder
+  // Setting Item Builder
   Widget _buildSettingItem({
     required IconData icon,
     required String title,
@@ -1556,7 +1576,12 @@ class _OfficeBoyProfileBottomSheetState
                       width: double.infinity,
                       height: 56,
                       decoration: BoxDecoration(
-                        color: Colors.red,
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.orange.shade600,
+                            Colors.orange.shade700,
+                          ],
+                        ),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Material(
@@ -1584,6 +1609,63 @@ class _OfficeBoyProfileBottomSheetState
                         ),
                       ),
                     ),
+                    SizedBox(height: 16),
+
+                    // Delete Account button (NEW)
+                    Container(
+                      width: double.infinity,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.red.shade700, Colors.red.shade900],
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.red.withOpacity(0.3),
+                            blurRadius: 10,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: _isSaving
+                              ? null
+                              : () {
+                                  Navigator.pop(context);
+                                  _showDeleteAccountConfirmation(locale);
+                                },
+                          child: Container(
+                            alignment: Alignment.center,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.delete_forever_rounded,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  locale == 'ar'
+                                      ? 'حذف الحساب'
+                                      : 'Delete Account',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -1591,6 +1673,370 @@ class _OfficeBoyProfileBottomSheetState
           ),
         );
       },
+    );
+  }
+}
+
+// Separate widget for Office Boy Delete Account Dialog
+class OfficeBoyDeleteAccountDialog extends StatefulWidget {
+  final String locale;
+  final OfficeUserModel user;
+  final FirebaseService firebaseService;
+  final Animation<double> glowAnimation;
+  final AnimationController glowController;
+
+  const OfficeBoyDeleteAccountDialog({
+    super.key,
+    required this.locale,
+    required this.user,
+    required this.firebaseService,
+    required this.glowAnimation,
+    required this.glowController,
+  });
+
+  @override
+  State<OfficeBoyDeleteAccountDialog> createState() =>
+      _OfficeBoyDeleteAccountDialogState();
+}
+
+class _OfficeBoyDeleteAccountDialogState
+    extends State<OfficeBoyDeleteAccountDialog> {
+  late TextEditingController _passwordController;
+  bool _isDeleting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _passwordController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+      child: Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.white.withOpacity(0.25),
+                Colors.white.withOpacity(0.1),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Warning icon
+              AnimatedBuilder(
+                animation: widget.glowController,
+                builder: (context, child) => Transform.scale(
+                  scale: 1.0 + (widget.glowAnimation.value * 0.1),
+                  child: Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                        colors: [
+                          Colors.red.withOpacity(0.3),
+                          Colors.red.withOpacity(0.1),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.red.withOpacity(
+                            widget.glowAnimation.value * 0.3,
+                          ),
+                          blurRadius: 15,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.warning_rounded,
+                      color: Colors.red,
+                      size: 30,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 20),
+
+              // Title
+              Text(
+                widget.locale == 'ar' ? 'حذف الحساب' : 'Delete Account',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(height: 12),
+
+              // Warning message
+              Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.red.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      widget.locale == 'ar'
+                          ? '⚠️ تحذير: هذا الإجراء لا يمكن التراجع عنه!'
+                          : '⚠️ Warning: This action cannot be undone!',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red.shade300,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      widget.locale == 'ar'
+                          ? 'سيتم حذف:\n• حسابك بالكامل\n• جميع بياناتك الشخصية\n• جميع طلباتك وسجلاتك\n• جميع الملفات والصور المرتبطة'
+                          : 'This will permanently delete:\n• Your entire account\n• All your personal data\n• All your requests and records\n• All associated files and images',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white.withOpacity(0.9),
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 20),
+
+              // Password confirmation field
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.white.withOpacity(0.15),
+                      Colors.white.withOpacity(0.05),
+                    ],
+                  ),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.2),
+                    width: 1,
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: TextFormField(
+                      controller: _passwordController,
+                      onTapOutside: (_) => FocusScope.of(context).unfocus(),
+                      obscureText: true,
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                      decoration: InputDecoration(
+                        hintText: widget.locale == 'ar'
+                            ? 'أدخل كلمة المرور للتأكيد'
+                            : 'Enter your password to confirm',
+                        hintStyle: TextStyle(
+                          color: Colors.white.withOpacity(0.6),
+                          fontSize: 14,
+                        ),
+                        prefixIcon: SvgPicture.asset(
+                          Assets.imagesSvgsLock,
+                          color: Colors.white.withOpacity(0.8),
+                          fit: BoxFit.scaleDown,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 24),
+
+              // Action buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.white.withOpacity(0.15),
+                            Colors.white.withOpacity(0.05),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: _isDeleting
+                              ? null
+                              : () {
+                                  Navigator.pop(context);
+                                },
+                          child: Center(
+                            child: Text(
+                              widget.locale == 'ar' ? 'إلغاء' : 'Cancel',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.red.shade700, Colors.red.shade900],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.red.withOpacity(0.4),
+                            blurRadius: 10,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: _isDeleting
+                              ? null
+                              : () async {
+                                  if (_passwordController.text.trim().isEmpty) {
+                                    showErrorToast(
+                                      context,
+                                      widget.locale == 'ar'
+                                          ? 'الرجاء إدخال كلمة المرور'
+                                          : 'Please enter your password',
+                                    );
+                                    return;
+                                  }
+
+                                  setState(() {
+                                    _isDeleting = true;
+                                  });
+
+                                  try {
+                                    final currentUser =
+                                        widget.firebaseService.currentUser;
+                                    if (currentUser == null) {
+                                      throw Exception('No user logged in');
+                                    }
+
+                                    // Reauthenticate user
+                                    await widget.firebaseService
+                                        .reauthenticateUser(
+                                          currentUser.email!,
+                                          _passwordController.text.trim(),
+                                        );
+
+                                    // Delete office boy account
+                                    await widget.firebaseService
+                                        .deleteUserAccount(widget.user.id);
+
+                                    // Sign out and redirect to login
+                                    await context.read<AuthCubit>().signOut();
+
+                                    if (context.mounted) {
+                                      Navigator.pop(context); // Close dialog
+                                      context.go(Routes.login);
+
+                                      showSuccessToast(
+                                        context,
+                                        widget.locale == 'ar'
+                                            ? 'تم حذف الحساب بنجاح'
+                                            : 'Account deleted successfully',
+                                      );
+                                    }
+                                  } catch (e) {
+                                    setState(() {
+                                      _isDeleting = false;
+                                    });
+
+                                    showErrorToast(
+                                      context,
+                                      widget.locale == 'ar'
+                                          ? 'فشل حذف الحساب: ${e.toString()}'
+                                          : 'Failed to delete account: ${e.toString()}',
+                                    );
+                                  }
+                                },
+                          child: Center(
+                            child: _isDeleting
+                                ? SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Text(
+                                    widget.locale == 'ar'
+                                        ? 'حذف نهائياً'
+                                        : 'Delete Permanently',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
