@@ -9,7 +9,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:taqy/app.dart';
-import 'package:taqy/config/supabase_config.dart';
 import 'package:taqy/core/observers/bloc_observer.dart';
 import 'package:taqy/core/services/di.dart';
 import 'package:taqy/core/static/locales.dart';
@@ -84,9 +83,8 @@ Future<void> main() async {
   // Set status bar color globally
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent, 
-      statusBarIconBrightness:
-          Brightness.light, 
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
     ),
   );
 
