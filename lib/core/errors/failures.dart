@@ -26,7 +26,7 @@
 
 // lib/core/errors/failures.dart
 import 'package:equatable/equatable.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+// import 'package:supabase_flutter/supabase_flutter.dart';
 
 abstract class Failure extends Equatable {
   final String message;
@@ -41,273 +41,347 @@ abstract class Failure extends Equatable {
 
 // Authentication Failures
 class AuthFailure extends Failure {
-  const AuthFailure(String message, {super.code, super.details}) : super(message: message);
+  const AuthFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class RegistrationFailure extends Failure {
-  const RegistrationFailure(String message, {super.code, super.details}) : super(message: message);
+  const RegistrationFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class LoginFailure extends Failure {
-  const LoginFailure(String message, {super.code, super.details}) : super(message: message);
+  const LoginFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class LogoutFailure extends Failure {
-  const LogoutFailure(String message, {super.code, super.details}) : super(message: message);
+  const LogoutFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class PasswordResetFailure extends Failure {
-  const PasswordResetFailure(String message, {super.code, super.details}) : super(message: message);
+  const PasswordResetFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class EmailVerificationFailure extends Failure {
-  const EmailVerificationFailure(String message, {super.code, super.details}) : super(message: message);
+  const EmailVerificationFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class TokenRefreshFailure extends Failure {
-  const TokenRefreshFailure(String message, {super.code, super.details}) : super(message: message);
+  const TokenRefreshFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class UnauthorizedFailure extends Failure {
-  const UnauthorizedFailure(String message, {super.code, super.details}) : super(message: message);
+  const UnauthorizedFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class SessionExpiredFailure extends Failure {
-  const SessionExpiredFailure(String message, {super.code, super.details}) : super(message: message);
+  const SessionExpiredFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 // Database Failures
 class DatabaseFailure extends Failure {
-  const DatabaseFailure(String message, {super.code, super.details}) : super(message: message);
+  const DatabaseFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class QueryFailure extends Failure {
-  const QueryFailure(String message, {super.code, super.details}) : super(message: message);
+  const QueryFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class InsertFailure extends Failure {
-  const InsertFailure(String message, {super.code, super.details}) : super(message: message);
+  const InsertFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class UpdateFailure extends Failure {
-  const UpdateFailure(String message, {super.code, super.details}) : super(message: message);
+  const UpdateFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class DeleteFailure extends Failure {
-  const DeleteFailure(String message, {super.code, super.details}) : super(message: message);
+  const DeleteFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class ConnectionFailure extends Failure {
-  const ConnectionFailure(String message, {super.code, super.details}) : super(message: message);
+  const ConnectionFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class TransactionFailure extends Failure {
-  const TransactionFailure(String message, {super.code, super.details}) : super(message: message);
+  const TransactionFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 // Storage Failures
 class StorageFailure extends Failure {
-  const StorageFailure(String message, {super.code, super.details}) : super(message: message);
+  const StorageFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class FileUploadFailure extends Failure {
-  const FileUploadFailure(String message, {super.code, super.details}) : super(message: message);
+  const FileUploadFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class FileDownloadFailure extends Failure {
-  const FileDownloadFailure(String message, {super.code, super.details}) : super(message: message);
+  const FileDownloadFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class FileDeleteFailure extends Failure {
-  const FileDeleteFailure(String message, {super.code, super.details}) : super(message: message);
+  const FileDeleteFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class FileNotFoundFailure extends Failure {
-  const FileNotFoundFailure(String message, {super.code, super.details}) : super(message: message);
+  const FileNotFoundFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class FileSizeExceededFailure extends Failure {
-  const FileSizeExceededFailure(String message, {super.code, super.details}) : super(message: message);
+  const FileSizeExceededFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class InvalidFileTypeFailure extends Failure {
-  const InvalidFileTypeFailure(String message, {super.code, super.details}) : super(message: message);
+  const InvalidFileTypeFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 // Network Failures
 class NetworkFailure extends Failure {
-  const NetworkFailure(String message, {super.code, super.details}) : super(message: message);
+  const NetworkFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class ServerFailure extends Failure {
-  const ServerFailure(String message, {super.code, super.details}) : super(message: message);
+  const ServerFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class TimeoutFailure extends Failure {
-  const TimeoutFailure(String message, {super.code, super.details}) : super(message: message);
+  const TimeoutFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class NoInternetFailure extends Failure {
-  const NoInternetFailure(String message, {super.code, super.details}) : super(message: message);
+  const NoInternetFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class BadRequestFailure extends Failure {
-  const BadRequestFailure(String message, {super.code, super.details}) : super(message: message);
+  const BadRequestFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class NotFoundFailure extends Failure {
-  const NotFoundFailure(String message, {super.code, super.details}) : super(message: message);
+  const NotFoundFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class InternalServerFailure extends Failure {
-  const InternalServerFailure(String message, {super.code, super.details}) : super(message: message);
+  const InternalServerFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 // Validation Failures
 class ValidationFailure extends Failure {
-  const ValidationFailure(String message, {super.code, super.details}) : super(message: message);
+  const ValidationFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class InvalidInputFailure extends Failure {
-  const InvalidInputFailure(String message, {super.code, super.details}) : super(message: message);
+  const InvalidInputFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class RequiredFieldFailure extends Failure {
-  const RequiredFieldFailure(String message, {super.code, super.details}) : super(message: message);
+  const RequiredFieldFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class InvalidEmailFailure extends Failure {
-  const InvalidEmailFailure(String message, {super.code, super.details}) : super(message: message);
+  const InvalidEmailFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class InvalidPasswordFailure extends Failure {
-  const InvalidPasswordFailure(String message, {super.code, super.details}) : super(message: message);
+  const InvalidPasswordFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class InvalidPhoneFailure extends Failure {
-  const InvalidPhoneFailure(String message, {super.code, super.details}) : super(message: message);
+  const InvalidPhoneFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class DuplicateEntryFailure extends Failure {
-  const DuplicateEntryFailure(String message, {super.code, super.details}) : super(message: message);
+  const DuplicateEntryFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 // Organization Failures
 class OrganizationFailure extends Failure {
-  const OrganizationFailure(String message, {super.code, super.details}) : super(message: message);
+  const OrganizationFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class OrganizationNotFoundFailure extends Failure {
-  const OrganizationNotFoundFailure(String message, {super.code, super.details}) : super(message: message);
+  const OrganizationNotFoundFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class OrganizationCodeFailure extends Failure {
-  const OrganizationCodeFailure(String message, {super.code, super.details}) : super(message: message);
+  const OrganizationCodeFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class OrganizationInactiveFailure extends Failure {
-  const OrganizationInactiveFailure(String message, {super.code, super.details}) : super(message: message);
+  const OrganizationInactiveFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class InsufficientPermissionsFailure extends Failure {
-  const InsufficientPermissionsFailure(String message, {super.code, super.details}) : super(message: message);
+  const InsufficientPermissionsFailure(
+    String message, {
+    super.code,
+    super.details,
+  }) : super(message: message);
 }
 
 // Request Failures
 class RequestFailure extends Failure {
-  const RequestFailure(String message, {super.code, super.details}) : super(message: message);
+  const RequestFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class RequestNotFoundFailure extends Failure {
-  const RequestNotFoundFailure(String message, {super.code, super.details}) : super(message: message);
+  const RequestNotFoundFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class RequestAlreadyProcessedFailure extends Failure {
-  const RequestAlreadyProcessedFailure(String message, {super.code, super.details}) : super(message: message);
+  const RequestAlreadyProcessedFailure(
+    String message, {
+    super.code,
+    super.details,
+  }) : super(message: message);
 }
 
 class RequestCancelledFailure extends Failure {
-  const RequestCancelledFailure(String message, {super.code, super.details}) : super(message: message);
+  const RequestCancelledFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 // Notification Failures
 class NotificationFailure extends Failure {
-  const NotificationFailure(String message, {super.code, super.details}) : super(message: message);
+  const NotificationFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class FCMTokenFailure extends Failure {
-  const FCMTokenFailure(String message, {super.code, super.details}) : super(message: message);
+  const FCMTokenFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class PushNotificationFailure extends Failure {
-  const PushNotificationFailure(String message, {super.code, super.details}) : super(message: message);
+  const PushNotificationFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class LocalNotificationFailure extends Failure {
-  const LocalNotificationFailure(String message, {super.code, super.details}) : super(message: message);
+  const LocalNotificationFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 // Permission Failures
 class PermissionFailure extends Failure {
-  const PermissionFailure(String message, {super.code, super.details}) : super(message: message);
+  const PermissionFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class CameraPermissionFailure extends Failure {
-  const CameraPermissionFailure(String message, {super.code, super.details}) : super(message: message);
+  const CameraPermissionFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class StoragePermissionFailure extends Failure {
-  const StoragePermissionFailure(String message, {super.code, super.details}) : super(message: message);
+  const StoragePermissionFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class LocationPermissionFailure extends Failure {
-  const LocationPermissionFailure(String message, {super.code, super.details}) : super(message: message);
+  const LocationPermissionFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class NotificationPermissionFailure extends Failure {
-  const NotificationPermissionFailure(String message, {super.code, super.details}) : super(message: message);
+  const NotificationPermissionFailure(
+    String message, {
+    super.code,
+    super.details,
+  }) : super(message: message);
 }
 
 // Cache Failures
 class CacheFailure extends Failure {
-  const CacheFailure(String message, {super.code, super.details}) : super(message: message);
+  const CacheFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class CacheNotFoundFailure extends Failure {
-  const CacheNotFoundFailure(String message, {super.code, super.details}) : super(message: message);
+  const CacheNotFoundFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class CacheExpiredFailure extends Failure {
-  const CacheExpiredFailure(String message, {super.code, super.details}) : super(message: message);
+  const CacheExpiredFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 // General Failures
 class GeneralFailure extends Failure {
-  const GeneralFailure(String message, {super.code, super.details}) : super(message: message);
+  const GeneralFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class UnknownFailure extends Failure {
-  const UnknownFailure(String message, {super.code, super.details}) : super(message: message);
+  const UnknownFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class ParseFailure extends Failure {
-  const ParseFailure(String message, {super.code, super.details}) : super(message: message);
+  const ParseFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class SerializationFailure extends Failure {
-  const SerializationFailure(String message, {super.code, super.details}) : super(message: message);
+  const SerializationFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class FormatFailure extends Failure {
-  const FormatFailure(String message, {super.code, super.details}) : super(message: message);
+  const FormatFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class ConfigurationFailure extends Failure {
-  const ConfigurationFailure(String message, {super.code, super.details}) : super(message: message);
+  const ConfigurationFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 class InitializationFailure extends Failure {
-  const InitializationFailure(String message, {super.code, super.details}) : super(message: message);
+  const InitializationFailure(String message, {super.code, super.details})
+    : super(message: message);
 }
 
 // Utility extension for common failure handling
@@ -340,7 +414,10 @@ extension FailureExtension on Failure {
 
   /// Returns true if the failure is network-related
   bool get isNetworkFailure {
-    return this is NetworkFailure || this is TimeoutFailure || this is NoInternetFailure || this is ConnectionFailure;
+    return this is NetworkFailure ||
+        this is TimeoutFailure ||
+        this is NoInternetFailure ||
+        this is ConnectionFailure;
   }
 
   /// Returns true if the failure is authentication-related
@@ -373,19 +450,19 @@ extension FailureExtension on Failure {
 
 // Failure factory for creating failures from different sources
 class FailureFactory {
-  static Failure fromException(Exception exception) {
-    if (exception is AuthException) {
-      return AuthFailure(exception.message);
-    } else if (exception is PostgrestException) {
-      return DatabaseFailure(exception.message);
-    } else if (exception is StorageException) {
-      return StorageFailure(exception.message);
-    } else if (exception is FormatException) {
-      return ParseFailure(exception.message);
-    } else {
-      return GeneralFailure(exception.toString());
-    }
-  }
+  // static Failure fromException(Exception exception) {
+  //   if (exception is AuthException) {
+  //     return AuthFailure(exception.message);
+  //   } else if (exception is PostgrestException) {
+  //     return DatabaseFailure(exception.message);
+  //   } else if (exception is StorageException) {
+  //     return StorageFailure(exception.message);
+  //   } else if (exception is FormatException) {
+  //     return ParseFailure(exception.message);
+  //   } else {
+  //     return GeneralFailure(exception.toString());
+  //   }
+  // }
 
   static Failure fromError(Error error) {
     return GeneralFailure(error.toString());
@@ -425,6 +502,7 @@ class FailureMessages {
   static const String requestNotFound = 'Request not found';
   static const String invalidCredentials = 'Invalid credentials';
   static const String emailAlreadyExists = 'Email already exists';
-  static const String organizationCodeExists = 'Organization code already exists';
+  static const String organizationCodeExists =
+      'Organization code already exists';
   static const String insufficientPermissions = 'Insufficient permissions';
 }

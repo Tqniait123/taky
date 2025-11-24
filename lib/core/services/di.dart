@@ -1,8 +1,8 @@
 // lib/core/services/di.dart
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:taqy/config/supabase_config.dart';
+// import 'package:supabase_flutter/supabase_flutter.dart';
+// import 'package:taqy/config/supabase_config.dart';
 import 'package:taqy/core/api/dio_client.dart';
 import 'package:taqy/core/preferences/shared_pref.dart';
 import 'package:taqy/core/services/firebase_service.dart';
@@ -27,7 +27,7 @@ Future<void> initLocator(SharedPreferences sharedPreferences) async {
 
     // Register SupabaseClient (Supabase should already be initialized at this point)
     // Use the SupabaseConfig.client getter for consistency
-    sl.registerLazySingleton<SupabaseClient>(() => SupabaseConfig.client);
+    // sl.registerLazySingleton<SupabaseClient>(() => SupabaseConfig.client);
     // Register Firebase Service
     sl.registerLazySingleton<FirebaseService>(() => FirebaseService());
 

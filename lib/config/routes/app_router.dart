@@ -16,12 +16,11 @@ import 'package:taqy/features/all/auth/presentation/pages/register_screen.dart';
 import 'package:taqy/features/all/layout/presentation/pages/admin_layout.dart';
 import 'package:taqy/features/all/layout/presentation/pages/employee_layout.dart';
 import 'package:taqy/features/all/layout/presentation/pages/office_boy_layout.dart';
-import 'package:taqy/features/all/notifications/presentation/pages/notifications_screen.dart';
-import 'package:taqy/features/all/on_boarding/presentation/pages/on_boarding_screen.dart';
-import 'package:taqy/features/all/profile/presentation/cubit/profile_cubit.dart';
-import 'package:taqy/features/all/profile/presentation/pages/edit_profile_screen.dart';
-import 'package:taqy/features/all/profile/presentation/pages/faq_screen.dart';
-import 'package:taqy/features/all/profile/presentation/pages/profile_screen.dart';
+// import 'package:taqy/features/all/notifications/presentation/pages/notifications_screen.dart';
+// import 'package:taqy/features/all/on_boarding/presentation/pages/on_boarding_screen.dart';
+// import 'package:taqy/features/all/profile/presentation/cubit/profile_cubit.dart';
+// import 'package:taqy/features/all/profile/presentation/pages/faq_screen.dart';
+// import 'package:taqy/features/all/profile/presentation/pages/profile_screen.dart';
 import 'package:taqy/features/all/splash/presentation/pages/splash.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -55,14 +54,13 @@ class AppRouter {
         },
       ),
 
-      GoRoute(
-        path: Routes.onBoarding1,
-        builder: (context, state) {
-          // Return the SplashScreen widget
-          return const OnBoardingScreen();
-        },
-      ),
-
+      // GoRoute(
+      //   path: Routes.onBoarding1,
+      //   builder: (context, state) {
+      //     // Return the SplashScreen widget
+      //     return const OnBoardingScreen();
+      //   },
+      // ),
       GoRoute(
         path: Routes.login,
         builder: (context, state) {
@@ -135,28 +133,28 @@ class AppRouter {
       //     return CheckYourEmailScreen(email: state.extra as String);
       //   },
       // ),
-      GoRoute(
-        path: Routes.notifications,
-        builder: (context, state) {
-          // Return the Routing widget
-          return NotificationsScreen();
-        },
-      ),
+      // GoRoute(
+      //   path: Routes.notifications,
+      //   builder: (context, state) {
+      //     // Return the Routing widget
+      //     return NotificationsScreen();
+      //   },
+      // ),
 
-      GoRoute(
-        path: Routes.profile,
-        builder: (context, state) {
-          // Return the ProfileScreen widget
-          return ProfileScreen();
-        },
-      ),
-      GoRoute(
-        path: Routes.editProfile,
-        builder: (context, state) {
-          // Return the EditProfileScreen widget
-          return EditProfileScreen();
-        },
-      ),
+      // GoRoute(
+      //   path: Routes.profile,
+      //   builder: (context, state) {
+      //     // Return the ProfileScreen widget
+      //     return ProfileScreen();
+      //   },
+      // ),
+      // GoRoute(
+      //   path: Routes.editProfile,
+      //   builder: (context, state) {
+      //     // Return the EditProfileScreen widget
+      //     return EditProfileScreen();
+      //   },
+      // ),
       GoRoute(
         path: Routes.layoutAdmin,
         builder: (context, state) {
@@ -188,7 +186,8 @@ class AppRouter {
       GoRoute(
         path: Routes.checkYourEmail,
         builder: (context, state) {
-          final Map<String, dynamic> extras = state.extra as Map<String, dynamic>;
+          final Map<String, dynamic> extras =
+              state.extra as Map<String, dynamic>;
           return CheckYourEmailScreen(
             email: extras['email'] as String,
             isPasswordReset: extras['isPasswordReset'] as bool,
@@ -203,13 +202,16 @@ class AppRouter {
       //     return BlocProvider(create: (BuildContext context) => CarCubit(sl()), child: MyCarsScreen());
       //   },
       // ),
-      GoRoute(
-        path: Routes.faq,
-        builder: (context, state) {
-          // Return the FAQscreen widget
-          return BlocProvider(create: (BuildContext context) => PagesCubit(sl()), child: FAQScreen());
-        },
-      ),
+      // GoRoute(
+      //   path: Routes.faq,
+      //   builder: (context, state) {
+      //     // Return the FAQscreen widget
+      //     return BlocProvider(
+      //       create: (BuildContext context) => PagesCubit(sl()),
+      //       child: FAQScreen(),
+      //     );
+      //   },
+      // ),
       // GoRoute(
       //   path: Routes.termsAndConditions,
       //   builder: (context, state) {
@@ -252,7 +254,10 @@ class AppRouter {
             CustomBackButton(),
             100.gap,
             Center(
-              child: Text("Un Found Route", style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold)),
+              child: Text(
+                "Un Found Route",
+                style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),

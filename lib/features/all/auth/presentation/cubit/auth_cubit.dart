@@ -4,7 +4,7 @@ import 'dart:async';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:image_picker/image_picker.dart';
+// import 'package:image_picker/image_picker.dart';
 import 'package:taqy/core/notifications/notification_service.dart';
 import 'package:taqy/core/translations/locale_keys.g.dart';
 import 'package:taqy/features/all/auth/data/repositories/auth_repo.dart';
@@ -37,14 +37,14 @@ class AuthCubit extends Cubit<AuthState> {
     required String name,
     required UserRole role,
     String? phone,
-    XFile? profileImage,
+    // XFile? profileImage,
     String? organizationName,
     String? organizationCode,
-    XFile? organizationLogo,
+    // XFile? organizationLogo,
     String? primaryColor,
     String? secondaryColor,
     bool skipImageUpload = true,
-    String? jobTitle ,
+    String? jobTitle,
   }) async {
     if (isClosed) return;
     emit(const AuthState.loading());
@@ -54,41 +54,41 @@ class AuthCubit extends Cubit<AuthState> {
       String? orgLogoUrl;
 
       // Handle image uploads if not skipping
-      if (!skipImageUpload) {
-        if (profileImage != null) {
-          final uploadResult = await _authRepository.uploadProfileImage(
-            profileImage.path,
-          );
-          final result = uploadResult.fold((failure) {
-            if (!isClosed) emit(AuthState.error(failure.message));
-            return null;
-          }, (url) => url);
+      // if (!skipImageUpload) {
+      //   if (profileImage != null) {
+      //     final uploadResult = await _authRepository.uploadProfileImage(
+      //       profileImage.path,
+      //     );
+      //     final result = uploadResult.fold((failure) {
+      //       if (!isClosed) emit(AuthState.error(failure.message));
+      //       return null;
+      //     }, (url) => url);
 
-          if (result == null) return;
-          profileImageUrl = result;
-        }
+      //     if (result == null) return;
+      //     profileImageUrl = result;
+      //   }
 
-        if (role == UserRole.admin && organizationLogo != null) {
-          final uploadResult = await _authRepository.uploadOrganizationLogo(
-            organizationLogo.path,
-          );
-          final result = uploadResult.fold((failure) {
-            if (!isClosed) emit(AuthState.error(failure.message));
-            return null;
-          }, (url) => url);
+      //   if (role == UserRole.admin && organizationLogo != null) {
+      //     final uploadResult = await _authRepository.uploadOrganizationLogo(
+      //       organizationLogo.path,
+      //     );
+      //     final result = uploadResult.fold((failure) {
+      //       if (!isClosed) emit(AuthState.error(failure.message));
+      //       return null;
+      //     }, (url) => url);
 
-          if (result == null) return;
-          orgLogoUrl = result;
-        }
-      } else {
-        // Use placeholder URLs for testing
-        profileImageUrl = profileImage != null
-            ? 'https://via.placeholder.com/150'
-            : null;
-        orgLogoUrl = organizationLogo != null
-            ? 'https://via.placeholder.com/300'
-            : null;
-      }
+      //     if (result == null) return;
+      //     orgLogoUrl = result;
+      //   }
+      // } else {
+      //   // Use placeholder URLs for testing
+      //   profileImageUrl = profileImage != null
+      //       ? 'https://via.placeholder.com/150'
+      //       : null;
+      //   orgLogoUrl = organizationLogo != null
+      //       ? 'https://via.placeholder.com/300'
+      //       : null;
+      // }
 
       // For non-admin users, verify organization code exists
       if (role != UserRole.admin && organizationCode != null) {

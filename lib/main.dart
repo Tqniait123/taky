@@ -61,7 +61,7 @@ Future<void> main() async {
   await EasyLocalization.ensureInitialized();
 
   // 1. Initialize Supabase FIRST
-  await SupabaseConfig.initialize();
+  // await SupabaseConfig.initialize();
 
   // 2. Initialize SharedPreferences
   final sharedPreferences = await SharedPreferences.getInstance();
