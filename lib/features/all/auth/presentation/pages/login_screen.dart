@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:taqy/config/routes/routes.dart';
+import 'package:taqy/core/extensions/context_extensions.dart';
 import 'package:taqy/core/services/di.dart';
 import 'package:taqy/core/theme/colors.dart';
 import 'package:taqy/core/translations/locale_keys.g.dart';
@@ -23,8 +24,7 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen>
-    with TickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -58,60 +58,46 @@ class _LoginScreenState extends State<LoginScreen>
 
   void _initializeAnimations() {
     // Background animation controller
-    _backgroundController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 4),
-    );
-    _backgroundGradient = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _backgroundController, curve: Curves.easeInOut),
-    );
+    _backgroundController = AnimationController(vsync: this, duration: const Duration(seconds: 4));
+    _backgroundGradient = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _backgroundController, curve: Curves.easeInOut));
 
     // Slide animation for content
-    _slideController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    );
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
-          CurvedAnimation(parent: _slideController, curve: Curves.elasticOut),
-        );
+    _slideController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000));
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.elasticOut));
 
     // Fade animation
-    _fadeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
+    _fadeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
     ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeOut));
 
     // Scale animation
-    _scaleController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
-    );
+    _scaleController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _scaleAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut));
 
     // Pulse animation
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    );
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
+    _pulseController = AnimationController(vsync: this, duration: const Duration(seconds: 3));
+    _pulseAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.05,
+    ).animate(CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut));
 
     // Rotation animation
-    _rotationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 20),
-    );
-    _rotationAnimation = Tween<double>(begin: 0.0, end: 2 * math.pi).animate(
-      CurvedAnimation(parent: _rotationController, curve: Curves.linear),
-    );
+    _rotationController = AnimationController(vsync: this, duration: const Duration(seconds: 20));
+    _rotationAnimation = Tween<double>(
+      begin: 0.0,
+      end: 2 * math.pi,
+    ).animate(CurvedAnimation(parent: _rotationController, curve: Curves.linear));
   }
 
   void _startAnimations() {
@@ -153,12 +139,8 @@ class _LoginScreenState extends State<LoginScreen>
             Positioned.fill(
               child: AnimatedBuilder(
                 animation: _backgroundController,
-                builder: (context, child) => CustomPaint(
-                  painter: _LoginBackgroundPainter(
-                    _backgroundGradient.value,
-                    _rotationAnimation.value,
-                  ),
-                ),
+                builder: (context, child) =>
+                    CustomPaint(painter: _LoginBackgroundPainter(_backgroundGradient.value, _rotationAnimation.value)),
               ),
             ),
 
@@ -191,10 +173,7 @@ class _LoginScreenState extends State<LoginScreen>
                   );
                 },
                 builder: (context, state) {
-                  final isLoading = state.maybeWhen(
-                    loading: () => true,
-                    orElse: () => false,
-                  );
+                  final isLoading = state.maybeWhen(loading: () => true, orElse: () => false);
 
                   return AnimatedBuilder(
                     animation: Listenable.merge([
@@ -206,48 +185,42 @@ class _LoginScreenState extends State<LoginScreen>
                     ]),
                     builder: (context, child) {
                       return FadeTransition(
-                        opacity: AlwaysStoppedAnimation(
-                          _fadeAnimation.value.clamp(0.0, 1.0),
-                        ),
+                        opacity: AlwaysStoppedAnimation(_fadeAnimation.value.clamp(0.0, 1.0)),
                         child: SlideTransition(
                           position: _slideAnimation,
                           child: ScaleTransition(
-                            scale: AlwaysStoppedAnimation(
-                              _scaleAnimation.value.clamp(0.1, 1.0),
-                            ),
+                            scale: AlwaysStoppedAnimation(_scaleAnimation.value.clamp(0.1, 1.0)),
                             child: SingleChildScrollView(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16.0,
-                                vertical: 16,
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Language Dropdown at the top
-                                  // const SizedBox(height: 16),
-                                  Align(
-                                    alignment: locale == 'ar'
-                                        ? Alignment.topLeft
-                                        : Alignment.topRight,
-                                    child: _buildGlassLanguageDropdown(),
-                                  ),
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16),
+                              child: SizedBox(
+                                height: context.height,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Language Dropdown at the top
+                                    // const SizedBox(height: 16),
+                                    Align(
+                                      alignment: locale == 'ar' ? Alignment.topLeft : Alignment.topRight,
+                                      child: _buildGlassLanguageDropdown(),
+                                    ),
 
-                                  // Header with enhanced design
-                                  const SizedBox(height: 16),
-                                  _buildAnimatedHeader(),
+                                    // Header with enhanced design
+                                    const SizedBox(height: 16),
+                                    _buildAnimatedHeader(),
 
-                                  const SizedBox(height: 24),
+                                    const SizedBox(height: 24),
 
-                                  // Glass Form Card
-                                  _buildGlassForm(isLoading, context),
+                                    // Glass Form Card
+                                    _buildGlassForm(isLoading, context),
 
-                                  const SizedBox(height: 24),
+                                    const SizedBox(height: 24),
 
-                                  // Sign Up Link with glass effect
-                                  _buildGlassSignUpSection(context),
+                                    // Sign Up Link with glass effect
+                                    _buildGlassSignUpSection(context),
 
-                                   const SizedBox(height: 48),
-                                ],
+                                    const SizedBox(height: 48),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -275,18 +248,9 @@ class _LoginScreenState extends State<LoginScreen>
             color: AppColors.glass,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: AppColors.glassStroke, width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 15,
-                offset: const Offset(0, 5),
-              ),
-            ],
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, 5))],
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: const CompactLanguageDropdown(),
-          ),
+          child: ClipRRect(borderRadius: BorderRadius.circular(20), child: const CompactLanguageDropdown()),
         ),
       ),
     );
@@ -311,31 +275,17 @@ class _LoginScreenState extends State<LoginScreen>
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [
-                          AppColors.primary.withOpacity(0.8),
-                          AppColors.secondary.withOpacity(0.6),
-                        ],
+                        colors: [AppColors.primary.withOpacity(0.8), AppColors.secondary.withOpacity(0.6)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       shape: BoxShape.circle,
                       boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withOpacity(0.3),
-                          blurRadius: 20,
-                          spreadRadius: 5,
-                        ),
+                        BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 20, spreadRadius: 5),
                       ],
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
-                        width: 2,
-                      ),
+                      border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
                     ),
-                    child: Icon(
-                      Icons.business_center_rounded,
-                      size: 48,
-                      color: Colors.white,
-                    ),
+                    child: Icon(Icons.business_center_rounded, size: 48, color: Colors.white),
                   ),
                 ),
               ),
@@ -356,13 +306,7 @@ class _LoginScreenState extends State<LoginScreen>
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
-                  shadows: [
-                    Shadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  shadows: [Shadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 2))],
                 ),
               ),
             ),
@@ -377,11 +321,7 @@ class _LoginScreenState extends State<LoginScreen>
               offset: Offset(0, value),
               child: Text(
                 LocaleKeys.signInToAccount.tr(),
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
-                  fontSize: 16,
-                  height: 1.5,
-                ),
+                style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 16, height: 1.5),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -402,13 +342,7 @@ class _LoginScreenState extends State<LoginScreen>
             color: AppColors.glass,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: AppColors.glassStroke, width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.15),
-                blurRadius: 30,
-                offset: const Offset(0, 10),
-              ),
-            ],
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 30, offset: const Offset(0, 10))],
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(24),
@@ -428,9 +362,7 @@ class _LoginScreenState extends State<LoginScreen>
                       if (value == null || value.isEmpty) {
                         return LocaleKeys.pleaseEnterEmail.tr();
                       }
-                      if (!RegExp(
-                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                      ).hasMatch(value)) {
+                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
                         return LocaleKeys.pleaseEnterValidEmail.tr();
                       }
                       return null;
@@ -472,21 +404,14 @@ class _LoginScreenState extends State<LoginScreen>
                     child: GestureDetector(
                       onTap: () => _handleForgotPassword(context),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
                           LocaleKeys.forgotPassword.tr(),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
                         ),
                       ),
                     ),
@@ -543,23 +468,12 @@ class _LoginScreenState extends State<LoginScreen>
         style: TextStyle(color: Colors.white, fontSize: 16),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(
-            color: Colors.white.withOpacity(0.8),
-            fontSize: 14,
-          ),
+          labelStyle: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
           hintText: hint,
-          hintStyle: TextStyle(
-            color: Colors.white.withOpacity(0.5),
-            fontSize: 14,
-          ),
+          hintStyle: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14),
           prefixIcon: Padding(
             padding: const EdgeInsets.all(12.0),
-            child: SvgPicture.asset(
-              prefixIcon,
-              color: Colors.white.withOpacity(0.7),
-              height: 20,
-              width: 20,
-            ),
+            child: SvgPicture.asset(prefixIcon, color: Colors.white.withOpacity(0.7), height: 20, width: 20),
           ),
           suffixIcon: isPassword
               ? IconButton(
@@ -571,10 +485,7 @@ class _LoginScreenState extends State<LoginScreen>
                 )
               : null,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
         validator: validator,
         onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
@@ -602,10 +513,7 @@ class _LoginScreenState extends State<LoginScreen>
                 children: [
                   Text(
                     LocaleKeys.dontHaveAccount.tr(),
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 16),
                   ),
                   const SizedBox(width: 8),
                   GestureDetector(
@@ -615,30 +523,17 @@ class _LoginScreenState extends State<LoginScreen>
                       }
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [
-                            Colors.white.withOpacity(0.1),
-                            Colors.white.withOpacity(0.2),
-                          ],
+                          colors: [Colors.white.withOpacity(0.1), Colors.white.withOpacity(0.2)],
                         ),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
-                          width: 1,
-                        ),
+                        border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
                       ),
                       child: Text(
                         LocaleKeys.signUp.tr(),
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16),
                       ),
                     ),
                   ),
@@ -655,10 +550,7 @@ class _LoginScreenState extends State<LoginScreen>
     if (!_formKey.currentState!.validate()) return;
 
     try {
-      context.read<AuthCubit>().signIn(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
+      context.read<AuthCubit>().signIn(email: _emailController.text.trim(), password: _passwordController.text);
     } catch (e) {
       debugPrint('Login error: $e');
       if (mounted && !_isDisposed) {
@@ -686,10 +578,7 @@ class _LoginBackgroundPainter extends CustomPainter {
       end: Alignment.bottomRight,
     );
 
-    final paint = Paint()
-      ..shader = gradient.createShader(
-        Rect.fromLTWH(0, 0, size.width, size.height),
-      );
+    final paint = Paint()..shader = gradient.createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
 
@@ -699,13 +588,8 @@ class _LoginBackgroundPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     for (int i = 0; i < 20; i++) {
-      final x =
-          (size.width * 0.1) +
-          (i * size.width * 0.04) +
-          (math.sin(animationValue * 2 * math.pi + i) * 30);
-      final y =
-          (size.height * 0.2) +
-          (math.cos(animationValue * 2 * math.pi + i * 0.7) * 40);
+      final x = (size.width * 0.1) + (i * size.width * 0.04) + (math.sin(animationValue * 2 * math.pi + i) * 30);
+      final y = (size.height * 0.2) + (math.cos(animationValue * 2 * math.pi + i * 0.7) * 40);
       final radius = 2 + math.sin(animationValue * 2 * math.pi + i) * 2;
 
       canvas.drawCircle(Offset(x, y), radius.abs(), particlePaint);
@@ -714,11 +598,7 @@ class _LoginBackgroundPainter extends CustomPainter {
     // Flowing gradient lines
     final linePaint = Paint()
       ..shader = LinearGradient(
-        colors: [
-          Colors.white.withOpacity(0.0),
-          Colors.white.withOpacity(0.1),
-          Colors.white.withOpacity(0.0),
-        ],
+        colors: [Colors.white.withOpacity(0.0), Colors.white.withOpacity(0.1), Colors.white.withOpacity(0.0)],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
       ..strokeWidth = 1.5;
 
@@ -729,10 +609,7 @@ class _LoginBackgroundPainter extends CustomPainter {
       path.moveTo(-50, startY);
 
       for (double x = -50; x <= size.width + 50; x += 8) {
-        final y =
-            startY +
-            math.sin((x * 0.008) + (animationValue * 2 * math.pi) + (i * 2)) *
-                25;
+        final y = startY + math.sin((x * 0.008) + (animationValue * 2 * math.pi) + (i * 2)) * 25;
         path.lineTo(x, y);
       }
 

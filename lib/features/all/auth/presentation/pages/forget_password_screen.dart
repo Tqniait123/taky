@@ -368,6 +368,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:taqy/config/routes/routes.dart';
+import 'package:taqy/core/extensions/context_extensions.dart';
 import 'package:taqy/core/services/di.dart';
 import 'package:taqy/core/theme/colors.dart';
 import 'package:taqy/core/translations/locale_keys.g.dart';
@@ -384,8 +385,7 @@ class ForgetPasswordScreen extends StatefulWidget {
   State<ForgetPasswordScreen> createState() => _ForgetPasswordScreenState();
 }
 
-class _ForgetPasswordScreenState extends State<ForgetPasswordScreen>
-    with TickerProviderStateMixin {
+class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
 
@@ -416,60 +416,46 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen>
 
   void _initializeAnimations() {
     // Background animation controller
-    _backgroundController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 4),
-    );
-    _backgroundGradient = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _backgroundController, curve: Curves.easeInOut),
-    );
+    _backgroundController = AnimationController(vsync: this, duration: const Duration(seconds: 4));
+    _backgroundGradient = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _backgroundController, curve: Curves.easeInOut));
 
     // Slide animation for content
-    _slideController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    );
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
-          CurvedAnimation(parent: _slideController, curve: Curves.elasticOut),
-        );
+    _slideController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000));
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.elasticOut));
 
     // Fade animation
-    _fadeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
+    _fadeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
     ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeOut));
 
     // Scale animation
-    _scaleController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
-    );
+    _scaleController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _scaleAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut));
 
     // Pulse animation
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    );
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
+    _pulseController = AnimationController(vsync: this, duration: const Duration(seconds: 3));
+    _pulseAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.05,
+    ).animate(CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut));
 
     // Rotation animation
-    _rotationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 20),
-    );
-    _rotationAnimation = Tween<double>(begin: 0.0, end: 2 * math.pi).animate(
-      CurvedAnimation(parent: _rotationController, curve: Curves.linear),
-    );
+    _rotationController = AnimationController(vsync: this, duration: const Duration(seconds: 20));
+    _rotationAnimation = Tween<double>(
+      begin: 0.0,
+      end: 2 * math.pi,
+    ).animate(CurvedAnimation(parent: _rotationController, curve: Curves.linear));
   }
 
   void _startAnimations() {
@@ -511,10 +497,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen>
               child: AnimatedBuilder(
                 animation: _backgroundController,
                 builder: (context, child) => CustomPaint(
-                  painter: _ForgetPasswordBackgroundPainter(
-                    _backgroundGradient.value,
-                    _rotationAnimation.value,
-                  ),
+                  painter: _ForgetPasswordBackgroundPainter(_backgroundGradient.value, _rotationAnimation.value),
                 ),
               ),
             ),
@@ -527,18 +510,12 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen>
 
                   state.maybeWhen(
                     passwordResetSent: () {
-                      showSuccessToast(
-                        context,
-                        LocaleKeys.passwordResetEmailSent.tr(),
-                      );
+                      showSuccessToast(context, LocaleKeys.passwordResetEmailSent.tr());
                       Future.delayed(const Duration(seconds: 2), () {
                         if (mounted && !_isDisposed) {
                           context.go(
                             Routes.checkYourEmail,
-                            extra: {
-                              'email': _emailController.text,
-                              'isPasswordReset': true,
-                            },
+                            extra: {'email': _emailController.text, 'isPasswordReset': true},
                           );
                         }
                       });
@@ -552,10 +529,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen>
                   );
                 },
                 builder: (context, state) {
-                  final isLoading = state.maybeWhen(
-                    loading: () => true,
-                    orElse: () => false,
-                  );
+                  final isLoading = state.maybeWhen(loading: () => true, orElse: () => false);
 
                   return AnimatedBuilder(
                     animation: Listenable.merge([
@@ -567,42 +541,38 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen>
                     ]),
                     builder: (context, child) {
                       return FadeTransition(
-                        opacity: AlwaysStoppedAnimation(
-                          _fadeAnimation.value.clamp(0.0, 1.0),
-                        ),
+                        opacity: AlwaysStoppedAnimation(_fadeAnimation.value.clamp(0.0, 1.0)),
                         child: SlideTransition(
                           position: _slideAnimation,
                           child: ScaleTransition(
-                            scale: AlwaysStoppedAnimation(
-                              _scaleAnimation.value.clamp(0.1, 1.0),
-                            ),
+                            scale: AlwaysStoppedAnimation(_scaleAnimation.value.clamp(0.1, 1.0)),
                             child: SingleChildScrollView(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16.0,
-                                vertical: 16,
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Header with Back Button and Language
-                                  _buildHeaderSection(locale, context),
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16),
+                              child: SizedBox(
+                                height: context.height,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Header with Back Button and Language
+                                    _buildHeaderSection(locale, context),
 
-                                  const SizedBox(height: 24),
+                                    const SizedBox(height: 24),
 
-                                  // Animated Header Content
-                                  _buildAnimatedHeader(),
+                                    // Animated Header Content
+                                    _buildAnimatedHeader(),
 
-                                  const SizedBox(height: 24),
+                                    const SizedBox(height: 24),
 
-                                  // Glass Form Card
-                                  _buildGlassForm(isLoading, context),
+                                    // Glass Form Card
+                                    _buildGlassForm(isLoading, context),
 
-                                  const SizedBox(height: 24),
+                                    const SizedBox(height: 24),
 
-                                  // Back to Login with glass effect
-                                  _buildGlassLoginSection(context),
-                                  const SizedBox(height: 80),
-                                ],
+                                    // Back to Login with glass effect
+                                    _buildGlassLoginSection(context),
+                                    const SizedBox(height: 80),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -635,22 +605,14 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen>
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: AppColors.glassStroke, width: 1),
                 boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 15,
-                    offset: const Offset(0, 5),
-                  ),
+                  BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, 5)),
                 ],
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: IconButton(
                   onPressed: () => context.pop(),
-                  icon: Icon(
-                    Icons.arrow_back_ios_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
+                  icon: Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: 20),
                 ),
               ),
             ),
@@ -674,18 +636,9 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen>
             color: AppColors.glass,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: AppColors.glassStroke, width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 15,
-                offset: const Offset(0, 5),
-              ),
-            ],
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, 5))],
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: const CompactLanguageDropdown(),
-          ),
+          child: ClipRRect(borderRadius: BorderRadius.circular(20), child: const CompactLanguageDropdown()),
         ),
       ),
     );
@@ -710,31 +663,17 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen>
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [
-                          AppColors.primary.withOpacity(0.8),
-                          AppColors.secondary.withOpacity(0.6),
-                        ],
+                        colors: [AppColors.primary.withOpacity(0.8), AppColors.secondary.withOpacity(0.6)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       shape: BoxShape.circle,
                       boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withOpacity(0.3),
-                          blurRadius: 20,
-                          spreadRadius: 5,
-                        ),
+                        BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 20, spreadRadius: 5),
                       ],
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
-                        width: 2,
-                      ),
+                      border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
                     ),
-                    child: Icon(
-                      Icons.lock_reset_rounded,
-                      size: 48,
-                      color: Colors.white,
-                    ),
+                    child: Icon(Icons.lock_reset_rounded, size: 48, color: Colors.white),
                   ),
                 ),
               ),
@@ -755,13 +694,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen>
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
-                  shadows: [
-                    Shadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  shadows: [Shadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 2))],
                 ),
               ),
             ),
@@ -776,11 +709,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen>
               offset: Offset(0, value),
               child: Text(
                 LocaleKeys.passwordResetInstructions.tr(),
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
-                  fontSize: 16,
-                  height: 1.5,
-                ),
+                style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 16, height: 1.5),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -801,13 +730,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen>
             color: AppColors.glass,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: AppColors.glassStroke, width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.15),
-                blurRadius: 30,
-                offset: const Offset(0, 10),
-              ),
-            ],
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 30, offset: const Offset(0, 10))],
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(24),
@@ -827,9 +750,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen>
                       if (value == null || value.isEmpty) {
                         return LocaleKeys.pleaseEnterEmail.tr();
                       }
-                      if (!RegExp(
-                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                      ).hasMatch(value)) {
+                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
                         return LocaleKeys.pleaseEnterValidEmail.tr();
                       }
                       return null;
@@ -843,9 +764,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen>
                     width: double.infinity,
                     child: AnimatedButton(
                       text: LocaleKeys.sendResetEmail.tr(),
-                      onPressed: isLoading
-                          ? null
-                          : () => _handleForgotPassword(context),
+                      onPressed: isLoading ? null : () => _handleForgotPassword(context),
                       isLoading: isLoading,
                       backgroundColor: AppColors.primary,
                       width: double.infinity,
@@ -881,29 +800,15 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen>
         style: TextStyle(color: Colors.white, fontSize: 16),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(
-            color: Colors.white.withOpacity(0.8),
-            fontSize: 14,
-          ),
+          labelStyle: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
           hintText: hint,
-          hintStyle: TextStyle(
-            color: Colors.white.withOpacity(0.5),
-            fontSize: 14,
-          ),
+          hintStyle: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14),
           prefixIcon: Padding(
             padding: const EdgeInsets.all(12.0),
-            child: SvgPicture.asset(
-              prefixIcon,
-              color: Colors.white.withOpacity(0.7),
-              height: 20,
-              width: 20,
-            ),
+            child: SvgPicture.asset(prefixIcon, color: Colors.white.withOpacity(0.7), height: 20, width: 20),
           ),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
         validator: validator,
         onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
@@ -930,10 +835,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen>
                 children: [
                   Text(
                     LocaleKeys.rememberPassword.tr(),
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 16),
                   ),
                   const SizedBox(height: 8),
                   GestureDetector(
@@ -943,30 +845,17 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen>
                       }
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [
-                            Colors.white.withOpacity(0.1),
-                            Colors.white.withOpacity(0.2),
-                          ],
+                          colors: [Colors.white.withOpacity(0.1), Colors.white.withOpacity(0.2)],
                         ),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
-                          width: 1,
-                        ),
+                        border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
                       ),
                       child: Text(
                         LocaleKeys.backToLogin.tr(),
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16),
                       ),
                     ),
                   ),
@@ -1007,10 +896,7 @@ class _ForgetPasswordBackgroundPainter extends CustomPainter {
       end: Alignment.bottomRight,
     );
 
-    final paint = Paint()
-      ..shader = gradient.createShader(
-        Rect.fromLTWH(0, 0, size.width, size.height),
-      );
+    final paint = Paint()..shader = gradient.createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
 
@@ -1020,13 +906,8 @@ class _ForgetPasswordBackgroundPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     for (int i = 0; i < 18; i++) {
-      final x =
-          (size.width * 0.1) +
-          (i * size.width * 0.05) +
-          (math.sin(animationValue * 2 * math.pi + i) * 35);
-      final y =
-          (size.height * 0.2) +
-          (math.cos(animationValue * 2 * math.pi + i * 0.7) * 45);
+      final x = (size.width * 0.1) + (i * size.width * 0.05) + (math.sin(animationValue * 2 * math.pi + i) * 35);
+      final y = (size.height * 0.2) + (math.cos(animationValue * 2 * math.pi + i * 0.7) * 45);
       final radius = 2 + math.sin(animationValue * 2 * math.pi + i) * 2.5;
 
       canvas.drawCircle(Offset(x, y), radius.abs(), particlePaint);
@@ -1035,11 +916,7 @@ class _ForgetPasswordBackgroundPainter extends CustomPainter {
     // Flowing gradient lines
     final linePaint = Paint()
       ..shader = LinearGradient(
-        colors: [
-          Colors.white.withOpacity(0.0),
-          Colors.white.withOpacity(0.12),
-          Colors.white.withOpacity(0.0),
-        ],
+        colors: [Colors.white.withOpacity(0.0), Colors.white.withOpacity(0.12), Colors.white.withOpacity(0.0)],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
       ..strokeWidth = 1.8;
 
@@ -1050,10 +927,7 @@ class _ForgetPasswordBackgroundPainter extends CustomPainter {
       path.moveTo(-50, startY);
 
       for (double x = -50; x <= size.width + 50; x += 8) {
-        final y =
-            startY +
-            math.sin((x * 0.009) + (animationValue * 2 * math.pi) + (i * 2)) *
-                28;
+        final y = startY + math.sin((x * 0.009) + (animationValue * 2 * math.pi) + (i * 2)) * 28;
         path.lineTo(x, y);
       }
 
@@ -1075,11 +949,7 @@ class _ForgetPasswordBackgroundPainter extends CustomPainter {
       // Lock body
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-          Rect.fromCenter(
-            center: Offset(centerX, centerY),
-            width: lockSize * 0.6,
-            height: lockSize * 0.8,
-          ),
+          Rect.fromCenter(center: Offset(centerX, centerY), width: lockSize * 0.6, height: lockSize * 0.8),
           Radius.circular(8),
         ),
         securityPaint,

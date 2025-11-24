@@ -8,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:taqy/config/routes/routes.dart';
+import 'package:taqy/core/extensions/context_extensions.dart';
 import 'package:taqy/core/services/di.dart';
 import 'package:taqy/core/theme/colors.dart';
 import 'package:taqy/core/translations/locale_keys.g.dart';
@@ -22,18 +23,13 @@ class CheckYourEmailScreen extends StatefulWidget {
   final String email;
   final bool isPasswordReset;
 
-  const CheckYourEmailScreen({
-    super.key,
-    required this.email,
-    this.isPasswordReset = false,
-  });
+  const CheckYourEmailScreen({super.key, required this.email, this.isPasswordReset = false});
 
   @override
   State<CheckYourEmailScreen> createState() => _CheckYourEmailScreenState();
 }
 
-class _CheckYourEmailScreenState extends State<CheckYourEmailScreen>
-    with TickerProviderStateMixin {
+class _CheckYourEmailScreenState extends State<CheckYourEmailScreen> with TickerProviderStateMixin {
   // Animation Controllers
   late AnimationController _backgroundController;
   late AnimationController _slideController;
@@ -64,69 +60,53 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen>
 
   void _initializeAnimations() {
     // Background animation controller
-    _backgroundController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 4),
-    );
-    _backgroundGradient = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _backgroundController, curve: Curves.easeInOut),
-    );
+    _backgroundController = AnimationController(vsync: this, duration: const Duration(seconds: 4));
+    _backgroundGradient = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _backgroundController, curve: Curves.easeInOut));
 
     // Slide animation for content
-    _slideController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    );
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
-          CurvedAnimation(parent: _slideController, curve: Curves.elasticOut),
-        );
+    _slideController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000));
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.elasticOut));
 
     // Fade animation
-    _fadeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
+    _fadeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
     ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeOut));
 
     // Scale animation
-    _scaleController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
-    );
+    _scaleController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _scaleAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut));
 
     // Pulse animation
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    );
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
+    _pulseController = AnimationController(vsync: this, duration: const Duration(seconds: 3));
+    _pulseAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.05,
+    ).animate(CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut));
 
     // Rotation animation
-    _rotationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 20),
-    );
-    _rotationAnimation = Tween<double>(begin: 0.0, end: 2 * math.pi).animate(
-      CurvedAnimation(parent: _rotationController, curve: Curves.linear),
-    );
+    _rotationController = AnimationController(vsync: this, duration: const Duration(seconds: 20));
+    _rotationAnimation = Tween<double>(
+      begin: 0.0,
+      end: 2 * math.pi,
+    ).animate(CurvedAnimation(parent: _rotationController, curve: Curves.linear));
 
     // Success checkmark animation
-    _successController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    );
-    _successAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _successController, curve: Curves.elasticOut),
-    );
+    _successController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500));
+    _successAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _successController, curve: Curves.elasticOut));
   }
 
   void _startAnimations() {
@@ -176,10 +156,7 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen>
               child: AnimatedBuilder(
                 animation: _backgroundController,
                 builder: (context, child) => CustomPaint(
-                  painter: _CheckEmailBackgroundPainter(
-                    _backgroundGradient.value,
-                    _rotationAnimation.value,
-                  ),
+                  painter: _CheckEmailBackgroundPainter(_backgroundGradient.value, _rotationAnimation.value),
                 ),
               ),
             ),
@@ -196,10 +173,7 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen>
                         _successController.forward();
                         _hasAnimatedSuccess = true;
                       }
-                      showSuccessToast(
-                        context,
-                        LocaleKeys.passwordResetEmailSent.tr(),
-                      );
+                      showSuccessToast(context, LocaleKeys.passwordResetEmailSent.tr());
                     },
                     error: (failure) {
                       if (mounted && !_isDisposed) {
@@ -210,10 +184,7 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen>
                   );
                 },
                 builder: (context, state) {
-                  final isLoading = state.maybeWhen(
-                    loading: () => true,
-                    orElse: () => false,
-                  );
+                  final isLoading = state.maybeWhen(loading: () => true, orElse: () => false);
 
                   return AnimatedBuilder(
                     animation: Listenable.merge([
@@ -226,30 +197,26 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen>
                     ]),
                     builder: (context, child) {
                       return FadeTransition(
-                        opacity: AlwaysStoppedAnimation(
-                          _fadeAnimation.value.clamp(0.0, 1.0),
-                        ),
+                        opacity: AlwaysStoppedAnimation(_fadeAnimation.value.clamp(0.0, 1.0)),
                         child: SlideTransition(
                           position: _slideAnimation,
                           child: ScaleTransition(
-                            scale: AlwaysStoppedAnimation(
-                              _scaleAnimation.value.clamp(0.1, 1.0),
-                            ),
+                            scale: AlwaysStoppedAnimation(_scaleAnimation.value.clamp(0.1, 1.0)),
                             child: SingleChildScrollView(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16.0,
-                                vertical: 16,
-                              ),
-                              child: Column(
-                                children: [
-                                  // Header with Back Button and Language
-                                  _buildHeaderSection(locale, context),
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16),
+                              child: SizedBox(
+                                height: context.height,
+                                child: Column(
+                                  children: [
+                                    // Header with Back Button and Language
+                                    _buildHeaderSection(locale, context),
 
-                                  const SizedBox(height: 40),
+                                    const SizedBox(height: 40),
 
-                                  // Animated Content
-                                  _buildAnimatedContent(context, isLoading),
-                                ],
+                                    // Animated Content
+                                    _buildAnimatedContent(context, isLoading),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -282,22 +249,14 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen>
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: AppColors.glassStroke, width: 1),
                 boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 15,
-                    offset: const Offset(0, 5),
-                  ),
+                  BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, 5)),
                 ],
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: IconButton(
                   onPressed: () => context.go(Routes.login),
-                  icon: Icon(
-                    Icons.arrow_back_ios_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
+                  icon: Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: 20),
                 ),
               ),
             ),
@@ -321,18 +280,9 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen>
             color: AppColors.glass,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: AppColors.glassStroke, width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 15,
-                offset: const Offset(0, 5),
-              ),
-            ],
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, 5))],
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: const CompactLanguageDropdown(),
-          ),
+          child: ClipRRect(borderRadius: BorderRadius.circular(20), child: const CompactLanguageDropdown()),
         ),
       ),
     );
@@ -359,13 +309,7 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen>
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
-                shadows: [
-                  Shadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                shadows: [Shadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 2))],
               ),
               textAlign: TextAlign.center,
             ),
@@ -385,11 +329,7 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen>
               widget.isPasswordReset
                   ? LocaleKeys.passwordResetEmailSentDescription.tr()
                   : LocaleKeys.verificationEmailSentDescription.tr(),
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.8),
-                fontSize: 16,
-                height: 1.5,
-              ),
+              style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 16, height: 1.5),
               textAlign: TextAlign.center,
             ),
           ),
@@ -423,11 +363,7 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen>
                     const SizedBox(width: 12),
                     Text(
                       widget.email,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                      ),
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16),
                     ),
                   ],
                 ),
@@ -444,10 +380,7 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen>
         const SizedBox(height: 32),
 
         // // Resend Email Section (for verification)
-        if (!widget.isPasswordReset) ...[
-          _buildGlassResendSection(context, isLoading),
-          const SizedBox(height: 24),
-        ],
+        if (!widget.isPasswordReset) ...[_buildGlassResendSection(context, isLoading), const SizedBox(height: 24)],
 
         // Help Text
         _buildGlassHelpText(context),
@@ -474,25 +407,13 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen>
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [
-                        AppColors.primary.withOpacity(0.8),
-                        AppColors.secondary.withOpacity(0.6),
-                      ],
+                      colors: [AppColors.primary.withOpacity(0.8), AppColors.secondary.withOpacity(0.6)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withOpacity(0.3),
-                        blurRadius: 20,
-                        spreadRadius: 5,
-                      ),
-                    ],
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
-                      width: 2,
-                    ),
+                    boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 20, spreadRadius: 5)],
+                    border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
                   ),
                   child: child,
                 ),
@@ -509,36 +430,20 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen>
               alignment: Alignment.center,
               children: [
                 // Email Icon
-                Opacity(
-                  opacity: 1.0 - _successAnimation.value,
-                  child: Icon(
-                    Icons.mark_email_read_outlined,
-                    size: 48,
-                    color: Colors.white,
-                  ),
-                ),
+                Icon(Icons.mark_email_read_outlined, size: 48, color: Colors.white),
 
                 // Success Checkmark
-                Opacity(
-                  opacity: _successAnimation.value,
-                  child: Transform.scale(
-                    scale: _successAnimation.value,
-                    child: Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: Colors.green,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.green.withOpacity(0.4),
-                            blurRadius: 15,
-                            spreadRadius: 5,
-                          ),
-                        ],
-                      ),
-                      child: Icon(Icons.check, size: 32, color: Colors.white),
+                Transform.scale(
+                  scale: _successAnimation.value,
+                  child: Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                      boxShadow: [BoxShadow(color: Colors.green.withOpacity(0.4), blurRadius: 15, spreadRadius: 5)],
                     ),
+                    child: Icon(Icons.check, size: 32, color: Colors.white),
                   ),
                 ),
               ],
@@ -560,13 +465,7 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen>
             color: AppColors.glass,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: AppColors.glassStroke, width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.15),
-                blurRadius: 30,
-                offset: const Offset(0, 10),
-              ),
-            ],
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 30, offset: const Offset(0, 10))],
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(24),
@@ -590,9 +489,7 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen>
                 SizedBox(
                   width: double.infinity,
                   child: AnimatedButton(
-                    text: widget.isPasswordReset
-                        ? LocaleKeys.backToLogin.tr()
-                        : LocaleKeys.skipIllConfirmLater.tr(),
+                    text: widget.isPasswordReset ? LocaleKeys.backToLogin.tr() : LocaleKeys.skipIllConfirmLater.tr(),
                     onPressed: () {
                       if (mounted && !_isDisposed) {
                         context.go(Routes.login);
@@ -631,10 +528,7 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen>
               children: [
                 Text(
                   LocaleKeys.didntReceiveEmail.tr(),
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
-                    fontSize: 16,
-                  ),
+                  style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 16),
                 ),
                 const SizedBox(height: 12),
                 AnimatedButton(
@@ -673,18 +567,11 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen>
                 children: [
                   TextSpan(
                     text: LocaleKeys.didntReceiveEmailCheck.tr(),
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
                   ),
                   TextSpan(
                     text: ' ${LocaleKeys.tryAnotherEmailAddress.tr()}',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
                     recognizer: TapGestureRecognizer()
                       ..onTap = () {
                         if (mounted && !_isDisposed) {
@@ -703,12 +590,7 @@ class _CheckYourEmailScreenState extends State<CheckYourEmailScreen>
 
   void _openEmailApp() async {
     try {
-      final emailApps = [
-        'mailto:',
-        'googlegmail://',
-        'ms-outlook://',
-        'ymail://',
-      ];
+      final emailApps = ['mailto:', 'googlegmail://', 'ms-outlook://', 'ymail://'];
 
       bool opened = false;
       for (String app in emailApps) {
@@ -754,10 +636,7 @@ class _CheckEmailBackgroundPainter extends CustomPainter {
       end: Alignment.bottomRight,
     );
 
-    final paint = Paint()
-      ..shader = gradient.createShader(
-        Rect.fromLTWH(0, 0, size.width, size.height),
-      );
+    final paint = Paint()..shader = gradient.createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
 
@@ -767,13 +646,8 @@ class _CheckEmailBackgroundPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     for (int i = 0; i < 22; i++) {
-      final x =
-          (size.width * 0.1) +
-          (i * size.width * 0.04) +
-          (math.sin(animationValue * 2 * math.pi + i) * 32);
-      final y =
-          (size.height * 0.2) +
-          (math.cos(animationValue * 2 * math.pi + i * 0.7) * 42);
+      final x = (size.width * 0.1) + (i * size.width * 0.04) + (math.sin(animationValue * 2 * math.pi + i) * 32);
+      final y = (size.height * 0.2) + (math.cos(animationValue * 2 * math.pi + i * 0.7) * 42);
       final radius = 2 + math.sin(animationValue * 2 * math.pi + i) * 2.2;
 
       canvas.drawCircle(Offset(x, y), radius.abs(), particlePaint);
@@ -782,11 +656,7 @@ class _CheckEmailBackgroundPainter extends CustomPainter {
     // Flowing gradient lines
     final linePaint = Paint()
       ..shader = LinearGradient(
-        colors: [
-          Colors.white.withOpacity(0.0),
-          Colors.white.withOpacity(0.1),
-          Colors.white.withOpacity(0.0),
-        ],
+        colors: [Colors.white.withOpacity(0.0), Colors.white.withOpacity(0.1), Colors.white.withOpacity(0.0)],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
       ..strokeWidth = 1.6;
 
@@ -797,10 +667,7 @@ class _CheckEmailBackgroundPainter extends CustomPainter {
       path.moveTo(-50, startY);
 
       for (double x = -50; x <= size.width + 50; x += 8) {
-        final y =
-            startY +
-            math.sin((x * 0.008) + (animationValue * 2 * math.pi) + (i * 2)) *
-                26;
+        final y = startY + math.sin((x * 0.008) + (animationValue * 2 * math.pi) + (i * 2)) * 26;
         path.lineTo(x, y);
       }
 

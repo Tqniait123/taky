@@ -26,8 +26,7 @@ class RegisterScreen extends StatefulWidget {
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen>
-    with TickerProviderStateMixin {
+class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -71,60 +70,46 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   void _initializeAnimations() {
     // Background animation controller
-    _backgroundController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 4),
-    );
-    _backgroundGradient = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _backgroundController, curve: Curves.easeInOut),
-    );
+    _backgroundController = AnimationController(vsync: this, duration: const Duration(seconds: 4));
+    _backgroundGradient = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _backgroundController, curve: Curves.easeInOut));
 
     // Slide animation for content
-    _slideController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    );
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
-          CurvedAnimation(parent: _slideController, curve: Curves.elasticOut),
-        );
+    _slideController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000));
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.elasticOut));
 
     // Fade animation
-    _fadeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
+    _fadeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
     ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeOut));
 
     // Scale animation
-    _scaleController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
-    );
+    _scaleController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _scaleAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut));
 
     // Pulse animation
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    );
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
+    _pulseController = AnimationController(vsync: this, duration: const Duration(seconds: 3));
+    _pulseAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.05,
+    ).animate(CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut));
 
     // Rotation animation
-    _rotationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 20),
-    );
-    _rotationAnimation = Tween<double>(begin: 0.0, end: 2 * math.pi).animate(
-      CurvedAnimation(parent: _rotationController, curve: Curves.linear),
-    );
+    _rotationController = AnimationController(vsync: this, duration: const Duration(seconds: 20));
+    _rotationAnimation = Tween<double>(
+      begin: 0.0,
+      end: 2 * math.pi,
+    ).animate(CurvedAnimation(parent: _rotationController, curve: Curves.linear));
   }
 
   void _startAnimations() {
@@ -173,10 +158,7 @@ class _RegisterScreenState extends State<RegisterScreen>
               child: AnimatedBuilder(
                 animation: _backgroundController,
                 builder: (context, child) => CustomPaint(
-                  painter: _RegisterBackgroundPainter(
-                    _backgroundGradient.value,
-                    _rotationAnimation.value,
-                  ),
+                  painter: _RegisterBackgroundPainter(_backgroundGradient.value, _rotationAnimation.value),
                 ),
               ),
             ),
@@ -189,10 +171,7 @@ class _RegisterScreenState extends State<RegisterScreen>
 
                   state.whenOrNull(
                     authenticated: (user) {
-                      showSuccessToast(
-                        context,
-                        LocaleKeys.accountCreatedSuccessfully.tr(),
-                      );
+                      showSuccessToast(context, LocaleKeys.accountCreatedSuccessfully.tr());
                       context.go(Routes.login);
                     },
                     error: (failure) {
@@ -202,10 +181,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                     },
                     organizationCodeChecked: (exists) {
                       if (!exists && !_isDisposed && mounted) {
-                        showErrorToast(
-                          context,
-                          LocaleKeys.organizationCodeNotFound.tr(),
-                        );
+                        showErrorToast(context, LocaleKeys.organizationCodeNotFound.tr());
                       }
                     },
                   );
@@ -227,20 +203,13 @@ class _RegisterScreenState extends State<RegisterScreen>
                     ]),
                     builder: (context, child) {
                       return FadeTransition(
-                        opacity: AlwaysStoppedAnimation(
-                          _fadeAnimation.value.clamp(0.0, 1.0),
-                        ),
+                        opacity: AlwaysStoppedAnimation(_fadeAnimation.value.clamp(0.0, 1.0)),
                         child: SlideTransition(
                           position: _slideAnimation,
                           child: ScaleTransition(
-                            scale: AlwaysStoppedAnimation(
-                              _scaleAnimation.value.clamp(0.1, 1.0),
-                            ),
+                            scale: AlwaysStoppedAnimation(_scaleAnimation.value.clamp(0.1, 1.0)),
                             child: SingleChildScrollView(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16.0,
-                                vertical: 16,
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -292,22 +261,14 @@ class _RegisterScreenState extends State<RegisterScreen>
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: AppColors.glassStroke, width: 1),
                     boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 15,
-                        offset: const Offset(0, 5),
-                      ),
+                      BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, 5)),
                     ],
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
                     child: IconButton(
                       onPressed: () => context.pop(),
-                      icon: Icon(
-                        Icons.arrow_back_ios_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
+                      icon: Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: 20),
                     ),
                   ),
                 ),
@@ -338,18 +299,9 @@ class _RegisterScreenState extends State<RegisterScreen>
             color: AppColors.glass,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: AppColors.glassStroke, width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 15,
-                offset: const Offset(0, 5),
-              ),
-            ],
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, 5))],
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: const CompactLanguageDropdown(),
-          ),
+          child: ClipRRect(borderRadius: BorderRadius.circular(20), child: const CompactLanguageDropdown()),
         ),
       ),
     );
@@ -374,31 +326,17 @@ class _RegisterScreenState extends State<RegisterScreen>
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [
-                          _getAccountTypeColor().withOpacity(0.8),
-                          _getAccountTypeColor().withOpacity(0.6),
-                        ],
+                        colors: [_getAccountTypeColor().withOpacity(0.8), _getAccountTypeColor().withOpacity(0.6)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       shape: BoxShape.circle,
                       boxShadow: [
-                        BoxShadow(
-                          color: _getAccountTypeColor().withOpacity(0.3),
-                          blurRadius: 20,
-                          spreadRadius: 5,
-                        ),
+                        BoxShadow(color: _getAccountTypeColor().withOpacity(0.3), blurRadius: 20, spreadRadius: 5),
                       ],
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
-                        width: 2,
-                      ),
+                      border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
                     ),
-                    child: Icon(
-                      _getAccountTypeIcon(),
-                      size: 40,
-                      color: Colors.white,
-                    ),
+                    child: Icon(_getAccountTypeIcon(), size: 40, color: Colors.white),
                   ),
                 ),
               ),
@@ -419,13 +357,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
-                  shadows: [
-                    Shadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  shadows: [Shadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 2))],
                 ),
               ),
             ),
@@ -440,11 +372,7 @@ class _RegisterScreenState extends State<RegisterScreen>
               offset: Offset(0, value),
               child: Text(
                 _getAccountTypeTitle(),
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
-                  fontSize: 16,
-                  height: 1.5,
-                ),
+                style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 16, height: 1.5),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -465,13 +393,7 @@ class _RegisterScreenState extends State<RegisterScreen>
             color: AppColors.glass,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: AppColors.glassStroke, width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.15),
-                blurRadius: 30,
-                offset: const Offset(0, 10),
-              ),
-            ],
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 30, offset: const Offset(0, 10))],
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(24),
@@ -507,9 +429,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                       if (value == null || value.isEmpty) {
                         return LocaleKeys.pleaseEnterEmail.tr();
                       }
-                      if (!RegExp(
-                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                      ).hasMatch(value)) {
+                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
                         return LocaleKeys.pleaseEnterValidEmail.tr();
                       }
                       return null;
@@ -597,9 +517,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                     width: double.infinity,
                     child: AnimatedButton(
                       text: LocaleKeys.createAccount.tr(),
-                      onPressed: isLoading
-                          ? null
-                          : () => _handleRegister(context),
+                      onPressed: isLoading ? null : () => _handleRegister(context),
                       isLoading: isLoading,
                       backgroundColor: _getAccountTypeColor(),
                       width: double.infinity,
@@ -639,23 +557,12 @@ class _RegisterScreenState extends State<RegisterScreen>
         style: TextStyle(color: Colors.white, fontSize: 16),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(
-            color: Colors.white.withOpacity(0.8),
-            fontSize: 14,
-          ),
+          labelStyle: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
           hintText: hint,
-          hintStyle: TextStyle(
-            color: Colors.white.withOpacity(0.5),
-            fontSize: 14,
-          ),
+          hintStyle: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14),
           prefixIcon: Padding(
             padding: const EdgeInsets.all(12.0),
-            child: SvgPicture.asset(
-              prefixIcon,
-              color: Colors.white.withOpacity(0.7),
-              height: 20,
-              width: 20,
-            ),
+            child: SvgPicture.asset(prefixIcon, color: Colors.white.withOpacity(0.7), height: 20, width: 20),
           ),
           suffixIcon: isPassword
               ? IconButton(
@@ -667,10 +574,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                 )
               : null,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
         validator: validator,
         onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
@@ -705,15 +609,11 @@ class _RegisterScreenState extends State<RegisterScreen>
           _buildGlassTextField(
             controller: _jobTitleController,
             label: locale == 'ar' ? 'المسمى الوظيفي' : 'Job Title',
-            hint: locale == 'ar'
-                ? 'أدخل المسمى الوظيفي'
-                : 'Enter your job title',
+            hint: locale == 'ar' ? 'أدخل المسمى الوظيفي' : 'Enter your job title',
             prefixIcon: Assets.imagesSvgsUser, // You'll need to add this icon
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return locale == 'ar'
-                    ? 'الرجاء إدخال المسمى الوظيفي'
-                    : 'Please enter your job title';
+                return locale == 'ar' ? 'الرجاء إدخال المسمى الوظيفي' : 'Please enter your job title';
               }
               return null;
             },
@@ -795,18 +695,10 @@ class _RegisterScreenState extends State<RegisterScreen>
         children: [
           Text(
             label,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.8),
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
-          ModernColorPicker(
-            selectedColor: selectedColor,
-            onColorSelected: onColorSelected,
-            label: '',
-          ),
+          ModernColorPicker(selectedColor: selectedColor, onColorSelected: onColorSelected, label: ''),
         ],
       ),
     );
@@ -832,10 +724,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                 children: [
                   Text(
                     LocaleKeys.alreadyHaveAccount.tr(),
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 16),
                   ),
                   const SizedBox(width: 8),
                   GestureDetector(
@@ -845,30 +734,17 @@ class _RegisterScreenState extends State<RegisterScreen>
                       }
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [
-                            Colors.white.withOpacity(0.1),
-                            Colors.white.withOpacity(0.2),
-                          ],
+                          colors: [Colors.white.withOpacity(0.1), Colors.white.withOpacity(0.2)],
                         ),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
-                          width: 1,
-                        ),
+                        border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
                       ),
                       child: Text(
                         LocaleKeys.signIn.tr(),
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16),
                       ),
                     ),
                   ),
@@ -960,24 +836,12 @@ class _RegisterScreenState extends State<RegisterScreen>
       password: _passwordController.text,
       name: _nameController.text.trim(),
       role: _getAccountTypeRole(),
-      phone: _phoneController.text.trim().isNotEmpty
-          ? _phoneController.text.trim()
-          : null,
-      organizationName: _orgNameController.text.trim().isNotEmpty
-          ? _orgNameController.text.trim()
-          : null,
-      organizationCode: _orgCodeController.text.trim().isNotEmpty
-          ? _orgCodeController.text.trim()
-          : null,
-      primaryColor: widget.accountType == 'admin'
-          ? _colorToHex(_selectedPrimaryColor)
-          : null,
-      secondaryColor: widget.accountType == 'admin'
-          ? _colorToHex(_selectedSecondaryColor)
-          : null,
-      jobTitle:
-          widget.accountType == 'employee' &&
-              _jobTitleController.text.trim().isNotEmpty
+      phone: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
+      organizationName: _orgNameController.text.trim().isNotEmpty ? _orgNameController.text.trim() : null,
+      organizationCode: _orgCodeController.text.trim().isNotEmpty ? _orgCodeController.text.trim() : null,
+      primaryColor: widget.accountType == 'admin' ? _colorToHex(_selectedPrimaryColor) : null,
+      secondaryColor: widget.accountType == 'admin' ? _colorToHex(_selectedSecondaryColor) : null,
+      jobTitle: widget.accountType == 'employee' && _jobTitleController.text.trim().isNotEmpty
           ? _jobTitleController.text.trim()
           : null,
     );
@@ -998,10 +862,7 @@ class _RegisterBackgroundPainter extends CustomPainter {
       end: Alignment.bottomRight,
     );
 
-    final paint = Paint()
-      ..shader = gradient.createShader(
-        Rect.fromLTWH(0, 0, size.width, size.height),
-      );
+    final paint = Paint()..shader = gradient.createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
 
@@ -1011,13 +872,8 @@ class _RegisterBackgroundPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     for (int i = 0; i < 25; i++) {
-      final x =
-          (size.width * 0.1) +
-          (i * size.width * 0.03) +
-          (math.sin(animationValue * 2 * math.pi + i) * 40);
-      final y =
-          (size.height * 0.2) +
-          (math.cos(animationValue * 2 * math.pi + i * 0.7) * 50);
+      final x = (size.width * 0.1) + (i * size.width * 0.03) + (math.sin(animationValue * 2 * math.pi + i) * 40);
+      final y = (size.height * 0.2) + (math.cos(animationValue * 2 * math.pi + i * 0.7) * 50);
       final radius = 2 + math.sin(animationValue * 2 * math.pi + i) * 3;
 
       canvas.drawCircle(Offset(x, y), radius.abs(), particlePaint);
@@ -1026,11 +882,7 @@ class _RegisterBackgroundPainter extends CustomPainter {
     // Flowing gradient lines
     final linePaint = Paint()
       ..shader = LinearGradient(
-        colors: [
-          Colors.white.withOpacity(0.0),
-          Colors.white.withOpacity(0.15),
-          Colors.white.withOpacity(0.0),
-        ],
+        colors: [Colors.white.withOpacity(0.0), Colors.white.withOpacity(0.15), Colors.white.withOpacity(0.0)],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
       ..strokeWidth = 2.0;
 
@@ -1041,10 +893,7 @@ class _RegisterBackgroundPainter extends CustomPainter {
       path.moveTo(-50, startY);
 
       for (double x = -50; x <= size.width + 50; x += 8) {
-        final y =
-            startY +
-            math.sin((x * 0.01) + (animationValue * 2 * math.pi) + (i * 2)) *
-                30;
+        final y = startY + math.sin((x * 0.01) + (animationValue * 2 * math.pi) + (i * 2)) * 30;
         path.lineTo(x, y);
       }
 
